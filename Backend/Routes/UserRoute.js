@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express.Router();
-const validate = require("../middleware/Validate");
+const validate = require("../Middleware/Validate");
 const { auth } = require("../Middleware/RoleAuth");
 const upload = require("../Middleware/upload");
 const { Login_Limit, Register_Limiter } = require("../middleware/Security");
