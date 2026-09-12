@@ -23,6 +23,7 @@ const {
   resetPasswords,
   ResendOtp,
 } = require("../Controller/auth.controller");
+
 const { profile } = require("../Controller/admin.controller");
 
 app.post("/register", validate(registerSchema), Register_Limiter, adminTokenAuth, register);
