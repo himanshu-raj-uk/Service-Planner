@@ -2,7 +2,7 @@ const express = require("express");
 const app = express.Router();
 
 const validate = require("../Middleware/Validate");
-const { auth, roleAuth, adminTokenAuth } = require("../middleware/RoleAuth");
+const { auth, roleAuth, adminTokenAuth } = require("../Middleware/RoleAuth");
 
 const { Login_Limit, Register_Limiter } = require("../Middleware/Security");
 
@@ -22,8 +22,8 @@ const {
   forgotPasswords,
   resetPasswords,
   ResendOtp,
-} = require("../controller/auth.controller");
-const { profile } = require("../controller/admin.controller");
+} = require("../Controller/auth.controller");
+const { profile } = require("../Controller/admin.controller");
 
 app.post("/register", validate(registerSchema), Register_Limiter, adminTokenAuth, register);
 
