@@ -4,7 +4,7 @@ const {
   auth,
   roleAuth,
   adminTokenAuth,
-} = require("../middleware/RoleAuth");
+} = require("../Middleware/RoleAuth");
 
 const {
   profile,
@@ -14,7 +14,7 @@ const {
   blockUser,
   unblockUser,
   deleteUser,
-} = require("../controller/admin.controller");
+} = require("../Controller/admin.controller");
 
 app.get("/profile", auth, roleAuth, profile);
 

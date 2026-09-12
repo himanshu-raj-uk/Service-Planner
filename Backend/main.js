@@ -5,11 +5,11 @@ const dns = require("dns");
 const connectDB = require("./Config/Mongoose");
 
 const userRoutes = require("./Routes/UserRoute");
-const adminRoutes = require("./routes/AdminRoute");
+const adminRoutes = require("./Routes/AdminRoute");
 const authRoutes = require("./Routes/AuthRoute");
 const tourplan = require("./Routes/TripRoute");
 const birthdayplan = require("./Routes/BirthdayRoute")
-const errorMiddleware = require("./middleware/Error");
+const errorMiddleware = require("./Middleware/Error");
 
 connectDB();
 
