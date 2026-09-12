@@ -28,7 +28,7 @@ const {
   verificationToken,
   AccessToken,
   RefreshToken,
-} = require("../Config/token");
+} = require("../Config/Token");
 
 const register = async (req, res, next) => {
   try {
