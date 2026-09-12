@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
 
@@ -33,8 +33,7 @@ axiosInstance.interceptors.response.use(
 
     const isUserDeleted =
       status === 401 &&
-      message ===
-        "User account no longer exists. Please login again.";
+      message === "User account no longer exists. Please login again.";
 
     const isInvalidUserToken =
       status === 401 &&
@@ -45,14 +44,13 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("userToken");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-
       localStorage.removeItem("verificationToken");
       localStorage.removeItem("resetToken");
 
       window.dispatchEvent(new Event("userLogout"));
 
-      if (window.location.pathname !== "/user/login") {
-        window.location.href = "/user/login";
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
       }
     }
 

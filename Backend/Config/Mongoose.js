@@ -2,11 +2,21 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.Mongoose_Connect);
+    const mongoURI = process.env.Mongoose_Connect;
+
+    if (!mongoURI) {
+      throw new Error("Mongoose_Connect environment variable is missing.");
+    }
+
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 10000,
+      family: 4,
+    });
 
     console.log("Database Connected Successfully");
   } catch (err) {
-    console.log(" Database Error:", err.message);
+    console.error("Database Connection Error:", err.message);
+    process.exit(1);
   }
 };
 
