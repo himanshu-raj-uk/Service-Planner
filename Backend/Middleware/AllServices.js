@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const ApiError = require("../Utilities/ApiError");
 const emailTemplate = require("../Template/EmailTemplate");
 const Transporter = require("../Config/MailSender");
-const { verificationToken } = require("../Config/token");
+const { verificationToken } = require("../Config/Token");
 
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
