@@ -95,7 +95,9 @@ const Notification = () => {
 
   const getDate = (notification) => {
     const date =
-      notification?.createdAt || notification?.created_at || notification?.date;
+      notification?.createdAt ||
+      notification?.created_at ||
+      notification?.date;
 
     if (!date) return "";
 
@@ -122,7 +124,7 @@ const Notification = () => {
       type.includes("trip") ||
       type.includes("tour")
     ) {
-      return <Plane size={19} strokeWidth={2} />;
+      return <Plane size={20} strokeWidth={2} />;
     }
 
     if (
@@ -130,10 +132,10 @@ const Notification = () => {
       type.includes("event") ||
       type.includes("wedding")
     ) {
-      return <CalendarDays size={19} strokeWidth={2} />;
+      return <CalendarDays size={20} strokeWidth={2} />;
     }
 
-    return <CheckCircle2 size={19} strokeWidth={2} />;
+    return <CheckCircle2 size={20} strokeWidth={2} />;
   };
 
   const handleNotificationClick = (notification) => {
@@ -327,37 +329,39 @@ const Notification = () => {
   };
 
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-[#F4F6FA] px-2.5 py-5 sm:px-6 sm:py-8 lg:px-8">
+    <main className="min-h-[calc(100vh-80px)] bg-[#F4F6FA] px-3 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
       <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-5 flex items-center gap-7 sm:mb-7 sm:gap-9">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-300 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-95"
-            aria-label="Go back"
-          >
-            <ArrowLeft size={19} />
-          </button>
+        <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-center sm:gap-5">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-95"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={19} strokeWidth={2} />
+            </button>
 
-          <div>
-            <div className="flex items-center gap-5">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Notifications
-              </h1>
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <h1 className="truncate text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  Notifications
+                </h1>
 
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-yellow-50 text-yellow-500 shadow-sm ring-1 ring-yellow-100">
-                <Bell size={18} strokeWidth={2.2} />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yellow-50 text-yellow-500 shadow-sm ring-1 ring-yellow-100">
+                  <Bell size={18} strokeWidth={2.2} />
+                </div>
               </div>
-            </div>
 
-            <p className="mt-1.5 text-xs text-slate-500 sm:text-sm">
-              Stay updated with your latest activities
-            </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                Stay updated with your latest activities
+              </p>
+            </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="flex w-full items-center justify-between gap-2 sm:ml-auto sm:w-auto sm:justify-end sm:gap-2.5">
             {unreadCount > 0 && (
-              <div className="rounded-full border border-indigo-100 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 shadow-sm">
+              <div className="min-w-0 rounded-full border border-indigo-100 bg-white px-3 py-1.5 text-center text-xs font-semibold text-indigo-600 shadow-sm">
                 {unreadCount} unread
                 {unreadCount !== 1 ? " notifications" : " notification"}
               </div>
@@ -368,17 +372,19 @@ const Notification = () => {
                 type="button"
                 onClick={removeAllNotifications}
                 disabled={deletingAll}
-                className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-100 hover:text-red-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5"
+                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-600 shadow-sm transition-all duration-200 hover:border-red-300 hover:bg-red-100 hover:text-red-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:h-auto sm:px-4 sm:py-2.5"
               >
                 {deletingAll ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
+                  <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
                 ) : (
-                  <Trash2 size={15} />
+                  <Trash2
+                    size={16}
+                    strokeWidth={2}
+                    className="h-4 w-4 shrink-0"
+                  />
                 )}
 
-                <span className="hidden sm:inline">Remove All</span>
-
-                <span className="sm:hidden">Remove</span>
+                <span className="whitespace-nowrap">Remove All</span>
               </button>
             )}
           </div>
@@ -386,19 +392,19 @@ const Notification = () => {
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
           {loading ? (
-            <div className="flex min-h-[320px] items-center justify-center">
+            <div className="flex min-h-[320px] items-center justify-center px-5">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-800" />
 
-                <p className="text-sm text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   Loading notifications...
                 </p>
               </div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex min-h-[360px] flex-col items-center justify-center px-5 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-                <Bell size={27} />
+            <div className="flex min-h-[360px] flex-col items-center justify-center px-5 py-10 text-center">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                <Bell size={27} strokeWidth={2} />
               </div>
 
               <h2 className="mt-5 text-lg font-bold text-slate-900">
@@ -412,7 +418,7 @@ const Notification = () => {
               <button
                 type="button"
                 onClick={() => navigate("/tour")}
-                className="mt-6 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-slate-800 hover:shadow-lg active:scale-95"
+                className="mt-6 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 hover:shadow-lg active:scale-95"
               >
                 Start Planning
               </button>
@@ -437,7 +443,7 @@ const Notification = () => {
                     className="relative overflow-hidden bg-white"
                   >
                     <div
-                      className={`absolute inset-y-0 right-0 flex w-[110px] items-center justify-center bg-red-500 transition-all duration-200 sm:w-[135px] ${
+                      className={`absolute inset-y-0 right-0 flex w-[110px] items-center justify-center bg-red-500 transition-opacity duration-200 sm:w-[135px] ${
                         isSwiping ? "opacity-100" : "opacity-0"
                       }`}
                     >
@@ -448,13 +454,17 @@ const Notification = () => {
                           removeNotification(notificationId);
                         }}
                         disabled={isDeleting}
-                        className="flex h-full w-full flex-col items-center justify-center gap-1 bg-red-500 text-white transition-all duration-200 hover:bg-red-600 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-full w-full flex-col items-center justify-center gap-1 bg-red-500 text-white transition-colors duration-200 hover:bg-red-600 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label="Remove notification"
                       >
                         {isDeleting ? (
-                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                         ) : (
-                          <Trash2 size={19} />
+                          <Trash2
+                            size={20}
+                            strokeWidth={2}
+                            className="h-5 w-5 shrink-0"
+                          />
                         )}
 
                         <span className="text-[11px] font-semibold">
@@ -487,10 +497,12 @@ const Notification = () => {
                         transform: `translateX(${isSwiping ? swipeX : 0}px)`,
                       }}
                       className={`relative z-10 cursor-pointer touch-pan-y select-none px-3.5 py-4 text-left transition-transform duration-200 ease-out sm:px-6 sm:py-5 ${
-                        isUnread ? "bg-slate-50" : "bg-white hover:bg-slate-50"
+                        isUnread
+                          ? "bg-slate-50"
+                          : "bg-white hover:bg-slate-50"
                       } ${isDeleting ? "pointer-events-none opacity-60" : ""}`}
                     >
-                      <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${
                             isUnread
@@ -502,9 +514,9 @@ const Notification = () => {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start justify-between gap-3">
                             <h2
-                              className={`text-sm sm:text-base ${
+                              className={`min-w-0 break-words text-sm leading-5 sm:text-base sm:leading-6 ${
                                 isUnread
                                   ? "font-bold text-slate-900"
                                   : "font-semibold text-slate-800"
@@ -518,14 +530,21 @@ const Notification = () => {
                             )}
                           </div>
 
-                          <p className="mt-1.5 text-xs leading-5 text-slate-500 sm:text-sm sm:leading-6">
+                          <p className="mt-1.5 break-words text-xs leading-5 text-slate-500 sm:text-sm sm:leading-6">
                             {getMessage(notification)}
                           </p>
 
                           {getDate(notification) && (
-                            <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-400 sm:text-xs">
-                              <Clock size={12} />
-                              <span>{getDate(notification)}</span>
+                            <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[10px] leading-4 text-slate-400 sm:text-xs sm:leading-5">
+                              <Clock
+                                size={13}
+                                strokeWidth={2}
+                                className="shrink-0"
+                              />
+
+                              <span className="break-words">
+                                {getDate(notification)}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -537,10 +556,10 @@ const Notification = () => {
                               event.stopPropagation();
                               closeSwipe();
                             }}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-700"
                             aria-label="Close remove action"
                           >
-                            <X size={16} />
+                            <X size={16} strokeWidth={2} />
                           </button>
                         )}
                       </div>
@@ -553,8 +572,8 @@ const Notification = () => {
         </section>
 
         {!loading && notifications.length > 0 && (
-          <div className="mt-4 text-center">
-            <p className="text-[10px] font-medium text-slate-400 sm:text-xs">
+          <div className="mt-4 px-2 text-center">
+            <p className="text-[10px] font-medium leading-4 text-slate-400 sm:text-xs sm:leading-5">
               Swipe left on a notification to remove it
             </p>
           </div>

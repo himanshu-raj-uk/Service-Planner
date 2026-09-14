@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight,
   Cake,
   CheckCircle2,
   Clock3,
@@ -60,14 +59,10 @@ const Dashboard = () => {
           allBirthdays: Array.isArray(data.allBirthdays)
             ? data.allBirthdays
             : [],
-          confirmedBirthdays: Array.isArray(
-            data.confirmedBirthdays,
-          )
+          confirmedBirthdays: Array.isArray(data.confirmedBirthdays)
             ? data.confirmedBirthdays
             : [],
-          cancelledBirthdays: Array.isArray(
-            data.cancelledBirthdays,
-          )
+          cancelledBirthdays: Array.isArray(data.cancelledBirthdays)
             ? data.cancelledBirthdays
             : [],
           latestSupportRequest:
@@ -174,29 +169,25 @@ const Dashboard = () => {
       case "Resolved":
         return {
           icon: CheckCircle2,
-          className:
-            "bg-emerald-50 text-emerald-700",
+          className: "bg-emerald-50 text-emerald-700",
         };
 
       case "Closed":
         return {
           icon: XCircle,
-          className:
-            "bg-slate-100 text-slate-600",
+          className: "bg-slate-100 text-slate-600",
         };
 
       case "In Progress":
         return {
           icon: Clock3,
-          className:
-            "bg-blue-50 text-blue-700",
+          className: "bg-blue-50 text-blue-700",
         };
 
       default:
         return {
           icon: Clock3,
-          className:
-            "bg-amber-50 text-amber-700",
+          className: "bg-amber-50 text-amber-700",
         };
     }
   };
@@ -205,56 +196,53 @@ const Dashboard = () => {
     <button
       type="button"
       onClick={() => handleViewTrip(trip?._id)}
-      className="group flex w-full flex-col gap-4 border-b border-slate-100 px-4 py-4 text-left transition-all duration-300 ease-out last:border-b-0 hover:bg-slate-50 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between"
+      className="group flex w-full min-w-0 flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition-all duration-200 last:border-b-0 hover:bg-slate-50 active:bg-slate-100 sm:gap-4 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between md:gap-6"
     >
-      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 transition-all duration-300 ease-out group-hover:scale-105 group-hover:bg-indigo-100 sm:h-11 sm:w-11">
-          <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+      <div className="flex min-w-0 w-full items-start gap-3 sm:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 transition-all duration-200 group-hover:scale-105 group-hover:bg-indigo-100 sm:h-11 sm:w-11">
+          <MapPin className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
         </div>
 
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium text-slate-800 transition-colors duration-300 group-hover:text-indigo-600 sm:text-base">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="truncate text-sm font-semibold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-indigo-600 sm:text-[15px] sm:leading-6">
             {trip?.destination || "Unknown destination"}
           </h3>
 
-          <p className="mt-1 truncate text-xs text-slate-500 sm:text-sm">
+          <p className="mt-1 truncate text-xs leading-5 text-slate-500 sm:text-[13px]">
             {trip?.startLocation || "Unknown location"} →{" "}
             {trip?.destination || "Destination"}
           </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 sm:gap-x-4 sm:text-xs">
-            <span>
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-slate-500 sm:gap-x-4">
+            <span className="whitespace-nowrap">
               {trip?.days ?? 0}{" "}
               {trip?.days === 1 ? "day" : "days"}
             </span>
 
-            <span>
+            <span className="whitespace-nowrap">
               {trip?.people ?? 0}{" "}
               {trip?.people === 1 ? "person" : "people"}
             </span>
 
             {trip?.travelType && (
-              <span>{trip.travelType}</span>
+              <span className="max-w-full truncate">
+                {trip.travelType}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-4 md:justify-end">
-        <div className="text-left md:text-right">
-          <p className="text-xs font-medium text-slate-800 sm:text-sm">
-            ₹
-            {Number(
-              trip?.budget || 0,
-            ).toLocaleString("en-IN")}
+      <div className="flex w-full shrink-0 items-center justify-between border-t border-slate-100 pt-3 sm:border-0 sm:pt-0 md:w-auto md:min-w-[150px] md:justify-end">
+        <div className="min-w-0 text-left md:text-right">
+          <p className="text-sm font-semibold leading-5 text-slate-800 sm:text-[15px]">
+            ₹{Number(trip?.budget || 0).toLocaleString("en-IN")}
           </p>
 
-          <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+          <p className="mt-0.5 truncate text-xs leading-5 text-slate-500 sm:text-[13px]">
             {trip?.status || "Generated"}
           </p>
         </div>
-
-        <ArrowRight className="h-4 w-4 text-slate-300 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:text-indigo-500 sm:h-5 sm:w-5" />
       </div>
     </button>
   );
@@ -263,60 +251,60 @@ const Dashboard = () => {
     <button
       type="button"
       onClick={() => handleViewBirthday(birthday?._id)}
-      className="group flex w-full flex-col gap-4 border-b border-slate-100 px-4 py-4 text-left transition-all duration-300 ease-out last:border-b-0 hover:bg-slate-50 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between"
+      className="group flex w-full min-w-0 flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition-all duration-200 last:border-b-0 hover:bg-slate-50 active:bg-slate-100 sm:gap-4 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between md:gap-6"
     >
-      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500 transition-all duration-300 ease-out group-hover:scale-105 group-hover:bg-pink-100 sm:h-11 sm:w-11">
-          <Cake className="h-4 w-4 sm:h-5 sm:w-5" />
+      <div className="flex min-w-0 w-full items-start gap-3 sm:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500 transition-all duration-200 group-hover:scale-105 group-hover:bg-pink-100 sm:h-11 sm:w-11">
+          <Cake className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
         </div>
 
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium text-slate-800 transition-colors duration-300 group-hover:text-pink-600 sm:text-base">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="truncate text-sm font-semibold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-pink-600 sm:text-[15px] sm:leading-6">
             {birthday?.Name || "Birthday Plan"}
           </h3>
 
-          <p className="mt-1 truncate text-xs text-slate-500 sm:text-sm">
+          <p className="mt-1 truncate text-xs leading-5 text-slate-500 sm:text-[13px]">
             {birthday?.Area || "Unknown location"}
           </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 sm:gap-x-4 sm:text-xs">
-            <span>
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-slate-500 sm:gap-x-4">
+            <span className="whitespace-nowrap">
               Age {birthday?.Age ?? 0}
             </span>
 
-            <span>
+            <span className="whitespace-nowrap">
               {birthday?.people ?? 0}{" "}
-              {birthday?.people === 1
-                ? "person"
-                : "people"}
+              {birthday?.people === 1 ? "person" : "people"}
             </span>
 
             {birthday?.venueType && (
-              <span>{birthday.venueType}</span>
+              <span className="max-w-full truncate">
+                {birthday.venueType}
+              </span>
             )}
 
             {birthday?.eventType && (
-              <span>{birthday.eventType}</span>
+              <span className="max-w-full truncate">
+                {birthday.eventType}
+              </span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-4 md:justify-end">
-        <div className="text-left md:text-right">
-          <p className="text-xs font-medium text-slate-800 sm:text-sm">
+      <div className="flex w-full shrink-0 items-center justify-between border-t border-slate-100 pt-3 sm:border-0 sm:pt-0 md:w-auto md:min-w-[150px] md:justify-end">
+        <div className="min-w-0 text-left md:text-right">
+          <p className="text-sm font-semibold leading-5 text-slate-800 sm:text-[15px]">
             ₹
-            {Number(
-              birthday?.budget || 0,
-            ).toLocaleString("en-IN")}
+            {Number(birthday?.budget || 0).toLocaleString(
+              "en-IN",
+            )}
           </p>
 
-          <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+          <p className="mt-0.5 truncate text-xs leading-5 text-slate-500 sm:text-[13px]">
             {birthday?.status || "Generated"}
           </p>
         </div>
-
-        <ArrowRight className="h-4 w-4 text-slate-300 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:text-pink-500 sm:h-5 sm:w-5" />
       </div>
     </button>
   );
@@ -332,28 +320,24 @@ const Dashboard = () => {
     const birthday = type === "birthday";
 
     return (
-      <div className="flex min-h-[260px] flex-col items-center justify-center px-5 py-10 text-center sm:px-6">
+      <div className="flex min-h-[220px] flex-col items-center justify-center px-5 py-9 text-center sm:min-h-[250px] sm:px-6">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-full sm:h-14 sm:w-14 ${
-            birthday
-              ? "bg-pink-50"
-              : "bg-indigo-50"
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl sm:h-14 sm:w-14 ${
+            birthday ? "bg-pink-50" : "bg-indigo-50"
           }`}
         >
           <Icon
             className={`h-5 w-5 sm:h-6 sm:w-6 ${
-              birthday
-                ? "text-pink-500"
-                : "text-indigo-500"
+              birthday ? "text-pink-500" : "text-indigo-500"
             }`}
           />
         </div>
 
-        <h3 className="mt-4 text-sm font-medium text-slate-800 sm:text-base">
+        <h3 className="mt-4 text-sm font-semibold leading-5 text-slate-800 sm:text-base">
           {title}
         </h3>
 
-        <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500 sm:text-sm sm:leading-6">
+        <p className="mt-1.5 max-w-sm text-xs leading-5 text-slate-500 sm:text-[13px] sm:leading-6">
           {description}
         </p>
 
@@ -361,7 +345,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={onClick}
-            className={`mt-5 rounded-xl px-4 py-2.5 text-xs font-medium text-white transition-all duration-300 hover:-translate-y-0.5 sm:px-5 sm:text-sm ${
+            className={`mt-5 inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 sm:min-h-11 sm:px-5 sm:text-sm ${
               birthday
                 ? "bg-pink-500 hover:bg-pink-600"
                 : "bg-indigo-600 hover:bg-indigo-700"
@@ -380,14 +364,14 @@ const Dashboard = () => {
     icon: Icon,
     iconClass,
   }) => (
-    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md sm:p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-xs text-slate-500 sm:text-sm">
+    <div className="min-w-0 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium leading-5 text-slate-500 sm:text-sm">
             {title}
           </p>
 
-          <p className="mt-2 text-xl font-medium text-slate-800 sm:text-2xl lg:text-3xl">
+          <p className="mt-1.5 text-2xl font-semibold leading-none text-slate-800 sm:mt-2 sm:text-3xl">
             {count}
           </p>
         </div>
@@ -395,7 +379,7 @@ const Dashboard = () => {
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${iconClass}`}
         >
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
         </div>
       </div>
     </div>
@@ -413,12 +397,12 @@ const Dashboard = () => {
       <button
         type="button"
         onClick={onClick}
-        className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-all duration-300 ease-out sm:px-4 sm:text-sm ${
+        className={`min-h-10 shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 sm:min-h-10 sm:px-5 sm:text-sm ${
           active
             ? birthday
               ? "bg-pink-500 text-white shadow-sm"
               : "bg-indigo-600 text-white shadow-sm"
-            : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            : "bg-transparent text-slate-500 hover:bg-white hover:text-slate-700"
         }`}
       >
         {children}
@@ -432,12 +416,12 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+      <main className="min-h-screen w-full overflow-x-hidden bg-slate-50 px-4 py-8 font-sans sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-[60vh] w-full max-w-7xl items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600 sm:h-9 sm:w-9" />
 
-            <p className="mt-4 text-xs text-slate-500 sm:text-sm">
+            <p className="mt-4 text-sm font-medium text-slate-500">
               Loading dashboard...
             </p>
           </div>
@@ -447,16 +431,17 @@ const Dashboard = () => {
   }
 
   return (
-    <main className="dashboard-page min-h-screen bg-slate-50 px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
+    <main className="dashboard-page min-h-screen w-full overflow-x-hidden bg-slate-50 px-3 py-4 font-sans sm:px-5 sm:py-6 lg:px-6 lg:py-7">
       <style>{`
         .dashboard-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: #c7d2fe transparent;
           scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
         }
 
         .dashboard-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 5px;
         }
 
         .dashboard-scrollbar::-webkit-scrollbar-track {
@@ -467,11 +452,6 @@ const Dashboard = () => {
         .dashboard-scrollbar::-webkit-scrollbar-thumb {
           background: #c7d2fe;
           border-radius: 999px;
-          transition: background 0.3s ease;
-        }
-
-        .dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #818cf8;
         }
 
         .dashboard-scrollbar::-webkit-scrollbar-button {
@@ -479,37 +459,47 @@ const Dashboard = () => {
           width: 0;
           height: 0;
         }
+
+        .dashboard-tabs {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .dashboard-tabs::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
 
       <div className="mx-auto w-full max-w-7xl">
-        <section className="mb-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 sm:mb-6 sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-indigo-600 sm:text-xs">
+        <section className="mb-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 sm:mb-5 sm:p-6 md:p-7">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-indigo-600">
                 Service Planner
               </p>
 
-              <h1 className="mt-2 text-xl font-medium tracking-tight text-slate-800 sm:text-2xl lg:text-3xl">
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-800 sm:mt-2 sm:text-3xl">
                 Dashboard
               </h1>
 
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500 sm:text-sm sm:leading-6">
-                Manage your travel plans, birthday plans,
-                and support requests from one place.
+              <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+                Manage your travel plans, birthday plans, and
+                support requests from one place.
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="inline-flex h-9 w-full items-center justify-center rounded-xl border border-slate-200 px-4 text-xs font-medium text-slate-600 transition-all duration-300 hover:border-slate-300 hover:bg-slate-50 sm:h-10 sm:w-auto sm:text-sm"
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99] sm:w-auto"
             >
               Back to Home
             </button>
           </div>
         </section>
 
-        <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+        <section className="mb-4 grid grid-cols-2 gap-3 sm:mb-5 sm:grid-cols-3 sm:gap-4">
           <StatCard
             title="All Trips"
             count={allTrips.length}
@@ -553,20 +543,20 @@ const Dashboard = () => {
           />
         </section>
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-          <div className="border-b border-slate-100 px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <section className="w-full overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-5">
+            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 sm:h-10 sm:w-10">
-                  <Plane className="h-4 w-4 text-indigo-500 sm:h-5 sm:w-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+                  <Plane className="h-[18px] w-[18px] text-indigo-500 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="text-sm font-medium text-slate-800 sm:text-base lg:text-lg">
+                  <h2 className="truncate text-base font-semibold leading-6 text-slate-800 sm:text-lg">
                     Travel Plans
                   </h2>
 
-                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                  <p className="mt-0.5 text-xs leading-5 text-slate-500 sm:text-sm">
                     View and manage your travel plans.
                   </p>
                 </div>
@@ -575,14 +565,13 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate("/tour")}
-                className="inline-flex items-center gap-2 self-start text-xs font-medium text-indigo-600 transition-all duration-300 hover:translate-x-0.5 hover:text-indigo-700 sm:text-sm lg:self-center"
+                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold text-indigo-600 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-700 sm:w-auto"
               >
                 Create Trip
-                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
 
-            <div className="mt-5 flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-50 p-1">
+            <div className="dashboard-tabs mt-5 flex w-full gap-2 overflow-x-auto">
               {tripTabs.map((tab) => (
                 <TabButton
                   key={tab.id}
@@ -642,20 +631,20 @@ const Dashboard = () => {
           )}
         </section>
 
-        <section className="mt-5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 sm:mt-6">
-          <div className="border-b border-slate-100 px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <section className="mt-4 w-full overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 sm:mt-5">
+          <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-5">
+            <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pink-50 sm:h-10 sm:w-10">
-                  <Cake className="h-4 w-4 text-pink-500 sm:h-5 sm:w-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50">
+                  <Cake className="h-[18px] w-[18px] text-pink-500 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="text-sm font-medium text-slate-800 sm:text-base lg:text-lg">
+                  <h2 className="truncate text-base font-semibold leading-6 text-slate-800 sm:text-lg">
                     Birthday Plans
                   </h2>
 
-                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                  <p className="mt-0.5 text-xs leading-5 text-slate-500 sm:text-sm">
                     View and manage your birthday plans.
                   </p>
                 </div>
@@ -664,23 +653,18 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate("/birthday")}
-                className="inline-flex items-center gap-2 self-start text-xs font-medium text-pink-600 transition-all duration-300 hover:translate-x-0.5 hover:text-pink-700 sm:text-sm lg:self-center"
+                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold text-pink-600 transition-all duration-200 hover:bg-pink-50 hover:text-pink-700 sm:w-auto"
               >
                 Plan Birthday
-                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
 
-            <div className="mt-5 flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-50 p-1">
+            <div className="dashboard-tabs mt-5 flex w-full gap-2 overflow-x-auto">
               {birthdayTabs.map((tab) => (
                 <TabButton
                   key={tab.id}
-                  active={
-                    activeBirthdayTab === tab.id
-                  }
-                  onClick={() =>
-                    setActiveBirthdayTab(tab.id)
-                  }
+                  active={activeBirthdayTab === tab.id}
+                  onClick={() => setActiveBirthdayTab(tab.id)}
                   type="birthday"
                 >
                   {tab.label}
@@ -736,20 +720,20 @@ const Dashboard = () => {
           )}
         </section>
 
-        <section className="mt-5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 sm:mt-6">
-          <div className="border-b border-slate-100 px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="mt-4 w-full overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 sm:mt-5">
+          <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-5">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 sm:h-10 sm:w-10">
-                  <Headphones className="h-4 w-4 text-indigo-500 sm:h-5 sm:w-5" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+                  <Headphones className="h-[18px] w-[18px] text-indigo-500 sm:h-5 sm:w-5" />
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="text-sm font-medium text-slate-800 sm:text-base lg:text-lg">
+                  <h2 className="truncate text-base font-semibold leading-6 text-slate-800 sm:text-lg">
                     Support Request
                   </h2>
 
-                  <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                  <p className="mt-0.5 text-xs leading-5 text-slate-500 sm:text-sm">
                     Check the status of your latest support request.
                   </p>
                 </div>
@@ -758,54 +742,54 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate("/support")}
-                className="inline-flex items-center gap-2 self-start text-xs font-medium text-indigo-600 transition-all duration-300 hover:translate-x-0.5 hover:text-indigo-700 sm:self-center sm:text-sm"
+                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold text-indigo-600 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-700 sm:w-auto"
               >
                 Contact Support
-                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>
 
           {latestSupportRequest ? (
             <div className="p-4 sm:p-6">
-              <div className="flex flex-col gap-5 rounded-2xl bg-slate-50 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400 sm:text-xs">
+              <div className="flex min-w-0 flex-col gap-4 rounded-2xl bg-slate-50 p-4 sm:gap-5 sm:p-5 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-400">
                     Latest Request
                   </p>
 
-                  <h3 className="mt-2 truncate text-sm font-medium text-slate-800 sm:text-base">
+                  <h3 className="mt-1.5 truncate text-sm font-semibold leading-5 text-slate-800 sm:mt-2 sm:text-base sm:leading-6">
                     {latestSupportRequest.subject ||
                       "Support Request"}
                   </h3>
 
-                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500 sm:gap-x-4 sm:text-xs">
+                  <div className="mt-2 flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs leading-5 text-slate-500">
                     {latestSupportRequest.category && (
-                      <span>
+                      <span className="max-w-full truncate">
                         {latestSupportRequest.category}
                       </span>
                     )}
 
                     {latestSupportRequest.priority && (
-                      <span>
-                        Priority:{" "}
-                        {latestSupportRequest.priority}
+                      <span className="max-w-full truncate">
+                        Priority: {latestSupportRequest.priority}
                       </span>
                     )}
                   </div>
                 </div>
 
                 {(() => {
-                  const StatusIcon =
-                    supportStatus.icon;
+                  const StatusIcon = supportStatus.icon;
 
                   return (
                     <div
-                      className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm md:self-center ${supportStatus.className}`}
+                      className={`inline-flex w-fit max-w-full shrink-0 items-center gap-2 self-start rounded-full px-3.5 py-2 text-xs font-semibold sm:px-4 sm:text-sm md:self-center ${supportStatus.className}`}
                     >
-                      <StatusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      {latestSupportRequest.status ||
-                        "Pending"}
+                      <StatusIcon className="h-4 w-4 shrink-0" />
+
+                      <span className="truncate">
+                        {latestSupportRequest.status ||
+                          "Pending"}
+                      </span>
                     </div>
                   );
                 })()}
