@@ -13,7 +13,7 @@ if (redirect) {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/Service-Planner">
     <App />
   </BrowserRouter>,
 );
