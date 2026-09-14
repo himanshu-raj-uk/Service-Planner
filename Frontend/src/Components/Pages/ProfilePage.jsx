@@ -10,7 +10,6 @@ import {
   Edit3,
   Save,
   X,
-  CheckCircle2,
   Globe,
   Building2,
   KeyRound,
@@ -18,6 +17,11 @@ import {
   Search,
   Check,
   LayoutDashboard,
+  Plane,
+  Cake,
+  CalendarDays,
+  Clock3,
+  ShieldCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -26,10 +30,12 @@ import {
   getUserProfile,
   updateUserProfile,
   logoutUser,
+  getUserDashboard,
 } from "../../Services/AuthAPI";
 
 import showSuccess from "../../Utils/toast";
 import Dashboard from "./Dashboard";
+import Navbar from "../Layout/Navbar";
 
 const countries = [
   "India",
@@ -90,7 +96,12 @@ const statesByCountry = {
     "Ohio",
     "Georgia",
   ],
-  "United Kingdom": ["England", "Scotland", "Wales", "Northern Ireland"],
+  "United Kingdom": [
+    "England",
+    "Scotland",
+    "Wales",
+    "Northern Ireland",
+  ],
   Canada: [
     "Ontario",
     "Quebec",
@@ -107,14 +118,27 @@ const statesByCountry = {
     "South Australia",
     "Tasmania",
   ],
-  Germany: ["Bavaria", "Berlin", "Hamburg", "Hesse", "Saxony"],
+  Germany: [
+    "Bavaria",
+    "Berlin",
+    "Hamburg",
+    "Hesse",
+    "Saxony",
+  ],
   France: [
     "Île-de-France",
     "Occitanie",
     "Nouvelle-Aquitaine",
     "Auvergne-Rhône-Alpes",
   ],
-  Japan: ["Tokyo", "Osaka", "Kyoto", "Hokkaido", "Aichi", "Fukuoka"],
+  Japan: [
+    "Tokyo",
+    "Osaka",
+    "Kyoto",
+    "Hokkaido",
+    "Aichi",
+    "Fukuoka",
+  ],
   Singapore: ["Singapore"],
   "United Arab Emirates": [
     "Abu Dhabi",
@@ -128,16 +152,16 @@ const statesByCountry = {
 };
 
 const fieldWrap =
-  "profile-field group relative min-h-[68px] w-full rounded-xl border border-slate-200 bg-[#f4f6fa] px-3.5 pb-2.5 pt-5.5 shadow-[0_2px_8px_rgba(15,23,42,.025)] transition-all duration-200 sm:min-h-[74px] sm:rounded-2xl sm:px-4 sm:pb-3 sm:pt-6 lg:px-5";
+  "group relative min-h-[64px] w-full rounded-xl border border-slate-200 bg-[#f5f7fb] px-3 pb-2 pt-5 shadow-[0_2px_8px_rgba(15,23,42,.025)] transition-all duration-200 sm:min-h-[70px] sm:rounded-2xl sm:px-4 sm:pb-2.5 sm:pt-5.5";
 
 const labelCls =
-  "pointer-events-none absolute left-3.5 top-2 z-10 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 transition-colors duration-200 sm:left-4 sm:top-2.5 lg:left-5";
+  "pointer-events-none absolute left-3 top-2 z-10 text-[clamp(0.58rem,0.55vw,0.7rem)] font-medium uppercase tracking-[0.08em] text-slate-500 transition-colors duration-200 sm:left-4 sm:tracking-[0.1em] group-focus-within:text-indigo-500";
 
 const iconBoxCls =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 transition-all duration-200 group-hover:bg-indigo-100 group-hover:text-indigo-600 sm:h-9 sm:w-9 sm:rounded-xl";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 transition-all duration-200 group-hover:bg-indigo-100 group-hover:text-indigo-600 sm:h-9 sm:w-9";
 
 const dropdownCls =
-  "absolute left-0 right-0 top-[72px] z-[9999] overflow-hidden rounded-xl border border-slate-200 bg-[#f4f6fa] shadow-[0_20px_50px_rgba(15,23,42,.12)] sm:top-[78px] sm:rounded-2xl";
+  "absolute left-0 right-0 top-[68px] z-[9999] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,.12)] sm:top-[76px] sm:rounded-2xl";
 
 const dropdownMotion = {
   initial: {
@@ -161,26 +185,44 @@ const dropdownMotion = {
   },
 };
 
-const SectionCard = ({ icon: Icon, title, subtitle, children, delay = 0 }) => (
+const SectionCard = ({
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+  delay = 0,
+  className = "",
+}) => (
   <motion.div
-    initial={{ opacity: 0, y: 15 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay }}
-    className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:rounded-3xl sm:p-5 md:p-6 lg:p-7"
+    initial={{
+      opacity: 0,
+      y: 10,
+    }}
+    animate={{
+      opacity: 1,
+      y: 0,
+    }}
+    transition={{
+      delay,
+      duration: 0.25,
+    }}
+    className={`flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_6px_24px_rgba(15,23,42,.045)] sm:p-4 lg:p-5 ${className}`}
   >
     {(Icon || title) && (
-      <div className="mb-5 flex items-start gap-3 sm:mb-6">
+      <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2.5 sm:mb-4 sm:gap-3">
         {Icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 sm:h-11 sm:w-11">
-            <Icon size={19} strokeWidth={1.8} />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 sm:h-10 sm:w-10">
+            <Icon size={17} />
           </div>
         )}
 
-        <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-bold text-[#0f172a]">{title}</h2>
+        <div className="min-w-0">
+          <h2 className="truncate text-[clamp(0.88rem,0.95vw,1.08rem)] font-semibold leading-5 text-[#0f172a]">
+            {title}
+          </h2>
 
           {subtitle && (
-            <p className="mt-0.5 text-sm leading-6 text-slate-500">
+            <p className="mt-0.5 truncate text-[clamp(0.68rem,0.68vw,0.8rem)] font-normal leading-4 text-slate-500">
               {subtitle}
             </p>
           )}
@@ -188,7 +230,7 @@ const SectionCard = ({ icon: Icon, title, subtitle, children, delay = 0 }) => (
       </div>
     )}
 
-    {children}
+    <div className="min-h-0 flex-1">{children}</div>
   </motion.div>
 );
 
@@ -213,11 +255,15 @@ const InputField = ({
           : "focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"
       }`}
     >
-      <label className={`${labelCls} ${error ? "text-red-500" : ""}`}>
+      <label
+        className={`${labelCls} ${
+          error ? "text-red-500" : ""
+        }`}
+      >
         {label}
       </label>
 
-      <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+      <div className="flex min-w-0 items-center gap-2">
         <span
           className={`${iconBoxCls} ${
             error
@@ -225,7 +271,7 @@ const InputField = ({
               : ""
           }`}
         >
-          <Icon size={15} className="sm:h-4 sm:w-4" />
+          <Icon size={15} />
         </span>
 
         <input
@@ -238,7 +284,7 @@ const InputField = ({
           placeholder={placeholder}
           maxLength={maxLength}
           autoComplete="off"
-          className={`min-w-0 w-full bg-transparent text-sm font-medium leading-6 text-[#0f172a] outline-none placeholder:text-slate-400/60 ${
+          className={`min-w-0 w-full bg-transparent text-[clamp(0.76rem,0.72vw,0.9rem)] font-normal leading-5 text-[#0f172a] outline-none placeholder:text-slate-400/70 ${
             !editing ? "cursor-default" : ""
           }`}
         />
@@ -248,7 +294,7 @@ const InputField = ({
     {error && (
       <p
         role="alert"
-        className="mt-1.5 px-1 text-xs font-medium leading-5 text-red-500"
+        className="mt-1 px-1 text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-red-500"
       >
         {error}
       </p>
@@ -281,10 +327,16 @@ const LocationSearch = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside,
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside,
+      );
     };
   }, [show, setShow]);
 
@@ -298,14 +350,16 @@ const LocationSearch = ({
   return (
     <div
       ref={wrapperRef}
-      className={`relative w-full min-w-0 ${show ? "z-[100]" : "z-10"}`}
+      className={`relative w-full min-w-0 ${
+        show ? "z-[100]" : "z-10"
+      }`}
     >
       <div className={fieldWrap}>
         <label className={labelCls}>{label}</label>
 
-        <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span className={iconBoxCls}>
-            <Icon size={15} className="sm:h-4 sm:w-4" />
+            <Icon size={15} />
           </span>
 
           <input
@@ -317,14 +371,14 @@ const LocationSearch = ({
             spellCheck="false"
             onFocus={handleFocus}
             onChange={onInput}
-            className={`min-w-0 flex-1 bg-transparent text-sm font-medium leading-6 text-[#0f172a] outline-none placeholder:text-slate-400/60 ${
+            className={`min-w-0 flex-1 bg-transparent text-[clamp(0.76rem,0.72vw,0.9rem)] font-normal leading-5 text-[#0f172a] outline-none placeholder:text-slate-400/70 ${
               !editing ? "cursor-default" : ""
             }`}
           />
 
           {editing && (
             <Search
-              size={16}
+              size={15}
               strokeWidth={1.8}
               className="shrink-0 text-slate-400"
             />
@@ -333,8 +387,11 @@ const LocationSearch = ({
 
         <AnimatePresence>
           {editing && show && (
-            <motion.div {...dropdownMotion} className={dropdownCls}>
-              <div className="profile-dropdown-scroll max-h-52 overflow-y-auto p-1.5 sm:max-h-60 sm:p-2">
+            <motion.div
+              {...dropdownMotion}
+              className={dropdownCls}
+            >
+              <div className="max-h-52 overflow-y-auto p-1.5 sm:max-h-56 sm:p-2">
                 {options.length > 0 ? (
                   options.map((option) => {
                     const selected = option === value;
@@ -343,16 +400,18 @@ const LocationSearch = ({
                       <button
                         key={option}
                         type="button"
-                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseDown={(event) =>
+                          event.preventDefault()
+                        }
                         onClick={() => onSelect(option)}
-                        className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm font-medium text-[#0f172a] transition-all duration-200 ${
+                        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal transition-all sm:rounded-xl sm:px-3 sm:py-2.5 ${
                           selected
                             ? "bg-indigo-50 text-indigo-600"
-                            : "hover:bg-indigo-50 hover:text-indigo-600"
+                            : "text-[#0f172a] hover:bg-indigo-50 hover:text-indigo-600"
                         }`}
                       >
-                        <span className={iconBoxCls}>
-                          <MapPin size={14} />
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
+                          <MapPin size={13} />
                         </span>
 
                         <span className="min-w-0 flex-1 truncate">
@@ -361,7 +420,7 @@ const LocationSearch = ({
 
                         {selected && (
                           <Check
-                            size={15}
+                            size={14}
                             className="ml-auto shrink-0 text-indigo-500"
                           />
                         )}
@@ -371,18 +430,22 @@ const LocationSearch = ({
                 ) : search.trim() ? (
                   <button
                     type="button"
-                    onMouseDown={(event) => event.preventDefault()}
+                    onMouseDown={(event) =>
+                      event.preventDefault()
+                    }
                     onClick={() => onSelect(search)}
-                    className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm font-medium text-[#0f172a] transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal text-[#0f172a] transition-all hover:bg-indigo-50 hover:text-indigo-600 sm:rounded-xl sm:px-3 sm:py-2.5"
                   >
-                    <span className={iconBoxCls}>
-                      <MapPin size={14} />
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
+                      <MapPin size={13} />
                     </span>
 
-                    <span className="min-w-0 truncate">Use "{search}"</span>
+                    <span className="truncate">
+                      Use "{search}"
+                    </span>
                   </button>
                 ) : (
-                  <div className="px-4 py-5 text-center text-sm text-slate-400">
+                  <div className="px-3 py-5 text-center text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal text-slate-400">
                     Start typing to search...
                   </div>
                 )}
@@ -401,21 +464,29 @@ const Profile = () => {
 
   const [activePage, setActivePage] = useState("profile");
   const [user, setUser] = useState(null);
-
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [phoneError, setPhoneError] = useState("");
-
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-
   const [countrySearch, setCountrySearch] = useState("");
   const [stateSearch, setStateSearch] = useState("");
-
   const [showCountries, setShowCountries] = useState(false);
   const [showStates, setShowStates] = useState(false);
+
+  const [dashboardData, setDashboardData] = useState({
+    allTrips: [],
+    confirmedTrips: [],
+    cancelledTrips: [],
+    allBirthdays: [],
+    confirmedBirthdays: [],
+    cancelledBirthdays: [],
+  });
+
+  const [dashboardLoading, setDashboardLoading] =
+    useState(true);
 
   const [form, setForm] = useState({
     name: "",
@@ -470,14 +541,82 @@ const Profile = () => {
 
       setProfileData(response.data.data);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load profile");
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to load profile",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchDashboardData = async () => {
+    try {
+      setDashboardLoading(true);
+
+      const response = await getUserDashboard();
+
+      if (!response?.status) {
+        throw new Error(
+          response?.message ||
+            "Unable to load dashboard",
+        );
+      }
+
+      const data = response?.data || {};
+
+      setDashboardData({
+        allTrips: Array.isArray(data.allTrips)
+          ? data.allTrips
+          : [],
+        confirmedTrips: Array.isArray(
+          data.confirmedTrips,
+        )
+          ? data.confirmedTrips
+          : [],
+        cancelledTrips: Array.isArray(
+          data.cancelledTrips,
+        )
+          ? data.cancelledTrips
+          : [],
+        allBirthdays: Array.isArray(
+          data.allBirthdays,
+        )
+          ? data.allBirthdays
+          : [],
+        confirmedBirthdays: Array.isArray(
+          data.confirmedBirthdays,
+        )
+          ? data.confirmedBirthdays
+          : [],
+        cancelledBirthdays: Array.isArray(
+          data.cancelledBirthdays,
+        )
+          ? data.cancelledBirthdays
+          : [],
+      });
+    } catch (error) {
+      console.error(
+        "PROFILE DASHBOARD ERROR:",
+        error,
+      );
+
+      setDashboardData({
+        allTrips: [],
+        confirmedTrips: [],
+        cancelledTrips: [],
+        allBirthdays: [],
+        confirmedBirthdays: [],
+        cancelledBirthdays: [],
+      });
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
+    fetchDashboardData();
   }, []);
 
   useEffect(() => {
@@ -492,7 +631,9 @@ const Profile = () => {
     const { name, value } = event.target;
 
     if (name === "phone") {
-      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      const numericValue = value
+        .replace(/\D/g, "")
+        .slice(0, 10);
 
       setForm((prev) => ({
         ...prev,
@@ -568,7 +709,10 @@ const Profile = () => {
       address: {
         ...prev.address,
         country,
-        state: country === prev.address.country ? prev.address.state : "",
+        state:
+          country === prev.address.country
+            ? prev.address.state
+            : "",
       },
     }));
 
@@ -643,7 +787,9 @@ const Profile = () => {
     setForm({
       name: user.name || "",
       email: user.email || "",
-      phone: user.phone || "",
+      phone: String(user.phone || "")
+        .replace(/\D/g, "")
+        .slice(0, 10),
       address,
     });
 
@@ -670,7 +816,9 @@ const Profile = () => {
     }
 
     if (!/^\d{10}$/.test(form.phone.trim())) {
-      setPhoneError("Phone number must be exactly 10 digits");
+      setPhoneError(
+        "Phone number must be exactly 10 digits",
+      );
       return;
     }
 
@@ -702,7 +850,8 @@ const Profile = () => {
         formData.append("profileImage", imageFile);
       }
 
-      const response = await updateUserProfile(formData);
+      const response =
+        await updateUserProfile(formData);
 
       setProfileData(response.data.data);
 
@@ -716,9 +865,15 @@ const Profile = () => {
         fileInputRef.current.value = "";
       }
 
-      showSuccess(response.data.message || "Profile updated successfully");
+      showSuccess(
+        response.data.message ||
+          "Profile updated successfully",
+      );
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to update profile",
+      );
     } finally {
       setSaving(false);
     }
@@ -735,7 +890,6 @@ const Profile = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
-
       await logoutUser();
     } catch {
     } finally {
@@ -753,14 +907,39 @@ const Profile = () => {
     }
   };
 
-  const availableStates = statesByCountry[form.address.country] || [];
+  const handleViewTrip = (tripId) => {
+    if (!tripId) {
+      toast.error("Trip ID is missing");
+      return;
+    }
 
-  const filteredCountries = countries.filter((country) =>
-    country.toLowerCase().includes(countrySearch.toLowerCase()),
+    navigate(`/tour/${tripId}`);
+  };
+
+  const handleViewBirthday = (birthdayId) => {
+    if (!birthdayId) {
+      toast.error("Birthday ID is missing");
+      return;
+    }
+
+    navigate(`/birthday/${birthdayId}`);
+  };
+
+  const availableStates =
+    statesByCountry[form.address.country] || [];
+
+  const filteredCountries = countries.filter(
+    (country) =>
+      country
+        .toLowerCase()
+        .includes(countrySearch.toLowerCase()),
   );
 
-  const filteredStates = availableStates.filter((state) =>
-    state.toLowerCase().includes(stateSearch.toLowerCase()),
+  const filteredStates = availableStates.filter(
+    (state) =>
+      state
+        .toLowerCase()
+        .includes(stateSearch.toLowerCase()),
   );
 
   const navItems = [
@@ -768,495 +947,828 @@ const Profile = () => {
       key: "profile",
       label: "Profile",
       icon: User,
+      activeClass:
+        "bg-blue-50 text-blue-600",
+      hoverClass:
+        "hover:bg-blue-50 hover:text-blue-600",
+      iconActive:
+        "bg-white text-blue-600",
     },
     {
       key: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
+      activeClass:
+        "bg-emerald-50 text-emerald-600",
+      hoverClass:
+        "hover:bg-emerald-50 hover:text-emerald-600",
+      iconActive:
+        "bg-white text-emerald-600",
     },
   ];
 
+  const totalTrips = dashboardData.allTrips.length;
+  const confirmedTrips =
+    dashboardData.confirmedTrips.length;
+  const cancelledTrips =
+    dashboardData.cancelledTrips.length;
+  const totalBirthdays =
+    dashboardData.allBirthdays.length;
+
+  const getDisplayStatus = (status) => {
+    if (!status) return "Generated";
+
+    const normalized = String(status)
+      .trim()
+      .toLowerCase();
+
+    if (
+      normalized === "booked" ||
+      normalized === "booking"
+    ) {
+      return "Confirmed";
+    }
+
+    if (normalized === "cancelled") {
+      return "Canceled";
+    }
+
+    return status;
+  };
+
   if (loading) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-[#f4f6fa] px-4">
-        <div className="text-center">
-          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500 sm:h-10 sm:w-10" />
+      <>
+        <Navbar />
 
-          <p className="mt-4 text-sm font-medium text-slate-500">
-            Loading profile...
-          </p>
-        </div>
-      </section>
+        <section className="flex min-h-[calc(100vh-68px)] items-center justify-center bg-[#f4f6fa] px-4 lg:min-h-[calc(100vh-76px)]">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500 sm:h-9 sm:w-9" />
+
+            <p className="mt-3 text-[clamp(0.72rem,0.75vw,0.9rem)] font-normal text-slate-500">
+              Loading profile...
+            </p>
+          </div>
+        </section>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <section className="flex min-h-screen items-center justify-center bg-[#f4f6fa] px-4 py-6">
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:rounded-3xl sm:p-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
-            <User size={25} />
+      <>
+        <Navbar />
+
+        <section className="flex min-h-[calc(100vh-68px)] items-center justify-center bg-[#f4f6fa] px-4 lg:min-h-[calc(100vh-76px)]">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:rounded-3xl sm:p-8">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 sm:h-14 sm:w-14 sm:rounded-2xl">
+              <User size={24} />
+            </div>
+
+            <h2 className="mt-4 text-[clamp(1rem,1.3vw,1.3rem)] font-semibold text-[#0f172a]">
+              Unable to load profile
+            </h2>
+
+            <p className="mt-2 text-[clamp(0.72rem,0.75vw,0.9rem)] font-normal leading-5 text-slate-500">
+              Something went wrong while loading your
+              account information.
+            </p>
+
+            <button
+              type="button"
+              onClick={fetchProfile}
+              className="mt-5 w-full rounded-xl bg-indigo-600 px-5 py-3 text-[clamp(0.72rem,0.75vw,0.9rem)] font-medium text-white transition hover:bg-indigo-700 sm:w-auto"
+            >
+              Try Again
+            </button>
           </div>
-
-          <h2 className="mt-5 text-lg font-bold text-[#0f172a] sm:text-xl">
-            Unable to load profile
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Something went wrong while loading your account information.
-          </p>
-
-          <button
-            type="button"
-            onClick={fetchProfile}
-            className="mt-6 min-h-11 w-full rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:w-auto"
-          >
-            Try Again
-          </button>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
   return (
-    <section className="min-h-screen w-full overflow-x-hidden bg-[#f4f6fa] px-3 py-4 text-[#0f172a] sm:px-5 sm:py-6 lg:px-8 lg:py-8 xl:px-10">
-      <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4 sm:gap-6 lg:flex-row lg:items-start lg:gap-7 xl:gap-8">
-        <motion.aside
-          initial={{ opacity: 0, x: -15 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full shrink-0 lg:sticky lg:top-6 lg:w-[270px] xl:w-[280px]"
-        >
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:p-5">
-            <div className="flex items-center gap-4 px-1 py-1">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-indigo-50 sm:h-16 sm:w-16">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt={user.name || "Profile"}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-indigo-500">
-                    <User size={27} strokeWidth={1.8} />
-                  </div>
-                )}
-              </div>
+    <>
+      <Navbar />
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold tracking-tight text-[#0f172a]">
-                  {user.name}
-                </p>
-
-                <p className="mt-1 truncate text-xs leading-5 text-slate-400">
-                  {user.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="my-5 border-t border-slate-100" />
-
-            <nav className="space-y-2">
-              {navItems.map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setActivePage(key);
-                    setEditing(false);
-                  }}
-                  className={`group flex min-h-[54px] w-full items-center gap-3.5 rounded-2xl px-3.5 py-3 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.99] sm:min-h-[58px] sm:px-4 ${
-                    activePage === key
-                      ? "bg-indigo-50 text-indigo-600"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600"
-                  }`}
-                >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-                      activePage === key
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "bg-slate-50 text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600"
-                    }`}
-                  >
-                    <Icon size={19} strokeWidth={1.9} />
-                  </span>
-
-                  <span className="flex-1">{label}</span>
-
-                  {activePage === key && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </motion.aside>
-
-        <main className="min-w-0 flex-1 pb-4 sm:pb-6">
-          <AnimatePresence mode="wait">
-            {activePage === "dashboard" ? (
-              <motion.div
-                key="dashboard"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-                className="min-w-0"
-              >
-                <Dashboard />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="profile"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
-                className="min-w-0"
-              >
-                <div className="mb-4 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-500">
-                      Account
-                    </p>
-
-                    <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#0f172a] lg:text-4xl">
-                      Profile
-                    </h1>
-
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      Manage your personal information.
-                    </p>
-                  </div>
-
-                  {!editing ? (
-                    <motion.button
-                      type="button"
-                      onClick={handleEdit}
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 active:scale-[0.99] sm:w-auto sm:px-6"
-                    >
-                      <Edit3 size={17} />
-                      Edit Profile
-                    </motion.button>
+      <section className="min-h-[calc(100vh-68px)] overflow-x-hidden bg-[#f4f6fa] px-2.5 py-3 text-[#0f172a] sm:px-4 sm:py-5 md:px-5 lg:min-h-[calc(100vh-76px)] lg:px-6 lg:py-6 xl:px-8">
+        <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start xl:gap-5">
+          <motion.aside
+            initial={{
+              opacity: 0,
+              x: -15,
+            }}
+            animate={{
+              opacity: 1,
+              x: 0,
+            }}
+            className="w-full shrink-0 lg:sticky lg:top-[92px] lg:w-[220px] xl:w-[235px] 2xl:w-[250px]"
+          >
+            <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_6px_24px_rgba(15,23,42,.045)] sm:p-3 lg:min-h-[calc(100vh-108px)]">
+              <div className="flex items-center gap-2.5 px-2 py-2 sm:gap-3 sm:px-2.5 sm:py-3">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-indigo-50 sm:h-12 sm:w-12 sm:rounded-2xl">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt={user.name || "Profile"}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:gap-3">
-                      <motion.button
-                        type="button"
-                        onClick={handleCancel}
-                        disabled={saving}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 sm:px-5"
-                      >
-                        <X size={17} />
-                        Cancel
-                      </motion.button>
-
-                      <motion.button
-                        type="submit"
-                        form="profile-form"
-                        disabled={saving}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-60 sm:px-5"
-                      >
-                        {saving ? (
-                          <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save size={17} />
-                            Save Changes
-                          </>
-                        )}
-                      </motion.button>
+                    <div className="flex h-full w-full items-center justify-center text-indigo-500">
+                      <User size={20} />
                     </div>
                   )}
                 </div>
 
-                <form
-                  id="profile-form"
-                  onSubmit={handleSave}
-                  className="space-y-4 sm:space-y-5 lg:space-y-6"
+                <div className="min-w-0">
+                  <p className="truncate text-[clamp(0.7rem,0.7vw,0.85rem)] font-medium leading-5 text-[#0f172a]">
+                    {user.name}
+                  </p>
+
+                  <p className="truncate text-[clamp(0.6rem,0.6vw,0.75rem)] font-normal leading-4 text-slate-500">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="my-1.5 border-t border-slate-100 sm:my-2" />
+
+              <div className="grid grid-cols-2 gap-1.5 lg:flex lg:flex-col lg:gap-1.5">
+                {navItems.map(
+                  ({
+                    key,
+                    label,
+                    icon: Icon,
+                    activeClass,
+                    hoverClass,
+                    iconActive,
+                  }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setActivePage(key);
+                        setEditing(false);
+                      }}
+                      className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[clamp(0.66rem,0.68vw,0.8rem)] font-medium transition-all duration-200 lg:justify-start lg:px-3 sm:min-h-[44px] sm:gap-2 ${
+                        activePage === key
+                          ? activeClass
+                          : `text-slate-600 ${hoverClass}`
+                      }`}
+                    >
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                          activePage === key
+                            ? iconActive
+                            : "bg-slate-50 text-slate-500"
+                        }`}
+                      >
+                        <Icon size={15} />
+                      </span>
+
+                      <span>{label}</span>
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <div className="mt-4 hidden lg:block">
+                <div className="rounded-xl bg-[#f8f9fc] p-3">
+                  <p className="text-[clamp(0.6rem,0.55vw,0.72rem)] font-medium uppercase tracking-[0.12em] text-slate-400">
+                    Account
+                  </p>
+
+                  <p className="mt-1.5 text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal leading-5 text-slate-500">
+                    Manage your personal information and
+                    dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.aside>
+
+          <main className="min-w-0 flex-1">
+            <AnimatePresence mode="wait">
+              {activePage === "dashboard" ? (
+                <motion.div
+                  key="dashboard"
+                  initial={{
+                    opacity: 0,
+                    x: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: -10,
+                  }}
+                  transition={{
+                    duration: 0.2,
+                  }}
                 >
-                  <SectionCard>
-                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-                      <div className="relative h-24 w-24 shrink-0 sm:h-28 sm:w-28 md:h-30 md:w-30">
-                        <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-indigo-50 shadow-md ring-1 ring-slate-200 sm:h-28 sm:w-28 md:h-30 md:w-30">
-                          {imagePreview ? (
-                            <img
-                              src={imagePreview}
-                              alt={user.name || "Profile"}
-                              className="h-full w-full object-cover"
+                  <Dashboard />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="profile"
+                  initial={{
+                    opacity: 0,
+                    x: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: -10,
+                  }}
+                  transition={{
+                    duration: 0.2,
+                  }}
+                >
+                  <form
+                    id="profile-form"
+                    onSubmit={handleSave}
+                    className="space-y-3.5 sm:space-y-4 lg:space-y-5"
+                  >
+                    <SectionCard className="h-auto min-h-[110px] sm:min-h-[120px]">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+                        <div className="flex min-w-0 items-center gap-3 sm:gap-4 lg:gap-5">
+                          <div className="relative h-[64px] w-[64px] shrink-0 sm:h-20 sm:w-20 lg:h-[86px] lg:w-[86px]">
+                            <div className="h-full w-full overflow-hidden rounded-full border-4 border-white bg-indigo-50 shadow-md ring-1 ring-slate-200">
+                              {imagePreview ? (
+                                <img
+                                  src={imagePreview}
+                                  alt={
+                                    user.name ||
+                                    "Profile"
+                                  }
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-indigo-500">
+                                  <User size={30} />
+                                </div>
+                              )}
+                            </div>
+
+                            {editing && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  fileInputRef.current?.click()
+                                }
+                                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 sm:h-8 sm:w-8"
+                              >
+                                <Camera size={14} />
+                              </button>
+                            )}
+
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="hidden"
                             />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="text-[clamp(0.6rem,0.6vw,0.75rem)] font-medium uppercase tracking-[0.14em] text-indigo-500">
+                              Account
+                            </p>
+
+                            <h1 className="mt-0.5 text-[clamp(1.35rem,2vw,2rem)] font-medium leading-tight tracking-tight text-[#3530c9]">
+                              Profile
+                            </h1>
+
+                            <p className="mt-0.5 text-[clamp(0.68rem,0.72vw,0.88rem)] font-normal leading-5 text-slate-500">
+                              Manage your personal
+                              information.
+                            </p>
+
+                            <div className="mt-1.5">
+                              <h2 className="truncate text-[clamp(0.9rem,1.1vw,1.2rem)] font-medium leading-5 text-[#0f172a]">
+                                {user.name}
+                              </h2>
+
+                              <p className="mt-0.5 truncate text-[clamp(0.66rem,0.7vw,0.85rem)] font-normal leading-4 text-slate-500">
+                                {user.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="w-full shrink-0 sm:w-auto">
+                          {!editing ? (
+                            <motion.button
+                              type="button"
+                              onClick={handleEdit}
+                              whileHover={{
+                                y: -2,
+                              }}
+                              whileTap={{
+                                scale: 0.98,
+                              }}
+                              className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-white shadow-md transition hover:bg-indigo-700 sm:min-h-[42px] sm:w-auto sm:px-5"
+                            >
+                              <Edit3 size={15} />
+                              Edit Profile
+                            </motion.button>
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-indigo-500">
-                              <User size={42} />
+                            <div className="flex w-full gap-2 sm:w-auto">
+                              <motion.button
+                                type="button"
+                                onClick={handleCancel}
+                                disabled={saving}
+                                whileTap={{
+                                  scale: 0.98,
+                                }}
+                                className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.86rem)] font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 sm:min-h-[42px] sm:flex-none sm:px-4"
+                              >
+                                <X size={15} />
+                                Cancel
+                              </motion.button>
+
+                              <motion.button
+                                type="submit"
+                                form="profile-form"
+                                disabled={saving}
+                                whileTap={{
+                                  scale: 0.98,
+                                }}
+                                className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.86rem)] font-medium text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-60 sm:min-h-[42px] sm:flex-none sm:px-4"
+                              >
+                                {saving ? (
+                                  <>
+                                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save size={15} />
+                                    Save
+                                  </>
+                                )}
+                              </motion.button>
                             </div>
                           )}
                         </div>
+                      </div>
+                    </SectionCard>
 
-                        {editing && (
+                    <div className="grid min-w-0 grid-cols-1 items-stretch gap-3.5 sm:gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
+                      <SectionCard
+                        icon={User}
+                        title="Personal Information"
+                        subtitle="Your basic account details"
+                        className="h-full"
+                      >
+                        <div className="flex h-full flex-col gap-2 sm:gap-2.5">
+                          <div className="flex-1">
+                            <InputField
+                              icon={User}
+                              label="Full Name"
+                              name="name"
+                              value={form.name}
+                              onChange={handleChange}
+                              editing={editing}
+                              placeholder="Enter your name"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={Mail}
+                              label="Email Address"
+                              name="email"
+                              value={form.email}
+                              onChange={handleChange}
+                              editing={editing}
+                              type="email"
+                              placeholder="Enter your email"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={Phone}
+                              label="Phone Number"
+                              name="phone"
+                              value={form.phone}
+                              onChange={handleChange}
+                              editing={editing}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={10}
+                              error={phoneError}
+                              placeholder="Enter 10 digit phone number"
+                            />
+                          </div>
+
+                          <div className="flex min-h-[64px] flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 sm:h-9 sm:w-9">
+                              <ShieldCheck size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
+                                Account Verified
+                              </p>
+
+                              <p className="mt-0.5 text-[clamp(0.78rem,0.75vw,0.92rem)] font-medium text-slate-700">
+                                {user.isVerified
+                                  ? "Verified"
+                                  : "Not Verified"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        icon={MapPin}
+                        title="Location"
+                        subtitle="Your address and location"
+                        className="h-full"
+                      >
+                        <div className="flex h-full flex-col gap-2 sm:gap-2.5">
+                          <div className="flex-1">
+                            <InputField
+                              icon={User}
+                              label="Full Name"
+                              name="fullName"
+                              value={
+                                form.address.fullName
+                              }
+                              onChange={
+                                handleAddressChange
+                              }
+                              editing={editing}
+                              placeholder="Enter full name"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={Home}
+                              label="House / Flat No."
+                              name="houseNo"
+                              value={
+                                form.address.houseNo
+                              }
+                              onChange={
+                                handleAddressChange
+                              }
+                              editing={editing}
+                              placeholder="Enter house or flat number"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={MapPin}
+                              label="Area"
+                              name="area"
+                              value={form.address.area}
+                              onChange={
+                                handleAddressChange
+                              }
+                              editing={editing}
+                              placeholder="Enter area"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={Building2}
+                              label="City"
+                              name="city"
+                              value={form.address.city}
+                              onChange={
+                                handleAddressChange
+                              }
+                              editing={editing}
+                              placeholder="Enter city"
+                            />
+                          </div>
+
+                          <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+                            <LocationSearch
+                              label="Country"
+                              icon={Globe}
+                              editing={editing}
+                              value={
+                                form.address.country
+                              }
+                              search={countrySearch}
+                              options={
+                                filteredCountries
+                              }
+                              show={showCountries}
+                              setShow={
+                                setShowCountries
+                              }
+                              setOtherShow={
+                                setShowStates
+                              }
+                              onInput={
+                                handleCountryInput
+                              }
+                              onSelect={
+                                selectCountry
+                              }
+                              placeholder="Search country"
+                            />
+
+                            <LocationSearch
+                              label="State"
+                              icon={MapPin}
+                              editing={editing}
+                              value={
+                                form.address.state
+                              }
+                              search={stateSearch}
+                              options={filteredStates}
+                              show={showStates}
+                              setShow={setShowStates}
+                              setOtherShow={
+                                setShowCountries
+                              }
+                              onInput={
+                                handleStateInput
+                              }
+                              onSelect={selectState}
+                              placeholder="Search state"
+                            />
+                          </div>
+
+                          <div className="flex-1">
+                            <InputField
+                              icon={MapPin}
+                              label="Pincode"
+                              name="pincode"
+                              value={
+                                form.address.pincode
+                              }
+                              onChange={
+                                handleAddressChange
+                              }
+                              editing={editing}
+                              placeholder="Enter pincode"
+                            />
+                          </div>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        icon={ShieldCheck}
+                        title="Profile Overview"
+                        subtitle="Account information"
+                        className="h-full"
+                      >
+                        <div className="grid h-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 sm:h-9 sm:w-9">
+                              <Plane size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
+                                Total Trips
+                              </p>
+
+                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
+                                {totalTrips}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500 sm:h-9 sm:w-9">
+                              <CalendarDays size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
+                                Confirmed Plans
+                              </p>
+
+                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
+                                {confirmedTrips}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-500 sm:h-9 sm:w-9">
+                              <Clock3 size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
+                                Canceled Plans
+                              </p>
+
+                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
+                                {cancelledTrips}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-500 sm:h-9 sm:w-9">
+                              <Cake size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
+                                Birthday Plans
+                              </p>
+
+                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
+                                {totalBirthdays}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </SectionCard>
+                    </div>
+
+                    {!dashboardLoading &&
+                      dashboardData.allTrips.length >
+                        0 && (
+                        <SectionCard
+                          icon={Plane}
+                          title="Recent Trips"
+                          subtitle="Your latest travel plans"
+                        >
+                          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                            {dashboardData.allTrips
+                              .slice(0, 3)
+                              .map((trip) => (
+                                <button
+                                  key={trip?._id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleViewTrip(
+                                      trip?._id,
+                                    )
+                                  }
+                                  className="min-w-0 rounded-xl border border-slate-100 bg-[#f8f9fc] p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50 active:scale-[0.99]"
+                                >
+                                  <div className="flex min-w-0 items-center gap-2.5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+                                      <MapPin size={15} />
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-[clamp(0.74rem,0.7vw,0.9rem)] font-medium leading-5 text-slate-800">
+                                        {trip?.destination ||
+                                          trip?.place ||
+                                          trip?.title ||
+                                          "Travel Plan"}
+                                      </p>
+
+                                      <p className="mt-0.5 truncate text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-slate-500">
+                                        {getDisplayStatus(
+                                          trip?.status,
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        </SectionCard>
+                      )}
+
+                    {!dashboardLoading &&
+                      dashboardData.allBirthdays.length >
+                        0 && (
+                        <SectionCard
+                          icon={Cake}
+                          title="Birthday Plans"
+                          subtitle="Your latest birthday plans"
+                        >
+                          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                            {dashboardData.allBirthdays
+                              .slice(0, 3)
+                              .map((birthday) => (
+                                <button
+                                  key={birthday?._id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleViewBirthday(
+                                      birthday?._id,
+                                    )
+                                  }
+                                  className="min-w-0 rounded-xl border border-pink-100 bg-pink-50/40 p-3 text-left transition-all hover:border-red-200 hover:bg-red-50 active:scale-[0.99]"
+                                >
+                                  <div className="flex min-w-0 items-center gap-2.5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
+                                      <Cake size={15} />
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-[clamp(0.74rem,0.7vw,0.9rem)] font-medium leading-5 text-slate-800">
+                                        {birthday?.name ||
+                                          birthday?.Name ||
+                                          birthday?.title ||
+                                          "Birthday Plan"}
+                                      </p>
+
+                                      <p className="mt-0.5 truncate text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-slate-500">
+                                        {getDisplayStatus(
+                                          birthday?.status,
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        </SectionCard>
+                      )}
+
+                    <SectionCard
+                      icon={KeyRound}
+                      title="Account & Security"
+                      subtitle="Manage your account access"
+                    >
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={handleChangePassword}
+                          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 active:scale-[0.99]"
+                        >
+                          <KeyRound size={16} />
+                          Change Password
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          disabled={loggingOut}
+                          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-white transition hover:bg-red-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {loggingOut ? (
+                            <>
+                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              Logging out...
+                            </>
+                          ) : (
+                            <>
+                              <LogOut size={16} />
+                              Logout
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {editing && (
+                        <div className="mt-2.5 grid w-full grid-cols-2 gap-2 sm:hidden">
                           <button
                             type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 sm:h-10 sm:w-10"
+                            onClick={handleCancel}
+                            disabled={saving}
+                            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.84rem)] font-medium text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
                           >
-                            <Camera size={16} />
+                            <X size={15} />
+                            Cancel
                           </button>
-                        )}
 
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                      </div>
-
-                      <div className="min-w-0 w-full text-center sm:w-auto sm:text-left">
-                        <h2 className="truncate text-lg font-bold text-[#0f172a] sm:text-xl">
-                          {user.name}
-                        </h2>
-
-                        <p className="mt-1 break-all text-sm text-slate-500">
-                          {user.email}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-                          {user.isVerified && (
-                            <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600">
-                              <CheckCircle2 size={13} />
-                              Verified Account
-                            </span>
-                          )}
-
-                          <span className="rounded-full bg-purple-50 px-3 py-1.5 text-xs font-bold capitalize text-purple-600">
-                            {user.role || "user"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </SectionCard>
-
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-                    <SectionCard
-                      icon={User}
-                      title="Personal Information"
-                      subtitle="Your basic account details"
-                      delay={0.05}
-                    >
-                      <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                        <InputField
-                          icon={User}
-                          label="Full Name"
-                          name="name"
-                          value={form.name}
-                          onChange={handleChange}
-                          editing={editing}
-                          placeholder="Enter your name"
-                        />
-
-                        <InputField
-                          icon={Mail}
-                          label="Email Address"
-                          name="email"
-                          value={form.email}
-                          onChange={handleChange}
-                          editing={editing}
-                          type="email"
-                          placeholder="Enter your email"
-                        />
-
-                        <InputField
-                          icon={Phone}
-                          label="Phone Number"
-                          name="phone"
-                          value={form.phone}
-                          onChange={handleChange}
-                          editing={editing}
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={10}
-                          error={phoneError}
-                          placeholder="Enter 10 digit phone number"
-                        />
-                      </div>
-                    </SectionCard>
-
-                    <SectionCard
-                      icon={MapPin}
-                      title="Location"
-                      subtitle="Your address and location"
-                      delay={0.1}
-                    >
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                        <div className="sm:col-span-2">
-                          <InputField
-                            icon={User}
-                            label="Full Name"
-                            name="fullName"
-                            value={form.address.fullName}
-                            onChange={handleAddressChange}
-                            editing={editing}
-                            placeholder="Enter full name"
-                          />
-                        </div>
-
-                        <InputField
-                          icon={Home}
-                          label="House / Flat No."
-                          name="houseNo"
-                          value={form.address.houseNo}
-                          onChange={handleAddressChange}
-                          editing={editing}
-                          placeholder="Enter house or flat number"
-                        />
-
-                        <InputField
-                          icon={MapPin}
-                          label="Area"
-                          name="area"
-                          value={form.address.area}
-                          onChange={handleAddressChange}
-                          editing={editing}
-                          placeholder="Enter area"
-                        />
-
-                        <InputField
-                          icon={Building2}
-                          label="City"
-                          name="city"
-                          value={form.address.city}
-                          onChange={handleAddressChange}
-                          editing={editing}
-                          placeholder="Enter city"
-                        />
-
-                        <InputField
-                          icon={MapPin}
-                          label="Pincode"
-                          name="pincode"
-                          value={form.address.pincode}
-                          onChange={handleAddressChange}
-                          editing={editing}
-                          placeholder="Enter pincode"
-                        />
-
-                        <LocationSearch
-                          label="Country"
-                          icon={Globe}
-                          editing={editing}
-                          value={form.address.country}
-                          search={countrySearch}
-                          options={filteredCountries}
-                          show={showCountries}
-                          setShow={setShowCountries}
-                          setOtherShow={setShowStates}
-                          onInput={handleCountryInput}
-                          onSelect={selectCountry}
-                          placeholder="Search country"
-                        />
-
-                        <LocationSearch
-                          label="State"
-                          icon={MapPin}
-                          editing={editing}
-                          value={form.address.state}
-                          search={stateSearch}
-                          options={filteredStates}
-                          show={showStates}
-                          setShow={setShowStates}
-                          setOtherShow={setShowCountries}
-                          onInput={handleStateInput}
-                          onSelect={selectState}
-                          placeholder="Search state"
-                        />
-                      </div>
-                    </SectionCard>
-                  </div>
-
-                  <SectionCard
-                    icon={KeyRound}
-                    title="Account & Security"
-                    subtitle="Manage your account access"
-                    delay={0.15}
-                  >
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={handleChangePassword}
-                        className="group flex min-h-12 touch-manipulation items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-[0.99]"
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 transition group-hover:bg-white group-hover:text-indigo-600">
-                            <KeyRound size={17} />
-                          </span>
-                          Change Password
-                        </span>
-
-                        <span className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-400">
-                          →
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        disabled={loggingOut}
-                        className="group flex min-h-12 touch-manipulation items-center justify-between gap-3 rounded-xl border border-red-100 bg-red-50/60 px-4 py-3 text-sm font-semibold text-red-500 transition-all duration-200 hover:border-red-200 hover:bg-red-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-red-500">
-                            {loggingOut ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-300 border-t-red-500" />
+                          <button
+                            type="submit"
+                            disabled={saving}
+                            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.84rem)] font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                          >
+                            {saving ? (
+                              <>
+                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                Saving...
+                              </>
                             ) : (
-                              <LogOut size={17} />
+                              <>
+                                <Save size={15} />
+                                Save Changes
+                              </>
                             )}
-                          </span>
-
-                          {loggingOut ? "Logging out..." : "Logout"}
-                        </span>
-
-                        {!loggingOut && (
-                          <span className="text-red-300 transition group-hover:translate-x-0.5 group-hover:text-red-400">
-                            →
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  </SectionCard>
-
-                  {editing && (
-                    <div className="flex flex-col gap-2.5 sm:hidden">
-                      <button
-                        type="submit"
-                        disabled={saving}
-                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-60"
-                      >
-                        {saving ? (
-                          <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save size={17} />
-                            Save Changes
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
-      </div>
-    </section>
+                          </button>
+                        </div>
+                      )}
+                    </SectionCard>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+        </div>
+      </section>
+    </>
   );
 };
 
