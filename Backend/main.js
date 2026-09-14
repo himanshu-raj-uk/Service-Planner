@@ -12,6 +12,12 @@ const birthdayplan = require("./Routes/BirthdayRoute");
 const errorMiddleware = require("./Middleware/Error");
 
 const app = express();
+app.set("trust proxy", 1);
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "online",
+  });
+});
 
 connectDB();
 
