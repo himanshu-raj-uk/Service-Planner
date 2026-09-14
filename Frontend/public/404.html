@@ -3,19 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      const path = window.location.pathname;
       const base = "/Service-Planner";
+      const path = window.location.pathname;
+      const search = window.location.search;
+      const hash = window.location.hash;
 
       if (path.startsWith(base)) {
-        const redirectPath = path.slice(base.length);
-
         sessionStorage.setItem(
           "redirect",
-          redirectPath + window.location.search + window.location.hash,
+          path.slice(base.length) + search + hash,
         );
       }
 
-      window.location.replace(base + "/");
+      window.location.replace(`${base}/`);
     </script>
   </head>
   <body></body>
