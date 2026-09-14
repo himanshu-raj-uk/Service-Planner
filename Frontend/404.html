@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      const path = window.location.pathname;
+      const base = "/Service-Planner";
+
+      if (path.startsWith(base)) {
+        const redirectPath = path.slice(base.length);
+
+        sessionStorage.setItem(
+          "redirect",
+          redirectPath + window.location.search + window.location.hash,
+        );
+      }
+
+      window.location.replace(base + "/");
+    </script>
+  </head>
+  <body></body>
+</html>
