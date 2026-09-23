@@ -546,12 +546,12 @@ const Navbar = () => {
               onClick={closeMenu}
               className="group flex min-w-0 items-center gap-3"
             >
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 shadow-[0_6px_18px_rgba(79,70,229,0.25)] transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11 lg:h-12 lg:w-12 lg:rounded-[15px]">
-                <div className="absolute inset-0 bg-white/10" />
-
-                <span className="relative text-sm font-black tracking-tight text-white sm:text-base">
-                  SP
-                </span>
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] shadow-[0_6px_18px_rgba(79,70,229,0.25)] transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11 lg:h-12 lg:w-12 lg:rounded-[15px]">
+                <img
+                  src="/Service_Planner_Logo.png"
+                  alt="Service Planner"
+                  className="h-full w-full object-contain"
+                />
               </div>
 
               <div className="min-w-0">

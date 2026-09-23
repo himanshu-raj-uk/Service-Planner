@@ -1250,6 +1250,9 @@ const Profile = () => {
                               information.
                             </p>
 
+
+
+
                             <div className="mt-1.5">
                               <h2 className="truncate text-[clamp(0.9rem,1.1vw,1.2rem)] font-medium leading-5 text-[#0f172a]">
                                 {user.name}

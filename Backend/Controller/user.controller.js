@@ -79,22 +79,80 @@ const register = async (req, res, next) => {
       { expiresIn: "10m" },
     );
 
-    await sendEmail({
-      to: pendingUser.email,
-      subject: "Welcome to All Services Planner",
-      html: emailTemplate({
-        heading: `Hello ${pendingUser.name}`,
-        message: ` <div style="text-align: center;"> 
-        <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;"> Your registration has been received successfully. </p>
-         <p style="margin: 0 0 10px; font-size: 15px; font-weight: 600;"> Your OTP is: </p>
-          <div style="margin: 18px 0; text-align: center;"> <span style=" display: inline-block; font-size: 28px; font-weight: 700; letter-spacing: 8px; line-height: 1.4; "> ${otp} </span> </div> 
-          <p style="margin: 0; font-size: 14px; line-height: 1.6;"> This OTP is valid for <strong>5 minutes</strong>. </p> 
-          <p style="margin: 22px 0 0; font-size: 14px; line-height: 1.6;"> Regards,<br> <strong>All Services Planners ❤️</strong> </p>
-           </div> `,
-      }),
-    });
+    let emailSent = false;
 
-    res.status(201).json({
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await sendEmail({
+          to: pendingUser.email,
+          subject: "Welcome to All Services Planner",
+          html: emailTemplate({
+            heading: `Hello ${pendingUser.name}`,
+            message: `
+              <div style="text-align: center;">
+                <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">
+                  Your registration has been received successfully.
+                </p>
+
+                <p style="margin: 0 0 10px; font-size: 15px; font-weight: 600;">
+                  Your OTP is:
+                </p>
+
+                <div style="margin: 18px 0; text-align: center;">
+                  <span style="
+                    display: inline-block;
+                    font-size: 28px;
+                    font-weight: 700;
+                    letter-spacing: 8px;
+                    line-height: 1.4;
+                  ">
+                    ${otp}
+                  </span>
+                </div>
+
+                <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                  This OTP is valid for <strong>5 minutes</strong>.
+                </p>
+
+                <p style="margin: 22px 0 0; font-size: 14px; line-height: 1.6;">
+                  Regards,<br>
+                  <strong>All Services Planners ❤️</strong>
+                </p>
+              </div>
+            `,
+          }),
+        });
+
+        emailSent = true;
+
+        console.log(`Registration email sent on attempt ${attempt}`);
+
+        break;
+      } catch (emailError) {
+        console.error(
+          `Registration email attempt ${attempt} failed:`,
+          emailError.message,
+        );
+
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
+    }
+
+    if (!emailSent) {
+      return res.status(503).json({
+        status: false,
+        message:
+          "Registration saved, but OTP email could not be sent. Please try Resend OTP.",
+        verificationToken: token,
+        data: {
+          email: pendingUser.email,
+        },
+      });
+    }
+
+    return res.status(201).json({
       status: true,
       message: "OTP sent successfully.",
       verificationToken: token,

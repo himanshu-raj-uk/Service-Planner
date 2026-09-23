@@ -6,6 +6,29 @@ const Transporter = NodeSender.createTransport({
     user: process.env.GOOGLE_USER_NAME,
     pass: process.env.GOOGLE_USER_PASSWORD,
   },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
 
-module.exports = Transporter;
+const sendEmail = async ({ to, subject, html }) => {
+  try {
+    await Transporter.verify();
+
+    const info = await Transporter.sendMail({
+      from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email sent:", info.messageId);
+
+    return info;
+  } catch (error) {
+    console.error("Email sending failed:", error.message);
+    throw error;
+  }
+};
+
+module.exports = sendEmail;
