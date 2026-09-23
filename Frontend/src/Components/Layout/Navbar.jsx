@@ -548,7 +548,7 @@ const Navbar = () => {
             >
               <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] shadow-[0_6px_18px_rgba(79,70,229,0.25)] transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11 lg:h-12 lg:w-12 lg:rounded-[15px]">
                 <img
-                  src="/Service_Planner_Logo.png"
+                  src="/Service-Planner/Service_Planner_Logo.png"
                   alt="Service Planner"
                   className="h-full w-full object-contain"
                 />
