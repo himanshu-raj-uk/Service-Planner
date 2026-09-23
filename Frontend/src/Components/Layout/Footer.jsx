@@ -30,23 +30,20 @@ function Footer() {
       <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-12 lg:gap-10">
           <div className="sm:col-span-2 lg:col-span-5">
-            <Link
+             <Link
               to="/"
-              className="group inline-flex items-center gap-3 sm:gap-4"
+              onClick={closeMenu}
+              className="group flex min-w-0 items-center"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 shadow-lg shadow-indigo-950/30 transition duration-500 group-hover:-translate-y-1 group-hover:shadow-indigo-500/30 sm:h-14 sm:w-14 lg:h-16 lg:w-16">
-                <span className="text-lg font-black text-white sm:text-xl lg:text-2xl">
-                  SP
-                </span>
-              </div>
-
-              <div className="min-w-0">
-                <h1 className="truncate bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-[18px] font-bold tracking-[-0.02em] text-transparent sm:text-lg lg:text-xl">
-                  Service Planner
-                </h1>
-                <p className="mt-0.5 text-xs text-slate-400 sm:text-sm">
-                  Plan Everything Smartly
-                </p>
+              <div className="flex h-[56px] w-auto min-w-0 max-w-[205px] items-center min-[360px]:h-[58px] min-[360px]:max-w-[220px] sm:h-[62px] sm:max-w-[245px] md:h-[66px] md:max-w-[270px] lg:h-[70px] lg:max-w-[290px] xl:h-[74px] xl:max-w-[315px] 2xl:h-[78px] 2xl:max-w-[340px]">
+                <img
+                  src="/Service-Planner/Service_Planner_Logo.png"
+                  alt="Service Planner"
+                  className="block h-full w-auto max-w-full object-contain object-left transition-transform duration-200 group-hover:scale-[1.01]"
+                  draggable="false"
+                  decoding="async"
+                  fetchPriority="high"
+                />
               </div>
             </Link>
 
