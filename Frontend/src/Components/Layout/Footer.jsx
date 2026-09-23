@@ -30,11 +30,7 @@ function Footer() {
       <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-12 lg:gap-10">
           <div className="sm:col-span-2 lg:col-span-5">
-             <Link
-              to="/"
-              onClick={closeMenu}
-              className="group flex min-w-0 items-center"
-            >
+            <Link to="/" className="group flex min-w-0 items-center">
               <div className="flex h-[56px] w-auto min-w-0 max-w-[205px] items-center min-[360px]:h-[58px] min-[360px]:max-w-[220px] sm:h-[62px] sm:max-w-[245px] md:h-[66px] md:max-w-[270px] lg:h-[70px] lg:max-w-[290px] xl:h-[74px] xl:max-w-[315px] 2xl:h-[78px] 2xl:max-w-[340px]">
                 <img
                   src="/Service-Planner/Service_Planner_Logo.png"
