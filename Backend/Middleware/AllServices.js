@@ -7,6 +7,7 @@ const ApiError = require("../Utilities/ApiError");
 const emailTemplate = require("../Template/EmailTemplate");
 const Transporter = require("../Config/MailSender");
 const { verificationToken } = require("../Config/Token");
+const sendEmail = require("../Config/MailSender");
 
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
