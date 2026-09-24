@@ -3,7 +3,7 @@ const User = require("../Model/UserModel");
 const TripModel = require("../Model/TripModel");
 const BirthdayModel = require("../Model/BirthdayModel");
 const jwt = require("jsonwebtoken");
-const Transporter = require("../Config/MailSender");
+const sendEmail = require("../Config/MailSender");
 const ApiError = require("../Utilities/ApiError");
 const cloudinary = require("../Config/Cloudinary");
 const Notification = require("../Model/AppNotificationModel");
@@ -15,7 +15,7 @@ const {
   verifyOTPService,
   resetPasswordService,
   resendOTPService,
-  sendEmail,
+  // sendEmail,
   loginEmail,
 } = require("../Middleware/AllServices");
 

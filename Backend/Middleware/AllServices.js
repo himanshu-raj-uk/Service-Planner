@@ -11,14 +11,14 @@ const { verificationToken } = require("../Config/Token");
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-const sendEmail = async ({ to, subject, html }) => {
-  await Transporter.sendMail({
-    from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
-    to,
-    subject,
-    html,
-  });
-};
+// const sendEmail = async ({ to, subject, html }) => {
+//   await Transporter.sendMail({
+//     from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
+//     to,
+//     subject,
+//     html,
+//   });
+// };
 
 const loginEmail = async ({ to, subject, html }) => {
   await Transporter.sendMail({
