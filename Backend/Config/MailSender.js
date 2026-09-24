@@ -8,13 +8,15 @@ const Transporter = NodeSender.createTransport({
     user: process.env.GOOGLE_USER_NAME,
     pass: process.env.GOOGLE_USER_PASSWORD,
   },
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
 });
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    console.log("SMTP USER:", process.env.GOOGLE_USER_NAME);
-    console.log("SMTP HOST:", "smtp.gmail.com");
-    console.log("SMTP PORT:", 465);
+    console.log("SMTP VERIFY START");
+
     await Transporter.verify();
 
     console.log("SMTP CONNECTION VERIFIED");
@@ -30,7 +32,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
     return info;
   } catch (error) {
-    console.error("Email sending failed:", error.message);
+    console.error("Email sending failed:", error);
     throw error;
   }
 };
