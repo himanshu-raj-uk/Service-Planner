@@ -8,14 +8,16 @@ const Transporter = NodeSender.createTransport({
     user: process.env.GOOGLE_USER_NAME,
     pass: process.env.GOOGLE_USER_PASSWORD,
   },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
 });
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
+    console.log("SMTP USER:", process.env.GOOGLE_USER_NAME);
+    console.log("SMTP HOST:", "smtp.gmail.com");
+    console.log("SMTP PORT:", 465);
     await Transporter.verify();
+
+    console.log("SMTP CONNECTION VERIFIED");
 
     const info = await Transporter.sendMail({
       from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
