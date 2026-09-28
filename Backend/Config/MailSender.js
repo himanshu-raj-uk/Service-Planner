@@ -1,38 +1,28 @@
-const NodeSender = require("nodemailer");
+const { Resend } = require("resend");
 
-const Transporter = NodeSender.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.GOOGLE_USER_NAME,
-    pass: process.env.GOOGLE_USER_PASSWORD,
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    console.log("SMTP VERIFY START");
+    console.log("RESEND EMAIL START");
 
-    await Transporter.verify();
-
-    console.log("SMTP CONNECTION VERIFIED");
-
-    const info = await Transporter.sendMail({
-      from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: [to],
       subject,
       html,
     });
 
-    console.log("Email sent:", info.messageId);
+    if (error) {
+      console.error("Resend email failed:", error);
+      throw new Error(error.message);
+    }
 
-    return info;
+    console.log("Email sent:", data.id);
+
+    return data;
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error("Email sending failed:", error.message);
     throw error;
   }
 };

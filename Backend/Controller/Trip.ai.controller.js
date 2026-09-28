@@ -4,64 +4,78 @@ const Notification = require("../Model/AppNotificationModel");
 
 const ai = require("../Config/OpenAi");
 
-const getBudgetMessage = (budget) => {
-  const formattedBudget = Number(budget).toLocaleString("en-IN");
-
-  if (budget < 2000) {
-    return `😂 Are you kidding? ₹${formattedBudget} for a trip? Even the chai bill is getting nervous!`;
-  }
-
-  if (budget < 3000) {
-    return `😂 ₹${formattedBudget}? Are you planning a vacation or just going for a walk around the neighborhood?`;
-  }
-
-  if (budget < 4000) {
-    return `😅 ₹${formattedBudget} is a little tight for a proper trip. Your hotel might ask you to sleep in the lobby!`;
-  }
-
-  return `😄 ₹${formattedBudget} is almost there! Just add a little more. Your future vacation will thank you!`;
-};
+const delay = (ms) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 const generateTravelPlan = async (prompt) => {
-  const models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
+  const models = [
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+  ];
 
   let lastError = null;
 
   for (const model of models) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          maxOutputTokens: 8192,
-          responseMimeType: "application/json",
-        },
-      });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        console.log(
+          `Gemini ${model} attempt ${attempt + 1}/3`,
+        );
 
-      return response;
-    } catch (error) {
-      lastError = error;
-      console.error(`Gemini ${model} failed:`, error?.status, error?.message);
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            maxOutputTokens: 16384,
+            responseMimeType: "application/json",
+          },
+        });
 
-      const status = error?.status;
+        return response;
+      } catch (error) {
+        lastError = error;
 
-      const message = String(error?.message || "").toLowerCase();
+        console.error(
+          `Gemini ${model} attempt ${attempt + 1} failed:`,
+          error?.status,
+          error?.message,
+        );
 
-      const canUseFallback =
-        status === 404 ||
-        status === 429 ||
-        status === 500 ||
-        status === 502 ||
-        status === 503 ||
-        status === 504 ||
-        message.includes("high demand") ||
-        message.includes("unavailable") ||
-        message.includes("fetch failed");
+        const status = error?.status;
 
-      if (!canUseFallback) {
-        throw error;
+        const message = String(
+          error?.message || "",
+        ).toLowerCase();
+
+        const canRetry =
+          status === 429 ||
+          status === 500 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504 ||
+          message.includes("high demand") ||
+          message.includes("unavailable") ||
+          message.includes("fetch failed");
+
+        if (!canRetry) {
+          throw error;
+        }
+
+        if (attempt < 2) {
+          const waitTime = 3000 * Math.pow(2, attempt);
+
+          console.log(
+            `Retrying ${model} in ${waitTime / 1000}s...`,
+          );
+
+          await delay(waitTime);
+        }
       }
     }
+
+    console.log(
+      `Gemini ${model} exhausted. Trying next model...`,
+    );
   }
 
   throw lastError;
@@ -102,7 +116,10 @@ const createTrip = async (req, res, next) => {
     }
 
     if (numericBudget < 5000) {
-      throw new ApiError(400, getBudgetMessage(numericBudget));
+      throw new ApiError(
+        400,
+        "Travel budget must be at least ₹5,000.",
+      );
     }
 
     if (!Number.isInteger(numericPeople) || numericPeople < 1) {
@@ -162,6 +179,30 @@ IMPORTANT RULES:
 36. Keep all costs realistic for the destination.
 37. Use numeric values only for estimatedCost and budgetBreakdown numeric fields.
 
+RECOMMENDATION COUNT REQUIREMENTS:
+
+38. Return AT LEAST 5 hotel recommendations.
+39. Return AT LEAST 5 restaurant recommendations.
+40. Return AT LEAST 5 tourist place recommendations.
+41. Return AT LEAST 5 hidden gem recommendations.
+42. Return AT LEAST 5 shopping place recommendations.
+43. Return AT LEAST 5 local food recommendations.
+44. Prefer 5 to 8 useful recommendations in each recommendation category.
+45. Do not fill the arrays with duplicate places, restaurants, hotels or foods.
+46. Every recommendation must be relevant to the selected destination.
+47. Recommendations should be realistic and currently recognizable places or categories in the destination.
+48. Hotel recommendations must match the requested hotel type and user's budget as closely as possible.
+49. Restaurant recommendations must respect the user's food preference whenever applicable.
+50. Tourist places should be suitable for the number of travel days.
+51. Hidden gems should be different from the main tourist places.
+52. Shopping recommendations should be relevant to the destination.
+53. Local foods should be authentic or strongly associated with the destination.
+54. Do not recommend the same place in multiple categories unless it is genuinely appropriate.
+55. Do not invent obviously fake hotels, restaurants or attractions.
+56. When exact pricing is unavailable, provide a reasonable approximate value rather than leaving the field empty.
+57. Keep recommendation descriptions concise and useful.
+58. Make recommendations useful for the user's actual trip rather than simply listing famous names.
+
 USER INFORMATION:
 
 Destination: ${String(destination).trim()}
@@ -182,6 +223,7 @@ RETURN EXACTLY THIS JSON STRUCTURE:
   "estimatedCost": 0,
   "bestTimeToVisit": "",
   "weather": "",
+
   "budgetBreakdown": {
     "hotel": 0,
     "food": 0,
@@ -190,7 +232,32 @@ RETURN EXACTLY THIS JSON STRUCTURE:
     "shopping": 0,
     "remaining": 0
   },
+
   "hotels": [
+    {
+      "name": "",
+      "pricePerNight": "",
+      "rating": "",
+      "reason": ""
+    },
+    {
+      "name": "",
+      "pricePerNight": "",
+      "rating": "",
+      "reason": ""
+    },
+    {
+      "name": "",
+      "pricePerNight": "",
+      "rating": "",
+      "reason": ""
+    },
+    {
+      "name": "",
+      "pricePerNight": "",
+      "rating": "",
+      "reason": ""
+    },
     {
       "name": "",
       "pricePerNight": "",
@@ -198,38 +265,110 @@ RETURN EXACTLY THIS JSON STRUCTURE:
       "reason": ""
     }
   ],
+
   "restaurants": [
+    {
+      "name": "",
+      "speciality": "",
+      "rating": ""
+    },
+    {
+      "name": "",
+      "speciality": "",
+      "rating": ""
+    },
+    {
+      "name": "",
+      "speciality": "",
+      "rating": ""
+    },
+    {
+      "name": "",
+      "speciality": "",
+      "rating": ""
+    },
     {
       "name": "",
       "speciality": "",
       "rating": ""
     }
   ],
+
   "touristPlaces": [
+    {
+      "name": "",
+      "description": "",
+      "entryFee": ""
+    },
+    {
+      "name": "",
+      "description": "",
+      "entryFee": ""
+    },
+    {
+      "name": "",
+      "description": "",
+      "entryFee": ""
+    },
+    {
+      "name": "",
+      "description": "",
+      "entryFee": ""
+    },
     {
       "name": "",
       "description": "",
       "entryFee": ""
     }
   ],
+
   "hiddenGems": [
+    {
+      "name": "",
+      "description": ""
+    },
+    {
+      "name": "",
+      "description": ""
+    },
+    {
+      "name": "",
+      "description": ""
+    },
+    {
+      "name": "",
+      "description": ""
+    },
     {
       "name": "",
       "description": ""
     }
   ],
+
   "shoppingPlaces": [
+    "",
+    "",
+    "",
+    "",
     ""
   ],
+
   "localFoods": [
+    "",
+    "",
+    "",
+    "",
     ""
   ],
+
   "packingList": [
     ""
   ],
+
   "travelTips": [
     ""
   ],
+
   "dailyPlan": [
     {
       "day": 1,
@@ -239,6 +378,7 @@ RETURN EXACTLY THIS JSON STRUCTURE:
       ]
     }
   ],
+
   "emergencyContacts": {
     "hospital": "",
     "police": "",
@@ -257,14 +397,14 @@ RETURN EXACTLY THIS JSON STRUCTURE:
       if (aiError?.status === 429) {
         throw new ApiError(
           503,
-          "😅 Our Team memberis receiving too many requests right now. Please try again in a moment.",
+          "😅 Our Team member is receiving too many requests right now. Please try again in a moment.",
         );
       }
 
       if (aiError?.status === 503) {
         throw new ApiError(
           503,
-          "😅 Our Team member is  busy to protect her relationship right now. Please try again in a moment.",
+          "😅 Our Team member is busy to protect her relationship right now. Please try again in a moment.",
         );
       }
 
@@ -288,7 +428,10 @@ RETURN EXACTLY THIS JSON STRUCTURE:
     const content = response?.text?.trim();
 
     if (!content) {
-      throw new ApiError(503, "No travel plan was returned. Please try again.");
+      throw new ApiError(
+        503,
+        "No travel plan was returned. Please try again.",
+      );
     }
 
     let aiPlan;
@@ -305,7 +448,11 @@ RETURN EXACTLY THIS JSON STRUCTURE:
       );
     }
 
-    if (!aiPlan || typeof aiPlan !== "object" || Array.isArray(aiPlan)) {
+    if (
+      !aiPlan ||
+      typeof aiPlan !== "object" ||
+      Array.isArray(aiPlan)
+    ) {
       throw new ApiError(
         500,
         "Invalid travel plan received. Please try again.",
@@ -336,7 +483,10 @@ RETURN EXACTLY THIS JSON STRUCTURE:
         type: "Tour",
       });
     } catch (notificationError) {
-      console.error("NOTIFICATION CREATION ERROR:", notificationError);
+      console.error(
+        "NOTIFICATION CREATION ERROR:",
+        notificationError,
+      );
     }
 
     return res.status(201).json({

@@ -5,56 +5,45 @@ const jwt = require("jsonwebtoken");
 
 const ApiError = require("../Utilities/ApiError");
 const emailTemplate = require("../Template/EmailTemplate");
-const Transporter = require("../Config/MailSender");
 const { verificationToken } = require("../Config/Token");
 const sendEmail = require("../Config/MailSender");
 
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-// const sendEmail = async ({ to, subject, html }) => {
-//   await Transporter.sendMail({
-//     from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
-//     to,
-//     subject,
-//     html,
-//   });
-// };
-
-const loginEmail = async ({ to, subject, html }) => {
-  await Transporter.sendMail({
-    from: `"All Services Planner" <${process.env.GOOGLE_USER_NAME}>`,
-    to,
-    subject,
-    html,
-  });
-};
-
 const refreshTokenService = async (token) => {
   if (!token) {
     throw new ApiError(401, "Refresh token is required.");
   }
+
   let decoded;
+
   try {
     decoded = jwt.verify(token, process.env.REFRESH_JWT_SECRET);
   } catch (err) {
     if (err.name === "TokenExpiredError") {
       throw new ApiError(401, "Refresh token has expired.");
     }
+
     throw new ApiError(401, "Invalid refresh token.");
   }
 
   const user = await User.findById(decoded.id);
+
   if (!user) {
     throw new ApiError(404, "User not found.");
   }
+
   if (!user.refreshToken) {
     throw new ApiError(401, "Please login again.");
   }
+
   if (user.refreshToken !== token) {
     throw new ApiError(401, "Invalid refresh token.");
   }
+
   const accessToken = AccessToken(user);
+
   return accessToken;
 };
 
@@ -105,6 +94,7 @@ const forgotPasswordService = async (email, role) => {
       `,
     }),
   });
+
   return token;
 };
 
@@ -316,6 +306,7 @@ const resetPasswordService = async (token, password) => {
 
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     console.log("Decoded Token:", decoded);
   } catch (err) {
     if (err.name === "TokenExpiredError") {
@@ -405,7 +396,6 @@ module.exports = {
   resendOTPService,
   resetPasswordService,
   sendEmail,
-  loginEmail,
   refreshTokenService,
   createNotification,
 };

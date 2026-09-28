@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* =========================================================
+   GLOBAL THEME
+========================================================= */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --page-pattern-color: rgba(99, 102, 241, 0.08);
+}
+
+html.dark {
+  --page-pattern-color: rgba(16, 185, 129, 0.16);
+}
+
+@keyframes themeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 :root {
   font-family:
     system-ui,
@@ -15,36 +41,146 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
   color-scheme: light;
 
+  /* ---------- Light Theme ---------- */
+
   --app-bg: #f4f6fa;
+  --app-bg-secondary: #f8fafc;
+  --app-bg-tertiary: #eef2f7;
+
+  --app-surface: #ffffff;
+  --app-surface-secondary: #f8fafc;
+
   --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+
+  --border-color: #e2e8f0;
+  --border-light: #f1f5f9;
+
   --indigo: #6366f1;
+  --indigo-dark: #4f46e5;
   --indigo-light: #eef2ff;
+  --indigo-border: #c7d2fe;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  --selection-bg: #c7d2fe;
+  --selection-text: #312e81;
+
+  --scrollbar-track: #f4f6fa;
+  --scrollbar-thumb: #6366f1;
 }
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+html.dark {
+  color-scheme: dark;
+
+  /* ---------- Dark Theme ---------- */
+
+  --app-bg: #0f172a;
+  --app-bg-secondary: #111827;
+  --app-bg-tertiary: #1e293b;
+
+  --app-surface: #111827;
+  --app-surface-secondary: #1e293b;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-disabled: #64748b;
+
+  --border-color: #334155;
+  --border-light: #1e293b;
+
+  --indigo: #818cf8;
+  --indigo-dark: #6366f1;
+  --indigo-light: #1e1b4b;
+  --indigo-border: #4338ca;
+
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+
+  --selection-bg: #4338ca;
+  --selection-text: #eef2ff;
+
+  --scrollbar-track: #0f172a;
+  --scrollbar-thumb: #6366f1;
+}
+
+/* =========================================================
+   GLOBAL BOX SIZING
+========================================================= */
 
 * {
   box-sizing: border-box;
 }
 
+/* =========================================================
+   HTML
+========================================================= */
+
 html {
   min-width: 320px;
   min-height: 100%;
+
   scroll-behavior: smooth;
+
   background: var(--app-bg);
 
+  transition: background-color 250ms ease;
+
   scrollbar-width: thin;
-  scrollbar-color: var(--indigo) var(--app-bg);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
+
+/* =========================================================
+   BODY
+========================================================= */
 
 body {
   margin: 0;
+
   min-width: 320px;
   min-height: 100vh;
+
   background: var(--app-bg);
   color: var(--text-primary);
+
   font-family: inherit;
+
+  transition:
+    background-color 250ms ease,
+    color 250ms ease;
 }
+
+/* =========================================================
+   ROOT
+========================================================= */
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+
+  background: var(--app-bg);
+
+  transition: background-color 250ms ease;
+}
+
+/* =========================================================
+   FORM ELEMENTS
+========================================================= */
 
 button,
 input,
@@ -58,17 +194,19 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* =========================================================
+   IMAGES / SVG
+========================================================= */
+
 img,
 svg {
   display: block;
   max-width: 100%;
 }
 
-#root {
-  width: 100%;
-  min-height: 100vh;
-  background: var(--app-bg);
-}
+/* =========================================================
+   GLOBAL SCROLLBAR
+========================================================= */
 
 *::-webkit-scrollbar {
   width: 10px;
@@ -76,13 +214,16 @@ svg {
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--app-bg);
+  background: var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-  border: 2px solid var(--app-bg);
+
+  border: 2px solid var(--scrollbar-track);
   border-radius: 999px;
+
+  transition: background 200ms ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
@@ -90,27 +231,272 @@ svg {
 }
 
 *::-webkit-scrollbar-corner {
-  background: var(--app-bg);
+  background: var(--scrollbar-track);
 }
 
+/* =========================================================
+   TEXT SELECTION
+========================================================= */
+
 ::selection {
-  background: #c7d2fe;
-  color: #312e81;
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }
+
+/* =========================================================
+   ACCESSIBILITY / FOCUS
+========================================================= */
 
 :focus-visible {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;
 }
 
+/* =========================================================
+   PROFILE FIELD
+========================================================= */
+
 .profile-field:focus-within {
-  border-color: #a5b4fc;
+  border-color: var(--indigo-border);
+
   background: var(--indigo-light);
+
   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
 }
+
+/* =========================================================
+   PROFILE DROPDOWN
+========================================================= */
 
 .profile-dropdown-option:hover,
 .profile-dropdown-option.selected {
   background: var(--indigo-light);
-  color: #4f46e5;
+  color: var(--indigo-dark);
+}
+
+/* =========================================================
+   DARK MODE - PROFILE COMPONENTS
+========================================================= */
+
+html.dark .profile-field:focus-within {
+  border-color: var(--indigo-border);
+
+  background: rgba(79, 70, 229, 0.12);
+
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+html.dark .profile-dropdown-option:hover,
+html.dark .profile-dropdown-option.selected {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+
+/* =========================================================
+   SMOOTH THEME TRANSITION
+========================================================= */
+
+html.dark,
+html.dark body,
+html.dark #root {
+  transition:
+    background-color 250ms ease,
+    color 250ms ease;
+}
+
+/* =========================================================
+   SMOOTH BANNER FLOAT
+========================================================= */
+
+@keyframes bannerFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-image-float {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  html,
+  body,
+  #root {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   NAVBAR SEARCH
+========================================================= */
+
+@keyframes searchDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   NAVBAR SEARCH INPUT - IMPORTANT FIX
+========================================================= */
+
+.navbar-search-input {
+  position: relative !important;
+  z-index: 10 !important;
+
+  display: block !important;
+
+  width: 100% !important;
+  min-width: 0 !important;
+
+  height: 2.75rem !important;
+
+  appearance: none !important;
+  -webkit-appearance: none !important;
+
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+
+  outline: none !important;
+
+  background: transparent !important;
+
+  box-shadow: none !important;
+
+  opacity: 1 !important;
+
+  cursor: text !important;
+
+  caret-color: #2563eb !important;
+
+  color: #0f172a !important;
+
+  -webkit-text-fill-color: #0f172a !important;
+
+  font: inherit !important;
+}
+
+html.dark .navbar-search-input {
+  cursor: text !important;
+
+  caret-color: #60a5fa !important;
+
+  color: #f8fafc !important;
+
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+/* =========================================================
+   NAVBAR SEARCH INPUT - RESPONSIVE
+========================================================= */
+
+@media (min-width: 640px) {
+  .navbar-search-input {
+    height: 3rem !important;
+  }
+}
+
+/* =========================================================
+   NAVBAR SEARCH INPUT - ALL STATES
+========================================================= */
+
+.navbar-search-input:hover,
+.navbar-search-input:focus,
+.navbar-search-input:focus-visible,
+.navbar-search-input:active {
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+
+  outline: none !important;
+
+  box-shadow: none !important;
+
+  background: transparent !important;
+
+  cursor: text !important;
+}
+
+/* =========================================================
+   NAVBAR SEARCH INPUT - PLACEHOLDER
+========================================================= */
+
+.navbar-search-input::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+}
+
+html.dark .navbar-search-input::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* =========================================================
+   NAVBAR SEARCH INPUT - AUTOFILL
+========================================================= */
+
+input[type="text"].navbar-search-input:-webkit-autofill,
+input[type="text"].navbar-search-input:-webkit-autofill:hover,
+input[type="text"].navbar-search-input:-webkit-autofill:focus,
+input[type="text"].navbar-search-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a !important;
+
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+
+  box-shadow: 0 0 0 1000px transparent inset !important;
+
+  background-color: transparent !important;
+
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+
+html.dark input[type="text"].navbar-search-input:-webkit-autofill,
+html.dark input[type="text"].navbar-search-input:-webkit-autofill:hover,
+html.dark input[type="text"].navbar-search-input:-webkit-autofill:focus,
+html.dark input[type="text"].navbar-search-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f8fafc !important;
+
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+
+  box-shadow: 0 0 0 1000px transparent inset !important;
+
+  background-color: transparent !important;
+}
+
+/* =========================================================
+   REMOVE BROWSER SEARCH DECORATIONS
+========================================================= */
+
+.navbar-search-input::-webkit-search-cancel-button,
+.navbar-search-input::-webkit-search-decoration,
+.navbar-search-input::-webkit-search-results-button,
+.navbar-search-input::-webkit-search-results-decoration {
+  display: none !important;
+}
+
+header a[href="/"] {
+  cursor: default !important;
 }

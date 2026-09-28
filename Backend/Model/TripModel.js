@@ -23,7 +23,7 @@ const tripSchema = new mongoose.Schema(
     budget: {
       type: Number,
       required: true,
-      min: 1,
+      min: 5000,
     },
 
     people: {
@@ -45,6 +45,8 @@ const tripSchema = new mongoose.Schema(
         "Couple",
         "Family",
         "Friends",
+        "Honeymoon",
+        "Adventure",
         "Business",
       ],
       required: true,
@@ -55,7 +57,11 @@ const tripSchema = new mongoose.Schema(
       enum: [
         "Budget",
         "Standard",
+        "Comfort",
         "Luxury",
+        "Homestay",
+        "Resort",
+        "Any",
       ],
       required: true,
     },

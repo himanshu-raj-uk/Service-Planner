@@ -5,7 +5,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0f172a" />
 
     <meta
       name="description"
@@ -14,7 +14,29 @@
 
     <title>Service Planner</title>
 
-    <!-- Favicon -->
+    <script>
+      (() => {
+        try {
+          const THEME_KEY = "theme";
+          const savedTheme = localStorage.getItem(THEME_KEY);
+
+          const theme =
+            savedTheme === "light" || savedTheme === "dark"
+              ? savedTheme
+              : "dark";
+
+          const root = document.documentElement;
+
+          root.classList.toggle("dark", theme === "dark");
+
+          root.setAttribute("data-theme", theme);
+        } catch {
+          document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+
     <link
       rel="icon"
       type="image/png"
@@ -64,12 +86,10 @@
       href="/Service-Planner/Service_Planner_Favicon.png"
     />
 
-    <!-- Load navbar logo immediately -->
     <link
-      rel="preload"
-      as="image"
-      href="/Service-Planner/Service_Planner_Logo.png"
-      fetchpriority="high"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/Service-Planner/Service_Planner_Favicon.png"
     />
   </head>
 

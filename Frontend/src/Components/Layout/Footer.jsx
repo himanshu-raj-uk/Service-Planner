@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Send, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import {
   FaFacebookF,
   FaInstagram,
@@ -6,6 +6,7 @@ import {
   FaLinkedinIn,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function Footer() {
   const plannerServices = [
@@ -22,20 +23,201 @@ function Footer() {
     { label: "Terms & Conditions", path: "/terms" },
   ];
 
-  return (
-    <footer className="relative mt-12 overflow-hidden bg-slate-950 text-white sm:mt-16 lg:mt-20">
-      <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-indigo-600/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-purple-600/10 blur-3xl" />
+  const thoughts = [
+    "Plan today, create memories that last forever.",
+    "Every great journey begins with a thoughtful plan.",
+    "Your perfect experience starts with one simple idea.",
+    "Turn your plans into moments worth remembering.",
+    "Good planning makes every experience more meaningful.",
+    "Dream it, plan it, experience it.",
+    "Make every destination part of your story.",
+    "The best memories are the ones you plan with heart.",
+    "Small plans can create unforgettable moments.",
+    "Your next beautiful memory may be one plan away.",
+    "Plan with purpose and enjoy every moment.",
+    "Great experiences begin with great preparation.",
+    "Make your special moments truly special.",
+    "Where plans become experiences and experiences become memories.",
+    "Travel more, celebrate more, remember more.",
+    "Every celebration deserves a thoughtful beginning.",
+    "Create moments today that you will smile about tomorrow.",
+    "A little planning can make every experience extraordinary.",
+    "Your journey deserves a plan as unique as you are.",
+    "Plan something beautiful. Make it unforgettable.",
+    "Explore new places, celebrate meaningful moments.",
+    "Better planning brings better experiences.",
+    "Make time for moments that matter.",
+    "Your next adventure is waiting to be planned.",
+  ];
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-12 lg:gap-10">
-          <div className="sm:col-span-2 lg:col-span-5">
-            <Link to="/" className="group flex min-w-0 items-center">
-              <div className="flex h-[56px] w-auto min-w-0 max-w-[205px] items-center min-[360px]:h-[58px] min-[360px]:max-w-[220px] sm:h-[62px] sm:max-w-[245px] md:h-[66px] md:max-w-[270px] lg:h-[70px] lg:max-w-[290px] xl:h-[74px] xl:max-w-[315px] 2xl:h-[78px] 2xl:max-w-[340px]">
+  const [currentThought, setCurrentThought] = useState(0);
+  const [thoughtVisible, setThoughtVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setThoughtVisible(false);
+
+      const timeout = setTimeout(() => {
+        setCurrentThought((prev) => (prev + 1) % thoughts.length);
+        setThoughtVisible(true);
+      }, 250);
+
+      return () => clearTimeout(timeout);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [thoughts.length]);
+
+  return (
+    <footer
+      className="
+        relative
+        w-full
+        overflow-hidden
+        border-t
+        border-slate-200/80
+        bg-[#f4f6fa]
+        text-slate-900
+        transition-colors
+        duration-500
+        dark:border-slate-800
+        dark:bg-[#0f172a]
+        dark:text-slate-100
+      "
+    >
+      {/* =========================================================
+          BACKGROUND GRID
+          Same pattern as Services / Features
+      ========================================================= */}
+      <div
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          opacity-100
+        "
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              90deg,
+              var(--page-pattern-color) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              0deg,
+              var(--page-pattern-color) 1px,
+              transparent 1px
+            )
+          `,
+          backgroundSize: "48px 48px",
+          backgroundPosition: "0 0",
+        }}
+      />
+
+      {/* =========================================================
+          AMBIENT ACCENTS
+      ========================================================= */}
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -left-32
+          -top-28
+          h-64
+          w-64
+          rounded-full
+          bg-indigo-300/8
+          blur-3xl
+          dark:bg-indigo-500/8
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-32
+          bottom-0
+          h-64
+          w-64
+          rounded-full
+          bg-blue-300/8
+          blur-3xl
+          dark:bg-blue-500/8
+        "
+      />
+
+      {/* =========================================================
+          MAIN FOOTER CONTENT
+      ========================================================= */}
+      <div
+        className="
+          relative
+          z-10
+          mx-auto
+          w-full
+          max-w-7xl
+          px-4
+          py-5
+          sm:px-6
+          sm:py-6
+          lg:px-8
+          lg:py-7
+        "
+      >
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-6
+            sm:grid-cols-2
+            sm:gap-x-8
+            sm:gap-y-6
+            lg:grid-cols-12
+            lg:gap-8
+          "
+        >
+          {/* =====================================================
+              BRAND
+          ===================================================== */}
+          <div className="sm:col-span-2 lg:col-span-6">
+            <Link
+              to="/"
+              className="group flex min-w-0 items-center"
+              aria-label="Service Planner Home"
+            >
+              <div
+                className="
+                  flex
+                  h-[46px]
+                  w-auto
+                  min-w-0
+                  max-w-[190px]
+                  items-center
+                  min-[360px]:h-[49px]
+                  min-[360px]:max-w-[205px]
+                  sm:h-[52px]
+                  sm:max-w-[225px]
+                  md:h-[55px]
+                  md:max-w-[240px]
+                  lg:h-[58px]
+                  lg:max-w-[260px]
+                "
+              >
                 <img
                   src="/Service-Planner/Service_Planner_Logo.png"
                   alt="Service Planner"
-                  className="block h-full w-auto max-w-full object-contain object-left transition-transform duration-200 group-hover:scale-[1.01]"
+                  className="
+                    block
+                    h-full
+                    w-auto
+                    max-w-full
+                    object-contain
+                    object-left
+                    transition-transform
+                    duration-200
+                    group-hover:scale-[1.01]
+                  "
                   draggable="false"
                   decoding="async"
                   fetchPriority="high"
@@ -43,64 +225,218 @@ function Footer() {
               </div>
             </Link>
 
-            <p className="mt-5 max-w-lg text-sm leading-6 text-slate-400 sm:mt-6 sm:text-[15px] sm:leading-7">
+            <p
+              className="
+                mt-2.5
+                max-w-xl
+                text-sm
+                leading-5
+                text-slate-500
+                transition-colors
+                duration-500
+                dark:text-slate-400
+                sm:mt-3
+                sm:text-[15px]
+                sm:leading-6
+              "
+            >
               Service Planner is your all-in-one platform to plan travel,
               birthdays, weddings, corporate events, parties and memorable
               experiences with experience agents and members.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3 sm:mt-7">
+            {/* =================================================
+                SOCIAL LINKS
+            ================================================= */}
+            <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
+              {/* Facebook */}
               <a
                 href="#"
                 aria-label="Facebook"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-sm text-slate-400 transition duration-300 hover:-translate-y-1 hover:border-indigo-500 hover:bg-indigo-600 hover:text-white sm:h-11 sm:w-11"
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-slate-300
+                  bg-white/70
+                  text-slate-500
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:border-[#1877F2]
+                  hover:bg-[#1877F2]
+                  hover:text-white
+                  hover:shadow-[0_8px_22px_rgba(24,119,242,0.28)]
+                  dark:border-slate-700
+                  dark:bg-slate-900/70
+                  dark:text-slate-400
+                  dark:hover:border-[#1877F2]
+                  dark:hover:bg-[#1877F2]
+                  dark:hover:text-white
+                  dark:hover:shadow-[0_8px_22px_rgba(24,119,242,0.32)]
+                "
               >
-                <FaFacebookF />
+                <FaFacebookF size={14} />
               </a>
 
+              {/* Instagram */}
               <a
                 href="#"
                 aria-label="Instagram"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-sm text-slate-400 transition duration-300 hover:-translate-y-1 hover:border-pink-500 hover:bg-pink-600 hover:text-white sm:h-11 sm:w-11"
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-slate-300
+                  bg-white/70
+                  text-slate-500
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:border-[#E4405F]
+                  hover:bg-[#E4405F]
+                  hover:text-white
+                  hover:shadow-[0_8px_22px_rgba(228,64,95,0.28)]
+                  dark:border-slate-700
+                  dark:bg-slate-900/70
+                  dark:text-slate-400
+                  dark:hover:border-[#E4405F]
+                  dark:hover:bg-[#E4405F]
+                  dark:hover:text-white
+                  dark:hover:shadow-[0_8px_22px_rgba(228,64,95,0.32)]
+                "
               >
-                <FaInstagram />
+                <FaInstagram size={14} />
               </a>
 
+              {/* Twitter */}
               <a
                 href="#"
                 aria-label="Twitter"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-sm text-slate-400 transition duration-300 hover:-translate-y-1 hover:border-sky-500 hover:bg-sky-500 hover:text-white sm:h-11 sm:w-11"
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-slate-300
+                  bg-white/70
+                  text-slate-500
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:border-[#1DA1F2]
+                  hover:bg-[#1DA1F2]
+                  hover:text-white
+                  hover:shadow-[0_8px_22px_rgba(29,161,242,0.28)]
+                  dark:border-slate-700
+                  dark:bg-slate-900/70
+                  dark:text-slate-400
+                  dark:hover:border-[#1DA1F2]
+                  dark:hover:bg-[#1DA1F2]
+                  dark:hover:text-white
+                  dark:hover:shadow-[0_8px_22px_rgba(29,161,242,0.32)]
+                "
               >
-                <FaTwitter />
+                <FaTwitter size={14} />
               </a>
 
+              {/* LinkedIn */}
               <a
                 href="#"
                 aria-label="LinkedIn"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-sm text-slate-400 transition duration-300 hover:-translate-y-1 hover:border-blue-500 hover:bg-blue-600 hover:text-white sm:h-11 sm:w-11"
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-slate-300
+                  bg-white/70
+                  text-slate-500
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:border-[#0A66C2]
+                  hover:bg-[#0A66C2]
+                  hover:text-white
+                  hover:shadow-[0_8px_22px_rgba(10,102,194,0.28)]
+                  dark:border-slate-700
+                  dark:bg-slate-900/70
+                  dark:text-slate-400
+                  dark:hover:border-[#0A66C2]
+                  dark:hover:bg-[#0A66C2]
+                  dark:hover:text-white
+                  dark:hover:shadow-[0_8px_22px_rgba(10,102,194,0.32)]
+                "
               >
-                <FaLinkedinIn />
+                <FaLinkedinIn size={14} />
               </a>
             </div>
           </div>
 
-          <div className="lg:col-span-2">
-            <h3 className="mb-4 text-sm font-bold text-white sm:mb-5 sm:text-base">
+          {/* =====================================================
+              PLANNER SERVICES
+          ===================================================== */}
+          <div className="lg:col-span-3">
+            <h3
+              className="
+                mb-2.5
+                text-sm
+                font-bold
+                text-slate-800
+                transition-colors
+                duration-500
+                dark:text-slate-100
+                sm:text-base
+              "
+            >
               Planner Services
             </h3>
 
-            <ul className="space-y-2.5 sm:space-y-3">
+            <ul className="space-y-2">
               {plannerServices.map((service) => (
                 <li key={service.label}>
                   <Link
                     to={service.path}
-                    className="group inline-flex items-center gap-1 text-sm text-slate-400 transition duration-300 hover:translate-x-1 hover:text-white"
+                    className="
+                      group
+                      inline-flex
+                      items-center
+                      gap-1
+                      text-sm
+                      text-slate-500
+                      transition-all
+                      duration-300
+                      hover:translate-x-1
+                      hover:text-indigo-600
+                      dark:text-slate-400
+                      dark:hover:text-indigo-300
+                    "
                   >
                     {service.label}
 
                     <ArrowUpRight
                       size={13}
-                      className="opacity-0 transition duration-300 group-hover:opacity-100"
+                      className="
+                        opacity-0
+                        transition-all
+                        duration-300
+                        group-hover:translate-x-0.5
+                        group-hover:opacity-100
+                      "
                     />
                   </Link>
                 </li>
@@ -108,117 +444,185 @@ function Footer() {
             </ul>
           </div>
 
-          <div className="lg:col-span-2">
-            <h3 className="mb-4 text-sm font-bold text-white sm:mb-5 sm:text-base">
+          {/* =====================================================
+              COMPANY
+          ===================================================== */}
+          <div className="lg:col-span-3">
+            <h3
+              className="
+                mb-2.5
+                text-sm
+                font-bold
+                text-slate-800
+                transition-colors
+                duration-500
+                dark:text-slate-100
+                sm:text-base
+              "
+            >
               Company
             </h3>
 
-            <ul className="space-y-2.5 sm:space-y-3">
+            <ul className="space-y-2">
               {companyLinks.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.path}
-                    className="group inline-flex items-center gap-1 text-sm text-slate-400 transition duration-300 hover:translate-x-1 hover:text-white"
+                    className="
+                      group
+                      inline-flex
+                      items-center
+                      gap-1
+                      text-sm
+                      text-slate-500
+                      transition-all
+                      duration-300
+                      hover:translate-x-1
+                      hover:text-indigo-600
+                      dark:text-slate-400
+                      dark:hover:text-indigo-300
+                    "
                   >
                     {item.label}
 
                     <ArrowUpRight
                       size={13}
-                      className="opacity-0 transition duration-300 group-hover:opacity-100"
+                      className="
+                        opacity-0
+                        transition-all
+                        duration-300
+                        group-hover:translate-x-0.5
+                        group-hover:opacity-100
+                      "
                     />
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
+        </div>
 
-          <div className="sm:col-span-2 lg:col-span-3">
-            <h3 className="mb-4 text-sm font-bold text-white sm:mb-5 sm:text-base">
-              Contact
-            </h3>
+        {/* =======================================================
+            AUTO CHANGING POSITIVE THOUGHT
+        ======================================================= */}
+        <div
+          className="
+            mt-5
+            border-t
+            border-slate-200/80
+            pt-4
+            transition-colors
+            duration-500
+            dark:border-slate-700/60
+            sm:mt-6
+            sm:pt-5
+          "
+        >
+          <div className="flex flex-col items-center text-center">
+            <p
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.18em]
+                text-indigo-600
+                dark:text-indigo-300
+                sm:text-xs
+              "
+            >
+              A Thought for Your Journey
+            </p>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
-                  <MapPin size={17} />
-                </div>
-
-                <div className="pt-1">
-                  <p className="text-xs text-slate-500">Location</p>
-                  <p className="mt-0.5 text-sm text-slate-300">India</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
-                  <Phone size={17} />
-                </div>
-
-                <div className="pt-1">
-                  <p className="text-xs text-slate-500">Phone</p>
-                  <p className="mt-0.5 text-sm text-slate-300">
-                    +91 98765 43210
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
-                  <Mail size={17} />
-                </div>
-
-                <div className="min-w-0 pt-1">
-                  <p className="text-xs text-slate-500">Email</p>
-                  <p className="mt-0.5 break-all text-sm text-slate-300">
-                    support@serviceplanner.com
-                  </p>
-                </div>
-              </div>
+            <div
+              className="
+                mt-1.5
+                flex
+                min-h-[34px]
+                w-full
+                max-w-3xl
+                items-center
+                justify-center
+                px-2
+                sm:min-h-[38px]
+              "
+            >
+              <p
+                aria-live="polite"
+                className={`
+                  text-sm
+                  font-medium
+                  leading-5
+                  text-slate-600
+                  transition-all
+                  duration-300
+                  dark:text-slate-300
+                  sm:text-[15px]
+                  sm:leading-6
+                  ${
+                    thoughtVisible
+                      ? "translate-y-0 opacity-100"
+                      : "translate-y-1 opacity-0"
+                  }
+                `}
+              >
+                {thoughts[currentThought]}
+              </p>
             </div>
 
-            <div className="mt-7 sm:mt-8">
-              <h4 className="mb-3 text-sm font-semibold text-white">
-                Stay Updated
-              </h4>
-
-              <div className="flex w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900 transition focus-within:border-indigo-500">
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  className="min-w-0 flex-1 bg-transparent px-3.5 py-3 text-xs text-white outline-none placeholder:text-slate-600 sm:px-4 sm:text-sm"
+            {/* Thought Indicator */}
+            <div className="mt-1.5 flex items-center gap-1.5">
+              {thoughts.slice(0, 5).map((_, index) => (
+                <span
+                  key={index}
+                  className={`
+                    h-1.5
+                    rounded-full
+                    transition-all
+                    duration-300
+                    ${
+                      currentThought % 5 === index
+                        ? "w-5 bg-indigo-500 dark:bg-indigo-400"
+                        : "w-1.5 bg-slate-300 dark:bg-slate-700"
+                    }
+                  `}
                 />
-
-                <button
-                  type="button"
-                  aria-label="Subscribe"
-                  className="flex w-12 shrink-0 items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 transition duration-300 hover:from-indigo-500 hover:to-purple-500 sm:w-14"
-                >
-                  <Send size={17} />
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-slate-800/80 pt-6 sm:mt-12 sm:pt-7">
-          <div className="flex flex-col gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-            <p className="text-xs leading-5 text-slate-500 sm:text-sm">
-              © {new Date().getFullYear()} Service Planner. All Rights Reserved.
+        {/* =======================================================
+            COPYRIGHT
+            Bottom Privacy / Terms / Cookies removed
+        ======================================================= */}
+        <div
+          className="
+            mt-4
+            border-t
+            border-slate-200/80
+            pt-3
+            transition-colors
+            duration-500
+            dark:border-slate-700/60
+            sm:mt-5
+            sm:pt-4
+          "
+        >
+          <div className="flex items-center justify-center text-center">
+            <p
+              className="
+                text-xs
+                leading-5
+                text-slate-400
+                transition-colors
+                duration-500
+                dark:text-slate-500
+                sm:text-sm
+              "
+            >
+              © {new Date().getFullYear()} Service Planner. All Rights
+              Reserved.
             </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500 sm:justify-end sm:text-sm">
-              <Link to="/privacy" className="transition hover:text-white">
-                Privacy
-              </Link>
-
-              <Link to="/terms" className="transition hover:text-white">
-                Terms
-              </Link>
-
-              <Link to="/cookies" className="transition hover:text-white">
-                Cookies
-              </Link>
-            </div>
           </div>
         </div>
       </div>

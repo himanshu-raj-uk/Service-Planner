@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Menu,
   X,
   ChevronRight,
   User,
-  LogOut,
   Bell,
   Plane,
   Cake,
   CheckCircle2,
   Clock,
   Trash2,
+  Search,
+  Sparkles,
+  Headphones,
+  CalendarDays,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+
 import {
   getUserProfile,
-  logoutUser,
   getNotifications,
   getUnreadNotification,
   deleteNotification,
@@ -24,339 +26,980 @@ import {
   markAllNotificationsAsRead,
 } from "../../Services/AuthAPI";
 
+import searchPlanner from "../../Services/SearchServices";
+import { searchItems } from "../../Data/SearchData";
+
+const LAST_KNOWN_USER_KEY = "sp_navbar_last_known_user";
+
+const readLastKnownUser = () => {
+  try {
+    const raw = window.localStorage.getItem(LAST_KNOWN_USER_KEY);
+
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const writeLastKnownUser = (userData) => {
+  try {
+    if (userData) {
+      window.localStorage.setItem(
+        LAST_KNOWN_USER_KEY,
+        JSON.stringify({
+          name: userData?.name || "",
+          profileImage: userData?.profileImage || null,
+        })
+      );
+    } else {
+      window.localStorage.removeItem(LAST_KNOWN_USER_KEY);
+    }
+  } catch {
+    // Ignore storage errors (private browsing, quota, etc.)
+  }
+};
+
+let cachedUser = readLastKnownUser();
+
+let inFlightRequest = null;
+const runProfileCheck = () => {
+  if (inFlightRequest) return inFlightRequest;
+
+  inFlightRequest = getUserProfile()
+    .then((response) => {
+      const userData = response?.data?.data || null;
+
+      const normalized =
+        userData &&
+          typeof userData === "object" &&
+          !Array.isArray(userData)
+          ? userData
+          : null;
+
+      cachedUser = normalized;
+      writeLastKnownUser(normalized);
+
+      return normalized;
+    })
+    .catch((error) => {
+      console.error("FETCH USER PROFILE ERROR:", error);
+
+      cachedUser = null;
+      writeLastKnownUser(null);
+
+      return null;
+    })
+    .finally(() => {
+      inFlightRequest = null;
+    });
+
+  return inFlightRequest;
+};
+
+/* =========================================================
+   SEARCH ICON
+========================================================= */
+
+const getSearchIcon = (item) => {
+  const value = `${item?.title || ""} ${item?.category || ""} ${item?.type || ""
+    }`.toLowerCase();
+
+  if (
+    value.includes("travel") ||
+    value.includes("tour") ||
+    value.includes("trip")
+  ) {
+    return <Plane size={18} strokeWidth={2} />;
+  }
+
+  if (
+    value.includes("birthday") ||
+    value.includes("party") ||
+    value.includes("surprise")
+  ) {
+    return <Cake size={18} strokeWidth={2} />;
+  }
+
+  if (value.includes("event")) {
+    return <CalendarDays size={18} strokeWidth={2} />;
+  }
+
+  if (
+    value.includes("support") ||
+    value.includes("customer")
+  ) {
+    return <Headphones size={18} strokeWidth={2} />;
+  }
+
+  return <Sparkles size={18} strokeWidth={2} />;
+};
+
+/* =========================================================
+   DYNAMIC PLACEHOLDER COLORS
+========================================================= */
+
+const getPlaceholderColor = (value = "") => {
+  const text = value.toLowerCase();
+
+  if (
+    text.includes("birthday party") ||
+    text.includes("birthday planning")
+  ) {
+    return "text-blue-600 dark:text-blue-400";
+  }
+
+  if (
+    text.includes("birthday surprise") ||
+    text.includes("surprise")
+  ) {
+    return "text-pink-500 dark:text-pink-400";
+  }
+
+  if (
+    text.includes("travel") ||
+    text.includes("tour") ||
+    text.includes("trip")
+  ) {
+    return "text-emerald-500 dark:text-emerald-400";
+  }
+
+  if (
+    text.includes("event") ||
+    text.includes("events")
+  ) {
+    return "text-cyan-500 dark:text-cyan-400";
+  }
+
+  if (
+    text.includes("support") ||
+    text.includes("customer")
+  ) {
+    return "text-orange-500 dark:text-orange-400";
+  }
+
+  if (
+    text.includes("dashboard") ||
+    text.includes("planner")
+  ) {
+    return "text-violet-500 dark:text-violet-400";
+  }
+
+  if (
+    text.includes("service") ||
+    text.includes("home")
+  ) {
+    return "text-indigo-500 dark:text-indigo-400";
+  }
+
+  return "text-blue-600 dark:text-blue-400";
+};
+
+/* =========================================================
+   SEARCH BOX
+========================================================= */
+
+const SearchBox = ({
+  mobile = false,
+  searchRef,
+  mobileSearchRef,
+  searchQuery,
+  setSearchQuery,
+  searchFocused,
+  setSearchFocused,
+  currentPlaceholder,
+  searchResults,
+  showSearchResults,
+  handleSearchSubmit,
+  handleSearchSelect,
+  clearSearch,
+}) => {
+  const wrapperRef = mobile ? mobileSearchRef : searchRef;
+
+  const placeholderColor =
+    getPlaceholderColor(currentPlaceholder);
+
+  return (
+    <div
+      ref={wrapperRef}
+      className={`
+        relative
+        w-full
+        min-w-0
+        ${mobile ? "max-w-none" : "max-w-none flex-1"}
+      `}
+    >
+      <form
+        onSubmit={handleSearchSubmit}
+        className="w-full"
+      >
+        <div
+          className="
+            flex
+            h-11
+            w-full
+            min-w-0
+            items-center
+            overflow-hidden
+            rounded-full
+            border
+            border-transparent
+            bg-[var(--app-surface-secondary)]
+            shadow-[0_2px_10px_rgba(15,23,42,0.07)]
+            transition-all
+            duration-150
+            focus-within:border-blue-500
+            dark:focus-within:border-blue-400
+            sm:h-12
+          "
+        >
+          <Search
+            size={20}
+            strokeWidth={2.5}
+            className="
+              ml-3
+              shrink-0
+              text-[var(--text-secondary)]
+              sm:ml-4
+              sm:h-[21px]
+              sm:w-[21px]
+            "
+          />
+
+          <div className="relative h-full min-w-0 flex-1">
+            {!searchQuery && (
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  z-0
+                  flex
+                  h-full
+                  w-full
+                  min-w-0
+                  items-center
+                  overflow-hidden
+                  whitespace-nowrap
+                  px-2.5
+                  sm:px-3
+                "
+              >
+                <span
+                  className="
+                    shrink-0
+                    text-[13px]
+                    font-bold
+                    leading-none
+                    text-[var(--text-primary)]
+                    sm:text-[15px]
+                  "
+                >
+                  Search&nbsp;
+                </span>
+
+                <span
+                  className={`
+                    min-w-0
+                    flex-1
+                    truncate
+                    text-[13px]
+                    font-bold
+                    leading-none
+                    sm:text-[15px]
+                    ${placeholderColor}
+                  `}
+                >
+                  {currentPlaceholder}
+                </span>
+              </div>
+            )}
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setSearchFocused(true);
+              }}
+              onFocus={() => {
+                setSearchFocused(true);
+              }}
+              aria-label="Search plans and services"
+              autoComplete="off"
+              spellCheck="false"
+              className="
+                navbar-search-input
+                relative
+                z-10
+                block
+                h-full
+                w-full
+                min-w-0
+                !cursor-text
+                !border-0
+                !outline-none
+                !ring-0
+                !shadow-none
+                bg-transparent
+                px-2.5
+                text-[13px]
+                font-bold
+                leading-none
+                text-[var(--text-primary)]
+                caret-blue-600
+                placeholder:text-transparent
+                dark:caret-blue-400
+                sm:px-3
+                sm:text-[15px]
+              "
+            />
+          </div>
+
+          {searchQuery && (
+            <button
+              type="button"
+              onMouseDown={(event) => {
+                event.preventDefault();
+              }}
+              onClick={clearSearch}
+              aria-label="Clear search"
+              className="
+                mr-1.5
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-transparent
+                text-[var(--text-muted)]
+                transition-colors
+                duration-150
+                hover:bg-[var(--app-surface)]
+                hover:text-[var(--text-primary)]
+                active:scale-90
+                sm:mr-2
+              "
+            >
+              <X size={17} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      </form>
+
+      {showSearchResults && (
+        <div
+          className="
+            absolute
+            left-0
+            right-0
+            top-[calc(100%+8px)]
+            z-[180]
+            overflow-hidden
+            rounded-2xl
+            border
+            border-[var(--border-color)]
+            bg-[var(--app-surface)]
+            shadow-[0_18px_45px_rgba(15,23,42,0.16)]
+          "
+        >
+          <div
+            className="
+              border-b
+              border-[var(--border-color)]
+              px-4
+              py-3
+            "
+          >
+            <p
+              className="
+                text-[11px]
+                font-bold
+                uppercase
+                tracking-[0.12em]
+                text-[var(--text-muted)]
+              "
+            >
+              Search Results
+            </p>
+          </div>
+
+          <div
+            className="
+              max-h-[min(430px,calc(100vh-150px))]
+              overflow-y-auto
+              overscroll-contain
+              p-2
+            "
+          >
+            {searchResults.length > 0 ? (
+              searchResults.map((item, index) => (
+                <button
+                  key={
+                    item?.id ||
+                    item?.route ||
+                    `${item?.title}-${index}`
+                  }
+                  type="button"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+                  onClick={() =>
+                    handleSearchSelect(item)
+                  }
+                  className="
+                    group
+                    flex
+                    w-full
+                    items-center
+                    gap-3
+                    rounded-xl
+                    px-2.5
+                    py-3
+                    text-left
+                    transition-colors
+                    duration-150
+                    hover:bg-blue-50
+                    dark:hover:bg-blue-500/10
+                    focus:bg-blue-50
+                    focus:outline-none
+                    dark:focus:bg-blue-500/10
+                  "
+                >
+                  <span
+                    className="
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-indigo-50
+                      text-indigo-600
+                      dark:bg-indigo-500/10
+                      dark:text-indigo-400
+                    "
+                  >
+                    {getSearchIcon(item)}
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="
+                        block
+                        truncate
+                        text-[14px]
+                        font-bold
+                        text-[var(--text-primary)]
+                        sm:text-[15px]
+                      "
+                    >
+                      {item?.title}
+                    </span>
+
+                    {item?.description && (
+                      <span
+                        className="
+                          mt-0.5
+                          block
+                          truncate
+                          text-[12px]
+                          leading-5
+                          text-[var(--text-secondary)]
+                          sm:text-[13px]
+                        "
+                      >
+                        {item?.description}
+                      </span>
+                    )}
+                  </span>
+
+                  <ChevronRight
+                    size={17}
+                    className="
+                      shrink-0
+                      text-[var(--text-disabled)]
+                      transition-colors
+                      duration-150
+                      group-hover:text-blue-500
+                    "
+                  />
+                </button>
+              ))
+            ) : (
+              <div className="px-5 py-8 text-center">
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[var(--app-surface-secondary)]
+                    text-[var(--text-muted)]
+                  "
+                >
+                  <Search size={18} />
+                </div>
+
+                <p
+                  className="
+                    mt-3
+                    text-sm
+                    font-medium
+                    text-[var(--text-primary)]
+                  "
+                >
+                  No results found
+                </p>
+
+                <p
+                  className="
+                    mt-1
+                    text-xs
+                    text-[var(--text-muted)]
+                  "
+                >
+                  Try another plan, event or service.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
 const Navbar = () => {
   const navigate = useNavigate();
-  const notificationDrawerRef = useRef(null);
+  const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const [notificationOpen, setNotificationOpen] =
+    useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] =
+    useState(false);
+
+  const [placeholderIndex, setPlaceholderIndex] =
+    useState(0);
+
+  const [user, setUser] = useState(cachedUser);
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [notificationLoading, setNotificationLoading] = useState(false);
+
+  const [notificationLoading, setNotificationLoading] =
+    useState(false);
+
   const [deletingId, setDeletingId] = useState(null);
   const [deletingAll, setDeletingAll] = useState(false);
 
-  const closeMenu = () => {
+  const [profileImageFailed, setProfileImageFailed] =
+    useState(false);
+
+  const desktopNotificationRef = useRef(null);
+  const mobileNotificationRef = useRef(null);
+  const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileToggleRef = useRef(null);
+
+  const searchPlaceholders = searchItems
+    .filter((item) => item?.title)
+    .map((item) => item.title)
+    .filter(
+      (title, index, array) =>
+        array.indexOf(title) === index
+    )
+    .slice(0, 12);
+
+  useEffect(() => {
+    if (!searchPlaceholders.length) return;
+
+    const interval = window.setInterval(() => {
+      setPlaceholderIndex(
+        (previous) =>
+          (previous + 1) %
+          searchPlaceholders.length
+      );
+    }, 2600);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [searchPlaceholders.length]);
+
+  const currentPlaceholder =
+    searchPlaceholders[placeholderIndex] ||
+    "plans, events or services";
+
+  const searchResults = searchQuery.trim()
+    ? searchPlanner(searchQuery, {
+      limit: 7,
+    })
+    : [];
+
+  const showSearchResults =
+    searchFocused &&
+    searchQuery.trim().length > 0;
+
+  const handleSearchSelect = (item) => {
+    if (!item?.route) return;
+
+    setSearchQuery("");
+    setSearchFocused(false);
     setMobileOpen(false);
+
+    navigate(item.route);
   };
 
-  const closeNotifications = () => {
-    setNotificationOpen(false);
-  };
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
 
-  const getId = (value) => {
-    if (!value) return null;
+    if (!searchQuery.trim()) return;
 
-    if (typeof value === "string" || typeof value === "number") {
-      return String(value);
+    const firstResult = searchResults[0];
+
+    if (firstResult) {
+      handleSearchSelect(firstResult);
+      return;
     }
 
-    if (value?._id) return String(value._id);
-    if (value?.id) return String(value.id);
+    toast.error(
+      "No matching plans or services found."
+    );
+  };
 
-    return null;
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchFocused(false);
+  };
+
+  const displayFirstName =
+    user?.name?.trim()?.split(/\s+/)?.[0] || "";
+
+  const profileImage =
+    user?.profileImage?.url || "";
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImage]);
+
+  const showProfileImage =
+    Boolean(profileImage) && !profileImageFailed;
+
+  /* =========================================================
+     NOTIFICATION HELPERS
+  ========================================================= */
+
+  const getId = (notification) => {
+    return (
+      notification?._id ||
+      notification?.id ||
+      notification?.notificationId
+    );
   };
 
   const getTripId = (notification) => {
-    return getId(notification?.tripId) || getId(notification?.trip) || null;
+    return (
+      notification?.tripId ||
+      notification?.data?.tripId ||
+      notification?.metadata?.tripId
+    );
   };
 
   const getBirthdayId = (notification) => {
     return (
-      getId(notification?.birthdayId) ||
-      getId(notification?.birthday) ||
-      getId(notification?.birthdayPlan) ||
-      null
+      notification?.birthdayId ||
+      notification?.data?.birthdayId ||
+      notification?.metadata?.birthdayId
     );
   };
 
-  const getNotificationIcon = (notification) => {
-    const type = String(notification?.type || "").toLowerCase();
+  const getNotificationTitle = (notification) => {
+    return (
+      notification?.title ||
+      notification?.message ||
+      "Notification"
+    );
+  };
 
-    if (
-      type.includes("tour") ||
-      type.includes("trip") ||
-      type.includes("travel")
-    ) {
-      return <Plane size={19} />;
-    }
-
-    if (
-      type.includes("birthday") ||
-      type.includes("event") ||
-      type.includes("calendar")
-    ) {
-      return <Cake size={19} />;
-    }
-
-    return <CheckCircle2 size={19} />;
+  const getNotificationMessage = (notification) => {
+    return (
+      notification?.description ||
+      notification?.body ||
+      notification?.message ||
+      ""
+    );
   };
 
   const getNotificationDate = (notification) => {
-    if (!notification?.createdAt) return "";
+    const date =
+      notification?.createdAt ||
+      notification?.date ||
+      notification?.timestamp;
 
-    const date = new Date(notification.createdAt);
-
-    if (Number.isNaN(date.getTime())) return "";
-
-    return date.toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const fetchUser = async () => {
-    const token = localStorage.getItem("userToken");
-
-    if (!token) {
-      setUser(null);
-      setLoadingUser(false);
-      return null;
-    }
-
-    setLoadingUser(true);
+    if (!date) return "";
 
     try {
-      const response = await getUserProfile();
-      const userData = response?.data?.data || null;
-
-      setUser(userData);
-
-      return userData;
-    } catch (error) {
-      console.error("FETCH USER ERROR:", error);
-
-      setUser(null);
-
-      if (error?.response?.status === 401) {
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-      }
-
-      return null;
-    } finally {
-      setLoadingUser(false);
+      return new Date(date).toLocaleDateString(
+        undefined,
+        {
+          day: "numeric",
+          month: "short",
+        }
+      );
+    } catch {
+      return "";
     }
   };
 
-  const fetchUnreadCount = async () => {
-    const token = localStorage.getItem("userToken");
+  const getNotificationIcon = (notification) => {
+    const type =
+      `${notification?.type || ""} ${notification?.category || ""
+        } ${notification?.title || ""}`.toLowerCase();
 
-    if (!token) {
-      setUnreadCount(0);
-      return;
+    if (
+      type.includes("birthday") ||
+      type.includes("party")
+    ) {
+      return (
+        <Cake
+          size={17}
+          strokeWidth={2}
+        />
+      );
     }
 
+    if (
+      type.includes("travel") ||
+      type.includes("trip") ||
+      type.includes("tour")
+    ) {
+      return (
+        <Plane
+          size={17}
+          strokeWidth={2}
+        />
+      );
+    }
+
+    if (
+      type.includes("success") ||
+      type.includes("complete")
+    ) {
+      return (
+        <CheckCircle2
+          size={17}
+          strokeWidth={2}
+        />
+      );
+    }
+
+    return (
+      <Clock
+        size={17}
+        strokeWidth={2}
+      />
+    );
+  };
+
+  const refreshUnreadCount = async () => {
     try {
       const response = await getUnreadNotification();
 
-      const count = Number(
+      const count =
         response?.data?.count ??
-          response?.data?.data?.count ??
-          response?.data?.unreadCount ??
-          response?.data?.data?.unreadCount ??
-          response?.data?.total ??
-          response?.data?.data?.total ??
-          0,
-      );
+        response?.count ??
+        response?.data?.unreadCount ??
+        response?.unreadCount ??
+        0;
 
-      setUnreadCount(Number.isFinite(count) && count > 0 ? count : 0);
-    } catch (error) {
-      console.error("FETCH UNREAD COUNT ERROR:", error);
+      setUnreadCount(Number(count) || 0);
+    } catch {
       setUnreadCount(0);
     }
   };
 
   const fetchNotifications = async () => {
-    const token = localStorage.getItem("userToken");
-
-    if (!token) {
+    /*
+     * Never request notification data while logged out.
+     */
+    if (!user) {
       setNotifications([]);
-      return [];
+      setUnreadCount(0);
+      return;
     }
 
     try {
       setNotificationLoading(true);
 
-      const response = await getNotifications();
+      const response =
+        await getNotifications();
 
-      const data = Array.isArray(response?.data)
-        ? response.data
-        : Array.isArray(response?.data?.data)
-          ? response.data.data
-          : [];
+      const notificationData =
+        response?.data?.notifications ||
+        response?.notifications ||
+        response?.data ||
+        [];
 
-      setNotifications(data);
-
-      return data;
-    } catch (error) {
-      console.error("FETCH NOTIFICATIONS ERROR:", error);
-
+      setNotifications(
+        Array.isArray(notificationData)
+          ? notificationData
+          : []
+      );
+    } catch {
       setNotifications([]);
-
-      if (error?.response?.status !== 401) {
-        toast.error(
-          error?.response?.data?.message || "Failed to load notifications",
-        );
-      }
-
-      return [];
     } finally {
       setNotificationLoading(false);
     }
   };
 
   const openNotifications = async () => {
-    setMobileOpen(false);
-    setNotificationOpen(true);
+    /*
+     * Extra protection against opening notification APIs
+     * while the Navbar is logged out.
+     */
+    if (!user) return;
 
-    const data = await fetchNotifications();
+    const nextState = !notificationOpen;
 
-    const unread = data.filter(
-      (notification) => notification?.isRead === false,
-    ).length;
+    setNotificationOpen(nextState);
 
-    setUnreadCount(unread);
+    if (nextState) {
+      await fetchNotifications();
 
-    if (!data.length || unread === 0) {
-      return;
-    }
-
-    try {
-      await markAllNotificationsAsRead();
-
-      setNotifications((previous) =>
-        previous.map((notification) => ({
-          ...notification,
-          isRead: true,
-        })),
-      );
-
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("MARK ALL NOTIFICATIONS AS READ ERROR:", error);
+      try {
+        await markAllNotificationsAsRead();
+        setUnreadCount(0);
+      } catch {
+        // Preserve existing behavior.
+      }
     }
   };
 
-  const handleNotificationClick = async (notification) => {
-    if (!notification) return;
-
-    const type = String(notification?.type || "").toLowerCase();
-
+  const getNotificationRoute = (notification) => {
     const tripId = getTripId(notification);
     const birthdayId = getBirthdayId(notification);
 
+    // Routes defined in App.jsx: /tour/:tripId, /birthday/:birthdayId
+    if (tripId) return `/tour/${tripId}`;
+    if (birthdayId) return `/birthday/${birthdayId}`;
+
+    // Explicit route sent by the backend (only accept in-app paths)
+    const explicitRoute =
+      notification?.route ||
+      notification?.data?.route ||
+      notification?.metadata?.route;
+
+    if (
+      typeof explicitRoute === "string" &&
+      explicitRoute.startsWith("/") &&
+      !explicitRoute.startsWith("//")
+    ) {
+      return explicitRoute;
+    }
+
+    // Fall back to the notification type
+    const type =
+      `${notification?.type || ""} ${notification?.category || ""
+        }`.toLowerCase();
+
+    if (type.includes("corporate")) return "/corporate";
+    if (type.includes("event")) return "/event";
+    if (type.includes("birthday") || type.includes("party")) {
+      return "/birthday";
+    }
+    if (
+      type.includes("travel") ||
+      type.includes("trip") ||
+      type.includes("tour")
+    ) {
+      return "/tour";
+    }
+    if (type.includes("support") || type.includes("ticket")) {
+      return "/support";
+    }
+
+    // Unknown type: open the full notifications page
+    return "/notification";
+  };
+
+  const handleNotificationClick = (notification) => {
     setNotificationOpen(false);
     setMobileOpen(false);
 
-    if (
-      type.includes("tour") ||
-      type.includes("trip") ||
-      type.includes("travel")
-    ) {
-      if (tripId) {
-        navigate(`/tour/${tripId}`);
-        return;
-      }
-
-      if (notification?.link) {
-        navigate(notification.link);
-        return;
-      }
-
-      toast.error("This tour information is no longer available.");
-      return;
-    }
-
-    if (type.includes("birthday")) {
-      if (birthdayId) {
-        navigate(`/birthday/${birthdayId}`);
-        return;
-      }
-
-      if (notification?.link) {
-        navigate(notification.link);
-        return;
-      }
-
-      toast.error("This birthday plan is no longer available.");
-      return;
-    }
-
-    if (type.includes("event")) {
-      if (notification?.link) {
-        navigate(notification.link);
-        return;
-      }
-
-      navigate("/event");
-      return;
-    }
-
-    if (notification?.link) {
-      navigate(notification.link);
-      return;
-    }
-
-    navigate("/notification");
+    navigate(getNotificationRoute(notification));
   };
 
-  const handleDeleteNotification = async (event, notificationId) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleDeleteNotification = async (
+    notification
+  ) => {
+    const id = getId(notification);
 
-    if (!notificationId) return;
+    if (!id) return;
 
     try {
-      setDeletingId(notificationId);
+      setDeletingId(id);
 
-      await deleteNotification(notificationId);
+      await deleteNotification(id);
 
       setNotifications((previous) =>
-        previous.filter((item) => item?._id !== notificationId),
+        previous.filter(
+          (item) => getId(item) !== id
+        )
       );
 
-      await fetchUnreadCount();
-
-      toast.success("Notification removed");
-    } catch (error) {
-      console.error("DELETE NOTIFICATION ERROR:", error);
-
+      setUnreadCount((previous) =>
+        Math.max(0, previous - 1)
+      );
+    } catch {
       toast.error(
-        error?.response?.data?.message || "Failed to remove notification",
+        "Unable to delete notification."
       );
     } finally {
       setDeletingId(null);
     }
   };
 
-  const handleDeleteAllNotifications = async () => {
-    if (!notifications.length) return;
+  const handleDeleteAllNotifications =
+    async () => {
+      if (!notifications.length) return;
 
-    try {
-      setDeletingAll(true);
+      try {
+        setDeletingAll(true);
 
-      await deleteAllNotifications();
+        await deleteAllNotifications();
 
-      setNotifications([]);
-      setUnreadCount(0);
-
-      toast.success("All notifications removed");
-    } catch (error) {
-      console.error("DELETE ALL NOTIFICATIONS ERROR:", error);
-
-      toast.error(
-        error?.response?.data?.message || "Failed to remove notifications",
-      );
-    } finally {
-      setDeletingAll(false);
-    }
-  };
+        setNotifications([]);
+        setUnreadCount(0);
+      } catch {
+        toast.error(
+          "Unable to delete notifications."
+        );
+      } finally {
+        setDeletingAll(false);
+      }
+    };
 
   const handleViewAllNotifications = () => {
     setNotificationOpen(false);
@@ -364,620 +1007,1808 @@ const Navbar = () => {
     navigate("/notification");
   };
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } catch (error) {
-      console.error("LOGOUT ERROR:", error);
-    }
-
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("verificationToken");
-    localStorage.removeItem("resetToken");
-
-    setUser(null);
-    setUnreadCount(0);
-    setNotifications([]);
+  const closeMenu = () => {
     setMobileOpen(false);
-    setNotificationOpen(false);
-
-    toast.success("Logged out successfully");
-
-    navigate("/");
   };
 
-  useEffect(() => {
-    const initializeUser = async () => {
-      const userData = await fetchUser();
+  /* =========================================================
+     LIVE AUTH CHECK
 
-      if (userData) {
-        await fetchUnreadCount();
+     Runs on the initial mount AND every time the route
+     changes. This is intentionally simple and has no
+     "already checked, skip it" branch - runProfileCheck()
+     always asks the API, and its own in-flight dedupe stops
+     that from turning into duplicate network calls when
+     several triggers fire close together (mount + userLogin
+     event + a navigate() call all landing in the same tick,
+     for example).
+
+     Net effect: log in anywhere in the app and the very next
+     render of the Navbar (no reload needed) shows the correct
+     name and photo, because the check re-runs the moment the
+     URL changes - which a login redirect always does.
+  ========================================================= */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const check = async () => {
+      const authenticatedUser = await runProfileCheck();
+
+      if (cancelled) return;
+
+      setUser(authenticatedUser);
+
+      if (authenticatedUser) {
+        await refreshUnreadCount();
+      } else {
+        setNotifications([]);
+        setUnreadCount(0);
       }
     };
 
-    initializeUser();
+    check();
 
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  /* =========================================================
+     LOGIN EVENT (optional, extra safety net)
+
+     If a login page dispatches:
+
+       window.dispatchEvent(new Event("userLogin"))
+
+     the Navbar re-checks immediately instead of waiting for
+     the next navigation. Not required for correctness (the
+     effect above already covers navigation), but makes a
+     login that doesn't navigate anywhere feel instant too.
+  ========================================================= */
+
+  useEffect(() => {
     const handleUserLogin = async () => {
-      const userData = await fetchUser();
+      const authenticatedUser = await runProfileCheck();
 
-      if (userData) {
-        await fetchUnreadCount();
-        await fetchNotifications();
+      setUser(authenticatedUser);
+
+      if (authenticatedUser) {
+        await refreshUnreadCount();
       }
     };
 
     window.addEventListener("userLogin", handleUserLogin);
 
-    return () => {
-      window.removeEventListener("userLogin", handleUserLogin);
-    };
+    return () =>
+      window.removeEventListener(
+        "userLogin",
+        handleUserLogin
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* =========================================================
+     RE-CHECK WHEN THE TAB REGAINS FOCUS
+
+     Covers logging in/out in another tab, or a session that
+     expired while this tab was in the background.
+  ========================================================= */
+
+  useEffect(() => {
+    const handleFocus = async () => {
+      const authenticatedUser = await runProfileCheck();
+      setUser(authenticatedUser);
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () =>
+      window.removeEventListener("focus", handleFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* =========================================================
+     CLEAR NOTIFICATIONS WHEN USER IS LOGGED OUT
+  ========================================================= */
 
   useEffect(() => {
     if (!user) {
-      setUnreadCount(0);
       setNotifications([]);
+      setUnreadCount(0);
+      setNotificationOpen(false);
     }
   }, [user]);
 
+  /* =========================================================
+     OUTSIDE CLICK
+  ========================================================= */
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
+      const target = event.target;
+
+      const insideDesktopSearch =
+        searchRef.current?.contains(target);
+
+      const insideMobileSearch =
+        mobileSearchRef.current?.contains(target);
+
       if (
-        notificationOpen &&
-        notificationDrawerRef.current &&
-        !notificationDrawerRef.current.contains(event.target)
+        !insideDesktopSearch &&
+        !insideMobileSearch
       ) {
+        setSearchFocused(false);
+      }
+
+      const insideMobileMenu =
+        mobileMenuRef.current?.contains(target);
+
+      const insideMobileToggle =
+        mobileToggleRef.current?.contains(target);
+
+      if (
+        !insideMobileMenu &&
+        !insideMobileToggle &&
+        mobileOpen
+      ) {
+        setMobileOpen(false);
+      }
+
+      const insideNotification =
+        desktopNotificationRef.current?.contains(target) ||
+        mobileNotificationRef.current?.contains(target);
+
+      if (notificationOpen && !insideNotification) {
         setNotificationOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
     };
-  }, [notificationOpen]);
+  }, [
+    mobileOpen,
+    notificationOpen,
+  ]);
+
+  /* =========================================================
+     ESCAPE
+  ========================================================= */
 
   useEffect(() => {
-    if (!notificationOpen) return;
-
     const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setNotificationOpen(false);
-      }
+      if (event.key !== "Escape") return;
+
+      setSearchFocused(false);
+      setMobileOpen(false);
+      setNotificationOpen(false);
     };
 
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
-  }, [notificationOpen]);
+  }, []);
+
+  /* =========================================================
+     MOBILE BODY SCROLL
+  ========================================================= */
 
   useEffect(() => {
-    document.body.style.overflow = notificationOpen ? "hidden" : "";
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
 
     return () => {
       document.body.style.overflow = "";
     };
-  }, [notificationOpen]);
+  }, [mobileOpen]);
 
-  const ProfileImage = ({ size = "desktop" }) => {
-    const classes =
-      size === "mobile"
-        ? "h-11 w-11 min-[360px]:h-11 min-[360px]:w-11 sm:h-12 sm:w-12"
-        : "h-11 w-11 xl:h-12 xl:w-12 2xl:h-[52px] 2xl:w-[52px]";
+  const navItemClass = `
+    flex
+    h-11
+    shrink-0
+    items-center
+    gap-2
+    rounded-full
+    px-4
+    text-[14px]
+    font-semibold
+    text-[var(--text-secondary)]
+    transition-colors
+    duration-150
+    hover:bg-[var(--app-surface)]
+    hover:text-[var(--text-primary)]
+  `;
 
-    return (
-      <div
-        className={`${classes} shrink-0 overflow-hidden rounded-full border-2 border-white bg-gradient-to-br from-indigo-100 to-purple-100 shadow-sm ring-1 ring-gray-200`}
-      >
-        {user?.profileImage?.url ? (
-          <img
-            src={user.profileImage.url}
-            alt={user.name || "Profile"}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-indigo-600">
-            <User size={size === "mobile" ? 20 : 21} />
-          </div>
-        )}
-      </div>
-    );
-  };
 
-  const AuthLoading = ({ mobile = false }) => {
-    if (mobile) {
-      return (
-        <div className="mt-4 h-[64px] animate-pulse rounded-2xl border border-gray-100 bg-gray-50 sm:h-[68px]" />
-      );
-    }
+  const loginButtonClass = `
+  flex
+  shrink-0
+  items-center
+  justify-center
+  gap-1.5
+  rounded-md
+  border-2
+  border-green-500
+  px-4
+  py-2
+  text-[14px]
+  font-semibold
 
-    return (
-      <div className="flex items-center gap-2 xl:gap-3">
-        <div className="h-10 w-20 animate-pulse rounded-full bg-gray-100 xl:h-11 xl:w-24" />
-        <div className="h-10 w-20 animate-pulse rounded-full bg-gray-100 xl:h-11 xl:w-24" />
-      </div>
-    );
-  };
+  text-black
+  dark:text-white
 
-  const NotificationButton = ({ mobile = false }) => {
-    const hasUnread = unreadCount > 0;
+  transition-colors
+  duration-150
 
-    return (
-      <button
-        type="button"
-        onClick={openNotifications}
-        aria-label="Notifications"
-        aria-expanded={notificationOpen}
-        className={`group relative flex shrink-0 items-center justify-center rounded-full border shadow-sm transition-all duration-200 active:scale-95 ${
-          hasUnread
-            ? "border-yellow-200 bg-yellow-50 text-yellow-500 hover:bg-yellow-100 hover:text-yellow-600"
-            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
-        } ${
-          mobile
-            ? "h-11 w-11 min-[360px]:h-11 min-[360px]:w-11 sm:h-12 sm:w-12"
-            : "h-11 w-11 xl:h-12 xl:w-12 2xl:h-[52px] 2xl:w-[52px]"
-        }`}
-      >
-        <Bell
-          size={mobile ? 21 : 22}
-          strokeWidth={hasUnread ? 2.4 : 2}
-          className="transition-transform duration-200 group-hover:scale-105"
-        />
+  hover:border-blue-400
+  hover:bg-blue-50
+  hover:text-blue-600
 
-        {hasUnread && (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white shadow-md ring-2 ring-white sm:h-5 sm:min-w-[20px]">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </button>
-    );
-  };
+  dark:hover:border-blue-700
+  dark:hover:bg-blue-950/30
+  dark:hover:text-blue-300
+
+  focus:border-blue-400
+  focus:bg-blue-50
+  focus:text-blue-600
+
+  dark:focus:border-blue-700
+  dark:focus:bg-blue-950/30
+  dark:focus:text-blue-300
+
+  focus:outline-none
+`;
 
   return (
-    <>
-      <header className="sticky top-0 z-[100] w-full border-b border-black/10 bg-white/95 shadow-[0_2px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-        <div className="w-full px-3 min-[360px]:px-4 sm:px-6 md:px-7 lg:px-8 xl:px-12 2xl:px-16">
-          <div className="flex min-h-[78px] w-full items-center justify-between gap-2 py-2 min-[360px]:gap-3 sm:min-h-[82px] sm:gap-4 md:min-h-[86px] lg:min-h-[90px] xl:min-h-[94px] 2xl:min-h-[100px]">
-            {/* Logo */}
-            <Link
-              to="/"
-              onClick={closeMenu}
-              className="group flex min-w-0 items-center"
+    <header
+      className="
+        sticky
+        top-0
+        z-[100]
+        w-full
+        border-b
+        border-[var(--border-color)]
+        bg-[var(--app-surface)]
+        text-[var(--text-primary)]
+        shadow-[0_1px_10px_rgba(15,23,42,0.04)]
+      "
+    >
+      {/* ===================================================
+          DESKTOP HEADER
+      =================================================== */}
+
+      <div
+        className="
+          mx-auto
+          hidden
+          min-h-[76px]
+          w-full
+          max-w-[1800px]
+          items-center
+          gap-4
+          px-5
+          lg:flex
+          lg:px-7
+          xl:gap-5
+          xl:px-9
+          2xl:px-10
+        "
+      >
+        {/* LOGO */}
+
+        <Link
+          to="/"
+          onClick={closeMenu}
+          className="
+            group
+            flex
+            shrink-0
+            cursor-default
+            items-center
+          "
+        >
+          <div
+            className="
+              flex
+              h-[52px]
+              w-[205px]
+              items-center
+              xl:h-[54px]
+              xl:w-[220px]
+              2xl:w-[235px]
+            "
+          >
+            <img
+              src="/Service-Planner/Service_Planner_Logo.png"
+              alt="Service Planner"
+              className="
+                block
+                h-full
+                w-full
+                object-contain
+                object-left
+              "
+              draggable="false"
+              decoding="async"
+              fetchPriority="high"
+            />
+          </div>
+        </Link>
+
+        {/* SEARCH */}
+
+        <div
+          className="
+            min-w-[180px]
+            flex-1
+          "
+        >
+          <SearchBox
+            searchRef={searchRef}
+            mobileSearchRef={mobileSearchRef}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchFocused={searchFocused}
+            setSearchFocused={setSearchFocused}
+            currentPlaceholder={currentPlaceholder}
+            searchResults={searchResults}
+            showSearchResults={showSearchResults}
+            handleSearchSubmit={handleSearchSubmit}
+            handleSearchSelect={handleSearchSelect}
+            clearSearch={clearSearch}
+          />
+        </div>
+
+        {/* NAVIGATION */}
+
+        <nav
+          className="
+            flex
+            shrink-0
+            items-center
+            gap-1
+            rounded-full
+            bg-[var(--app-surface-secondary)]
+            p-1
+          "
+        >
+          <Link
+            to="/tour"
+            className={navItemClass}
+          >
+            <Plane
+              size={19}
+              strokeWidth={2}
+              className="text-emerald-500"
+            />
+            <span>Travel</span>
+          </Link>
+
+          <Link
+            to="/birthday"
+            className={navItemClass}
+          >
+            <Cake
+              size={19}
+              strokeWidth={2}
+              className="text-pink-500"
+            />
+            <span>Birthday</span>
+          </Link>
+
+          <Link
+            to="/event"
+            className={navItemClass}
+          >
+            <CalendarDays
+              size={19}
+              strokeWidth={2}
+              className="text-cyan-500"
+            />
+            <span>Event</span>
+          </Link>
+
+          <Link
+            to="/support"
+            className={navItemClass}
+          >
+            <Headphones
+              size={19}
+              strokeWidth={2}
+              className="text-orange-500"
+            />
+            <span>Support</span>
+          </Link>
+        </nav>
+
+        {/* NOTIFICATION */}
+
+        {user && (
+          <div
+            ref={desktopNotificationRef}
+            className="relative shrink-0"
+          >
+            <button
+              type="button"
+              onClick={openNotifications}
+              aria-label="Notifications"
+              aria-expanded={notificationOpen}
+              className="
+                relative
+                flex
+                h-11
+                w-11
+                cursor-pointer
+                items-center
+                justify-center
+                rounded-full
+                bg-transparent
+                text-[var(--text-secondary)]
+                transition-colors
+                duration-150
+                hover:bg-[var(--app-surface-secondary)]
+                hover:text-[var(--text-primary)]
+                active:scale-95
+              "
             >
-              <div className="flex h-[56px] w-auto min-w-0 max-w-[205px] items-center min-[360px]:h-[58px] min-[360px]:max-w-[220px] sm:h-[62px] sm:max-w-[245px] md:h-[66px] md:max-w-[270px] lg:h-[70px] lg:max-w-[290px] xl:h-[74px] xl:max-w-[315px] 2xl:h-[78px] 2xl:max-w-[340px]">
-                <img
-                  src="/Service-Planner/Service_Planner_Logo.png"
-                  alt="Service Planner"
-                  className="block h-full w-auto max-w-full object-contain object-left transition-transform duration-200 group-hover:scale-[1.01]"
-                  draggable="false"
-                  decoding="async"
-                  fetchPriority="high"
-                />
-              </div>
-            </Link>
+              <Bell
+                size={21}
+                strokeWidth={2}
+              />
 
-            {/* Desktop navigation */}
-            <nav className="hidden shrink-0 lg:flex">
-              <div className="flex h-[52px] w-[600px] shrink-0 items-center justify-center rounded-full border border-gray-200/80 bg-gray-50/90 px-2 shadow-[0_3px_14px_rgba(15,23,42,0.06)] xl:h-[60px] xl:w-[760px] xl:px-3 2xl:h-[66px] 2xl:w-[900px] 2xl:px-4">
-                <div className="flex h-full items-center justify-center gap-1.5 xl:gap-2 2xl:gap-2.5">
-                  <Link
-                    to="/tour"
-                    className="flex h-10 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-[15px] font-medium text-gray-700 transition-all duration-200 hover:bg-white hover:text-indigo-600 hover:shadow-sm hover:ring-1 hover:ring-black/5 xl:h-[46px] xl:w-[180px] xl:gap-2 xl:px-4 xl:text-base 2xl:h-[50px] 2xl:w-[200px] 2xl:gap-2.5 2xl:px-4 2xl:text-[17px]"
-                  >
-                    <Plane
-                      size={18}
-                      strokeWidth={2.2}
-                      className="shrink-0 text-indigo-500 xl:h-5 xl:w-5 2xl:h-[22px] 2xl:w-[22px]"
-                    />
-                    <span>Travel</span>
-                  </Link>
-
-                  <Link
-                    to="/birthday"
-                    className="flex h-10 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-[15px] font-medium text-gray-700 transition-all duration-200 hover:bg-white hover:text-pink-500 hover:shadow-sm hover:ring-1 hover:ring-black/5 xl:h-[46px] xl:w-[180px] xl:gap-2 xl:px-4 xl:text-base 2xl:h-[50px] 2xl:w-[200px] 2xl:gap-2.5 2xl:px-4 2xl:text-[17px]"
-                  >
-                    <Cake
-                      size={18}
-                      strokeWidth={2.2}
-                      className="shrink-0 text-pink-500 xl:h-5 xl:w-5 2xl:h-[22px] 2xl:w-[22px]"
-                    />
-                    <span>Birthday</span>
-                  </Link>
-
-                  <Link
-                    to="/event"
-                    className="flex h-10 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-[15px] font-medium text-gray-700 transition-all duration-200 hover:bg-white hover:text-emerald-600 hover:shadow-sm hover:ring-1 hover:ring-black/5 xl:h-[46px] xl:w-[180px] xl:gap-2 xl:px-4 xl:text-base 2xl:h-[50px] 2xl:w-[200px] 2xl:gap-2.5 2xl:px-4 2xl:text-[17px]"
-                  >
-                    <CheckCircle2
-                      size={18}
-                      strokeWidth={2.2}
-                      className="shrink-0 text-emerald-500 xl:h-5 xl:w-5 2xl:h-[22px] 2xl:w-[22px]"
-                    />
-                    <span>Event</span>
-                  </Link>
-                </div>
-              </div>
-            </nav>
-
-            {/* Desktop auth area */}
-            <div className="hidden shrink-0 items-center lg:flex">
-              {loadingUser ? (
-                <AuthLoading />
-              ) : user ? (
-                <div className="flex items-center gap-2 xl:gap-2.5">
-                  <Link
-                    to="/profile"
-                    className="group flex max-w-[170px] items-center gap-2 rounded-full px-2 py-1.5 transition-colors hover:bg-gray-50 xl:max-w-[210px]"
-                  >
-                    <ProfileImage />
-
-                    <span className="max-w-[100px] truncate text-[15px] font-medium text-gray-700 transition-colors group-hover:text-indigo-600 xl:max-w-[150px] xl:text-base 2xl:text-[17px]">
-                      {user.name}
-                    </span>
-                  </Link>
-
-                  <NotificationButton />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 xl:gap-2.5">
-                  <Link
-                    to="/login"
-                    className="rounded-full border border-indigo-200 bg-white px-5 py-2.5 text-[15px] font-medium text-indigo-700 shadow-sm transition-all duration-200 hover:border-indigo-500 hover:bg-indigo-50 hover:shadow-md active:scale-[0.97] xl:px-6 xl:py-3 xl:text-base"
-                  >
-                    Login
-                  </Link>
-
-                  <Link
-                    to="/register"
-                    className="rounded-full bg-indigo-600 px-5 py-2.5 text-[15px] font-medium text-white shadow-[0_5px_14px_rgba(79,70,229,0.22)] transition-all duration-200 hover:bg-indigo-700 hover:shadow-[0_7px_18px_rgba(79,70,229,0.30)] active:scale-[0.97] xl:px-6 xl:py-3 xl:text-base"
-                  >
-                    Register
-                  </Link>
-                </div>
+              {unreadCount > 0 && (
+                <span
+                  className="
+                    absolute
+                    right-1
+                    top-1
+                    flex
+                    min-h-[17px]
+                    min-w-[17px]
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-red-500
+                    px-1
+                    text-[9px]
+                    font-bold
+                    leading-none
+                    text-white
+                  "
+                >
+                  {unreadCount > 99
+                    ? "99+"
+                    : unreadCount}
+                </span>
               )}
-            </div>
+            </button>
 
-            {/* Mobile / tablet actions */}
-            <div className="flex shrink-0 items-center gap-2 lg:hidden">
-              {loadingUser ? (
-                <div className="h-11 w-11 animate-pulse rounded-full bg-gray-100 sm:h-12 sm:w-12" />
-              ) : (
-                user && <NotificationButton mobile />
-              )}
-
-              <button
-                type="button"
-                onClick={() => setMobileOpen((previous) => !previous)}
-                aria-label="Toggle menu"
-                aria-expanded={mobileOpen}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gray-200/80 bg-white text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:text-indigo-600 active:scale-95 sm:h-12 sm:w-12"
+            {notificationOpen && (
+              <div
+                className="
+                  absolute
+                  right-0
+                  top-[calc(100%+10px)]
+                  z-[220]
+                  w-[min(390px,calc(100vw-24px))]
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-[var(--border-color)]
+                  bg-[var(--app-surface)]
+                  shadow-[0_20px_55px_rgba(15,23,42,0.18)]
+                "
               >
-                {mobileOpen ? (
-                  <X size={21} />
-                ) : (
-                  <Menu size={21} />
-                )}
-              </button>
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    border-b
+                    border-[var(--border-color)]
+                    px-4
+                    py-3.5
+                  "
+                >
+                  <div>
+                    <h3
+                      className="
+                        text-[15px]
+                        font-bold
+                        text-[var(--text-primary)]
+                      "
+                    >
+                      Notifications
+                    </h3>
+
+                    <p
+                      className="
+                        mt-0.5
+                        text-[11px]
+                        text-[var(--text-muted)]
+                      "
+                    >
+                      Your latest updates
+                    </p>
+                  </div>
+
+                  {notifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={
+                        handleDeleteAllNotifications
+                      }
+                      disabled={deletingAll}
+                      className="
+                        flex
+                        items-center
+                        gap-1.5
+                        rounded-lg
+                        px-2
+                        py-1.5
+                        text-[11px]
+                        font-semibold
+                        text-red-500
+                        hover:bg-red-50
+                        dark:hover:bg-red-500/10
+                        disabled:opacity-50
+                      "
+                    >
+                      <Trash2 size={14} />
+
+                      {deletingAll
+                        ? "Clearing..."
+                        : "Clear all"}
+                    </button>
+                  )}
+                </div>
+
+                <div
+                  className="
+                    max-h-[420px]
+                    overflow-y-auto
+                  "
+                >
+                  {notificationLoading ? (
+                    <div
+                      className="
+                        flex
+                        min-h-[180px]
+                        items-center
+                        justify-center
+                      "
+                    >
+                      <div
+                        className="
+                          h-6
+                          w-6
+                          animate-spin
+                          rounded-full
+                          border-2
+                          border-[var(--border-color)]
+                          border-t-blue-500
+                        "
+                      />
+                    </div>
+                  ) : notifications.length > 0 ? (
+                    notifications.map(
+                      (
+                        notification,
+                        index
+                      ) => {
+                        const id =
+                          getId(notification);
+
+                        return (
+                          <div
+                            key={
+                              id ||
+                              `${index}-${getNotificationTitle(
+                                notification
+                              )}`
+                            }
+                            className="
+                              flex
+                              gap-3
+                              border-b
+                              border-[var(--border-light)]
+                              px-4
+                              py-3.5
+                              hover:bg-[var(--app-surface-secondary)]
+                            "
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleNotificationClick(
+                                  notification
+                                )
+                              }
+                              className="
+                                flex
+                                min-w-0
+                                flex-1
+                                gap-3
+                                text-left
+                              "
+                            >
+                              <span
+                                className="
+                                  flex
+                                  h-9
+                                  w-9
+                                  shrink-0
+                                  items-center
+                                  justify-center
+                                  rounded-xl
+                                  bg-indigo-50
+                                  text-indigo-600
+                                  dark:bg-indigo-500/10
+                                  dark:text-indigo-400
+                                "
+                              >
+                                {getNotificationIcon(
+                                  notification
+                                )}
+                              </span>
+
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className="
+                                    block
+                                    truncate
+                                    text-[13px]
+                                    font-bold
+                                    text-[var(--text-primary)]
+                                  "
+                                >
+                                  {getNotificationTitle(
+                                    notification
+                                  )}
+                                </span>
+
+                                <span
+                                  className="
+                                    mt-0.5
+                                    block
+                                    line-clamp-2
+                                    text-[12px]
+                                    leading-5
+                                    text-[var(--text-secondary)]
+                                  "
+                                >
+                                  {getNotificationMessage(
+                                    notification
+                                  )}
+                                </span>
+
+                                {getNotificationDate(
+                                  notification
+                                ) && (
+                                    <span
+                                      className="
+                                      mt-1
+                                      block
+                                      text-[10px]
+                                      font-medium
+                                      text-[var(--text-muted)]
+                                    "
+                                    >
+                                      {getNotificationDate(
+                                        notification
+                                      )}
+                                    </span>
+                                  )}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteNotification(
+                                  notification
+                                )
+                              }
+                              disabled={
+                                deletingId === id
+                              }
+                              aria-label="Delete notification"
+                              className="
+                                flex
+                                h-7
+                                w-7
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-lg
+                                text-[var(--text-muted)]
+                                hover:bg-red-50
+                                hover:text-red-500
+                                dark:hover:bg-red-500/10
+                                disabled:opacity-50
+                              "
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        );
+                      }
+                    )
+                  ) : (
+                    <div
+                      className="
+                        flex
+                        min-h-[200px]
+                        flex-col
+                        items-center
+                        justify-center
+                        px-6
+                        text-center
+                      "
+                    >
+                      <span
+                        className="
+                          flex
+                          h-11
+                          w-11
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[var(--app-surface-secondary)]
+                          text-[var(--text-muted)]
+                        "
+                      >
+                        <Bell size={19} />
+                      </span>
+
+                      <p
+                        className="
+                          mt-3
+                          text-sm
+                          font-semibold
+                          text-[var(--text-primary)]
+                        "
+                      >
+                        No notifications
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-xs
+                          text-[var(--text-muted)]
+                        "
+                      >
+                        You're all caught up.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className="
+                    border-t
+                    border-[var(--border-color)]
+                    p-2
+                  "
+                >
+                  <button
+                    type="button"
+                    onClick={
+                      handleViewAllNotifications
+                    }
+                    className="
+                      flex
+                      w-full
+                      items-center
+                      justify-center
+                      gap-1.5
+                      rounded-xl
+                      px-3
+                      py-2.5
+                      text-[12px]
+                      font-semibold
+                      text-blue-600
+                      hover:bg-blue-50
+                      dark:text-blue-400
+                      dark:hover:bg-blue-500/10
+                    "
+                  >
+                    View all notifications
+                    <ChevronRight size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PROFILE */}
+
+        {user ? (
+          <Link
+            to="/profile"
+            className="
+              flex
+              shrink-0
+              items-center
+              gap-2
+              rounded-full
+              px-2
+              py-1.5
+              transition-colors
+              duration-150
+              hover:bg-[var(--app-surface-secondary)]
+            "
+          >
+            {showProfileImage ? (
+              <img
+                src={profileImage}
+                alt={
+                  displayFirstName ||
+                  "Profile"
+                }
+                onError={() =>
+                  setProfileImageFailed(true)
+                }
+                className="
+                  h-9
+                  w-9
+                  shrink-0
+                  rounded-full
+                  object-cover
+                "
+              />
+            ) : (
+              <span
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-indigo-100
+                  text-indigo-600
+                  dark:bg-indigo-500/15
+                  dark:text-indigo-400
+                "
+              >
+                <User
+                  size={18}
+                  strokeWidth={2}
+                />
+              </span>
+            )}
+
+            <span
+              className="
+                max-w-[120px]
+                truncate
+                text-[14px]
+                font-semibold
+                text-[var(--text-primary)]
+              "
+            >
+              {displayFirstName}
+            </span>
+          </Link>
+        ) : (
+          <Link
+            to="/login"
+            className={loginButtonClass}
+          >
+            Login
+          </Link>
+        )}
+      </div>
+
+      {/* =====================================================
+          TABLET / MOBILE HEADER
+      ===================================================== */}
+
+      <div
+        className="
+          mx-auto
+          flex
+          w-full
+          max-w-[900px]
+          flex-col
+          px-3
+          py-2.5
+          sm:px-5
+          sm:py-3
+          lg:hidden
+        "
+      >
+        {/* TOP ROW */}
+
+        <div
+          className="
+            flex
+            min-h-[52px]
+            w-full
+            items-center
+            gap-2
+            sm:min-h-[58px]
+            sm:gap-3
+          "
+        >
+          {/* LOGO */}
+
+          <Link
+            to="/"
+            onClick={closeMenu}
+            className="
+              group
+              flex
+              min-w-0
+              shrink-0
+              cursor-default
+              items-center
+            "
+          >
+            <div
+              className="
+                flex
+                h-[42px]
+                w-[138px]
+                items-center
+                sm:h-[48px]
+                sm:w-[170px]
+                md:h-[52px]
+                md:w-[190px]
+              "
+            >
+              <img
+                src="/Service-Planner/Service_Planner_Logo.png"
+                alt="Service Planner"
+                className="
+                  block
+                  h-full
+                  w-full
+                  object-contain
+                  object-left
+                "
+                draggable="false"
+                decoding="async"
+                fetchPriority="high"
+              />
             </div>
+          </Link>
+
+          <div
+            className="
+              ml-auto
+              flex
+              shrink-0
+              items-center
+              gap-3
+              sm:gap-4
+            "
+          >
+            {/* LOGIN (shown in navbar only when logged out) */}
+
+            {!user && (
+              <Link
+                to="/login"
+                className={`
+                  ${loginButtonClass}
+                  !px-3.5
+                  !py-1.5
+                  sm:!px-4
+                  sm:!py-2
+                `}
+              >
+                Login
+              </Link>
+            )}
+
+            {/* NOTIFICATION */}
+
+            {user && (
+              <div ref={mobileNotificationRef}>
+                <button
+                  type="button"
+                  onClick={openNotifications}
+                  aria-label="Notifications"
+                  aria-expanded={notificationOpen}
+                  className="
+                    relative
+                    flex
+                    h-10
+                    w-10
+                    cursor-pointer
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-[var(--text-secondary)]
+                    transition-colors
+                    duration-150
+                    hover:bg-[var(--app-surface-secondary)]
+                    hover:text-[var(--text-primary)]
+                    active:scale-95
+                    sm:h-11
+                    sm:w-11
+                  "
+                >
+                  <Bell size={21} strokeWidth={2} />
+
+                  {unreadCount > 0 && (
+                    <span
+                      className="
+                        absolute
+                        right-1
+                        top-1
+                        flex
+                        min-h-[17px]
+                        min-w-[17px]
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-red-500
+                        px-1
+                        text-[9px]
+                        font-bold
+                        leading-none
+                        text-white
+                      "
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Always mounted so it can animate open/closed.
+                    Anchored to the sticky <header>, so it always sits
+                    fully on-screen right under the navbar. */}
+                <div
+                  aria-hidden={!notificationOpen}
+                  className={`
+                    absolute
+                    left-3
+                    right-3
+                    top-full
+                    z-[220]
+                    mt-2
+                    flex
+                    max-h-[min(56dvh,400px)]
+                    origin-top
+                    flex-col
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-[var(--border-color)]
+                    bg-[var(--app-surface)]
+                    shadow-[0_20px_55px_rgba(15,23,42,0.18)]
+                    transition-[opacity,transform,visibility]
+                    duration-200
+                    ease-out
+                    sm:left-auto
+                    sm:right-5
+                    sm:w-[390px]
+                    ${notificationOpen
+                      ? "visible translate-y-0 scale-100 opacity-100"
+                      : "pointer-events-none invisible -translate-y-2 scale-[0.98] opacity-0"
+                    }
+                  `}
+                >
+                  {/* HEADER (fixed) */}
+                  <div
+                    className="
+                      flex
+                      shrink-0
+                      items-center
+                      justify-between
+                      border-b
+                      border-[var(--border-color)]
+                      px-4
+                      py-3.5
+                    "
+                  >
+                    <div>
+                      <h3
+                        className="
+                          text-[15px]
+                          font-bold
+                          text-[var(--text-primary)]
+                        "
+                      >
+                        Notifications
+                      </h3>
+
+                      <p
+                        className="
+                          mt-0.5
+                          text-[11px]
+                          text-[var(--text-muted)]
+                        "
+                      >
+                        Your latest updates
+                      </p>
+                    </div>
+
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteAllNotifications}
+                        disabled={deletingAll}
+                        className="
+                          flex
+                          items-center
+                          gap-1.5
+                          rounded-lg
+                          px-2
+                          py-1.5
+                          text-[11px]
+                          font-semibold
+                          text-red-500
+                          hover:bg-red-50
+                          dark:hover:bg-red-500/10
+                          disabled:opacity-50
+                        "
+                      >
+                        <Trash2 size={14} />
+
+                        {deletingAll ? "Clearing..." : "Clear all"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* LIST (only this part scrolls) */}
+                  <div
+                    className="
+                      min-h-0
+                      flex-1
+                      overflow-y-auto
+                      overscroll-contain
+                    "
+                  >
+                    {notificationLoading ? (
+                      <div
+                        className="
+                          flex
+                          min-h-[160px]
+                          items-center
+                          justify-center
+                        "
+                      >
+                        <div
+                          className="
+                            h-6
+                            w-6
+                            animate-spin
+                            rounded-full
+                            border-2
+                            border-[var(--border-color)]
+                            border-t-blue-500
+                          "
+                        />
+                      </div>
+                    ) : notifications.length > 0 ? (
+                      notifications.map((notification, index) => {
+                        const id = getId(notification);
+
+                        return (
+                          <div
+                            key={
+                              id ||
+                              `${index}-${getNotificationTitle(
+                                notification
+                              )}`
+                            }
+                            className="
+                              flex
+                              gap-3
+                              border-b
+                              border-[var(--border-light)]
+                              px-4
+                              py-3.5
+                              hover:bg-[var(--app-surface-secondary)]
+                            "
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleNotificationClick(notification)
+                              }
+                              className="
+                                flex
+                                min-w-0
+                                flex-1
+                                gap-3
+                                text-left
+                              "
+                            >
+                              <span
+                                className="
+                                  flex
+                                  h-9
+                                  w-9
+                                  shrink-0
+                                  items-center
+                                  justify-center
+                                  rounded-xl
+                                  bg-indigo-50
+                                  text-indigo-600
+                                  dark:bg-indigo-500/10
+                                  dark:text-indigo-400
+                                "
+                              >
+                                {getNotificationIcon(notification)}
+                              </span>
+
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className="
+                                    block
+                                    truncate
+                                    text-[13px]
+                                    font-bold
+                                    text-[var(--text-primary)]
+                                  "
+                                >
+                                  {getNotificationTitle(notification)}
+                                </span>
+
+                                <span
+                                  className="
+                                    mt-0.5
+                                    block
+                                    line-clamp-2
+                                    text-[12px]
+                                    leading-5
+                                    text-[var(--text-secondary)]
+                                  "
+                                >
+                                  {getNotificationMessage(notification)}
+                                </span>
+
+                                {getNotificationDate(notification) && (
+                                  <span
+                                    className="
+                                      mt-1
+                                      block
+                                      text-[10px]
+                                      font-medium
+                                      text-[var(--text-muted)]
+                                    "
+                                  >
+                                    {getNotificationDate(notification)}
+                                  </span>
+                                )}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteNotification(notification)
+                              }
+                              disabled={deletingId === id}
+                              aria-label="Delete notification"
+                              className="
+                                flex
+                                h-8
+                                w-8
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-lg
+                                text-[var(--text-muted)]
+                                hover:bg-red-50
+                                hover:text-red-500
+                                dark:hover:bg-red-500/10
+                                disabled:opacity-50
+                              "
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div
+                        className="
+                          flex
+                          min-h-[180px]
+                          flex-col
+                          items-center
+                          justify-center
+                          px-6
+                          text-center
+                        "
+                      >
+                        <span
+                          className="
+                            flex
+                            h-11
+                            w-11
+                            items-center
+                            justify-center
+                            rounded-full
+                            bg-[var(--app-surface-secondary)]
+                            text-[var(--text-muted)]
+                          "
+                        >
+                          <Bell size={19} />
+                        </span>
+
+                        <p
+                          className="
+                            mt-3
+                            text-sm
+                            font-semibold
+                            text-[var(--text-primary)]
+                          "
+                        >
+                          No notifications
+                        </p>
+
+                        <p
+                          className="
+                            mt-1
+                            text-xs
+                            text-[var(--text-muted)]
+                          "
+                        >
+                          You're all caught up.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* FOOTER (always visible at the bottom) */}
+                  <div
+                    className="
+                      shrink-0
+                      border-t
+                      border-[var(--border-color)]
+                      bg-[var(--app-surface)]
+                      p-2
+                    "
+                  >
+                    <button
+                      type="button"
+                      onClick={handleViewAllNotifications}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        justify-center
+                        gap-1.5
+                        rounded-xl
+                        px-3
+                        py-3
+                        text-[13px]
+                        font-semibold
+                        text-blue-600
+                        hover:bg-blue-50
+                        dark:text-blue-400
+                        dark:hover:bg-blue-500/10
+                      "
+                    >
+                      View all notifications
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MENU */}
+
+            <button
+              ref={mobileToggleRef}
+              type="button"
+              onClick={() =>
+                setMobileOpen(
+                  (previous) => !previous
+                )
+              }
+              aria-label={
+                mobileOpen
+                  ? "Close menu"
+                  : "Open menu"
+              }
+              aria-expanded={mobileOpen}
+              className="
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-transparent
+                transition-all
+                duration-150
+                active:scale-90
+                sm:h-11
+                sm:w-11
+              "
+            >
+              <span
+                aria-hidden="true"
+                className="relative block h-[18px] w-[22px]"
+              >
+                <span
+                  className={`
+                    absolute
+                    left-0
+                    top-[3px]
+                    block
+                    h-[2px]
+                    w-full
+                    rounded-full
+                    transition-all
+                    duration-300
+                    ease-in-out
+                    ${mobileOpen
+                      ? "translate-y-[5px] rotate-45 bg-red-500"
+                      : "bg-[var(--text-primary)]"
+                    }
+                  `}
+                />
+
+                <span
+                  className={`
+                    absolute
+                    left-0
+                    top-[8px]
+                    block
+                    h-[2px]
+                    w-full
+                    rounded-full
+                    transition-all
+                    duration-300
+                    ease-in-out
+                    ${mobileOpen
+                      ? "scale-x-0 bg-red-500 opacity-0"
+                      : "bg-[var(--text-primary)] opacity-100"
+                    }
+                  `}
+                />
+
+                <span
+                  className={`
+                    absolute
+                    left-0
+                    top-[13px]
+                    block
+                    h-[2px]
+                    w-full
+                    rounded-full
+                    transition-all
+                    duration-300
+                    ease-in-out
+                    ${mobileOpen
+                      ? "-translate-y-[5px] -rotate-45 bg-red-500"
+                      : "bg-[var(--text-primary)]"
+                    }
+                  `}
+                />
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* SEARCH BELOW TOP ROW */}
+
         <div
-          className={`border-t border-gray-100 bg-white transition-all duration-300 ease-out lg:hidden ${
-            mobileOpen
-              ? "max-h-[calc(100dvh-78px)] overflow-y-auto overscroll-contain opacity-100 min-[360px]:max-h-[calc(100dvh-78px)] sm:max-h-[calc(100dvh-82px)] md:max-h-[calc(100dvh-86px)]"
-              : "max-h-0 overflow-hidden border-transparent opacity-0"
-          }`}
+          className="
+            mt-2
+            w-full
+            sm:mt-2.5
+          "
         >
-          <div className="w-full px-4 pb-5 pt-3 min-[360px]:px-4 sm:px-6 sm:pb-6 sm:pt-4">
-            <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-1.5 sm:p-2">
+          <SearchBox
+            mobile
+            searchRef={searchRef}
+            mobileSearchRef={mobileSearchRef}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchFocused={searchFocused}
+            setSearchFocused={setSearchFocused}
+            currentPlaceholder={currentPlaceholder}
+            searchResults={searchResults}
+            showSearchResults={showSearchResults}
+            handleSearchSubmit={handleSearchSubmit}
+            handleSearchSelect={handleSearchSelect}
+            clearSearch={clearSearch}
+          />
+        </div>
+      </div>
+
+      {/* =====================================================
+          MOBILE / TABLET MENU
+      ===================================================== */}
+
+      <div
+        ref={mobileMenuRef}
+        aria-hidden={!mobileOpen}
+        className={`
+          grid
+          border-[var(--border-color)]
+          bg-[var(--app-surface)]
+          transition-[grid-template-rows,opacity,visibility]
+          duration-300
+          ease-in-out
+          lg:hidden
+          ${mobileOpen
+            ? "visible grid-rows-[1fr] border-t opacity-100"
+            : "pointer-events-none invisible grid-rows-[0fr] border-t-0 opacity-0"
+          }
+        `}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className="
+              mx-auto
+              flex
+              max-h-[calc(100vh-76px)]
+              flex-col
+              overflow-y-auto
+              px-4
+              pb-5
+              pt-4
+              sm:px-5
+            "
+          >
+            <div className="grid gap-2">
               <Link
                 to="/tour"
                 onClick={closeMenu}
-                className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-gray-800 transition hover:bg-white hover:text-indigo-600 min-[360px]:py-3.5 sm:py-4 sm:text-base md:text-[17px]"
+                className="
+                  flex
+                  min-h-12
+                  items-center
+                  gap-3
+                  rounded-xl
+                  px-3
+                  text-[14px]
+                  font-semibold
+                  text-[var(--text-primary)]
+                  hover:bg-[var(--app-surface-secondary)]
+                "
               >
-                <span className="flex items-center gap-2.5">
-                  <Plane
-                    size={20}
-                    className="shrink-0 text-indigo-500"
-                  />
-                  Travel
+                <span
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-emerald-50
+                    text-emerald-500
+                    dark:bg-emerald-500/10
+                  "
+                >
+                  <Plane size={18} />
                 </span>
 
-                <ChevronRight
-                  size={19}
-                  className="shrink-0 text-gray-400"
-                />
+                Travel
               </Link>
 
               <Link
                 to="/birthday"
                 onClick={closeMenu}
-                className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-gray-800 transition hover:bg-white hover:text-pink-500 min-[360px]:py-3.5 sm:py-4 sm:text-base md:text-[17px]"
+                className="
+                  flex
+                  min-h-12
+                  items-center
+                  gap-3
+                  rounded-xl
+                  px-3
+                  text-[14px]
+                  font-semibold
+                  text-[var(--text-primary)]
+                  hover:bg-[var(--app-surface-secondary)]
+                "
               >
-                <span className="flex items-center gap-2.5">
-                  <Cake
-                    size={20}
-                    className="shrink-0 text-pink-500"
-                  />
-                  Birthday
+                <span
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-pink-50
+                    text-pink-500
+                    dark:bg-pink-500/10
+                  "
+                >
+                  <Cake size={18} />
                 </span>
 
-                <ChevronRight
-                  size={19}
-                  className="shrink-0 text-gray-400"
-                />
+                Birthday
               </Link>
 
               <Link
                 to="/event"
                 onClick={closeMenu}
-                className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-gray-800 transition hover:bg-white hover:text-emerald-600 min-[360px]:py-3.5 sm:py-4 sm:text-base md:text-[17px]"
+                className="
+                  flex
+                  min-h-12
+                  items-center
+                  gap-3
+                  rounded-xl
+                  px-3
+                  text-[14px]
+                  font-semibold
+                  text-[var(--text-primary)]
+                  hover:bg-[var(--app-surface-secondary)]
+                "
               >
-                <span className="flex items-center gap-2.5">
-                  <CheckCircle2
-                    size={20}
-                    className="shrink-0 text-emerald-500"
-                  />
-                  Event
+                <span
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-cyan-50
+                    text-cyan-500
+                    dark:bg-cyan-500/10
+                  "
+                >
+                  <CalendarDays size={18} />
                 </span>
 
-                <ChevronRight
-                  size={19}
-                  className="shrink-0 text-gray-400"
-                />
+                Event
+              </Link>
+              <Link
+                to="/support"
+                onClick={closeMenu}
+                className="
+                  flex
+                  min-h-12
+                  items-center
+                  gap-3
+                  rounded-xl
+                  px-3
+                  text-[14px]
+                  font-semibold
+                  text-[var(--text-primary)]
+                  hover:bg-[var(--app-surface-secondary)]
+                "
+              >
+                <span
+                  className="
+                    flex
+                    h-9
+                    w-9
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-orange-50
+                    text-orange-500
+                    dark:bg-orange-500/10
+                  "
+                >
+                  <Headphones size={18} />
+                </span>
+
+                Customer Support
               </Link>
             </div>
 
-            {loadingUser ? (
-              <AuthLoading mobile />
-            ) : user ? (
-              <div className="mt-4 space-y-2">
+            {user && (
+              <div
+                className="
+                  mt-4
+                  border-t
+                  border-[var(--border-color)]
+                  pt-4
+                "
+              >
                 <Link
                   to="/profile"
                   onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition hover:border-indigo-100 hover:bg-indigo-50/30 sm:p-3.5"
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    rounded-xl
+                    px-3
+                    py-3
+                    hover:bg-[var(--app-surface-secondary)]
+                  "
                 >
-                  <ProfileImage size="mobile" />
+                  {showProfileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={displayFirstName || "Profile"}
+                      onError={() => setProfileImageFailed(true)}
+                      className="
+                        h-10
+                        w-10
+                        shrink-0
+                        rounded-full
+                        object-cover
+                      "
+                    />
+                  ) : (
+                    <span
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-indigo-100
+                        text-indigo-600
+                        dark:bg-indigo-500/15
+                        dark:text-indigo-400
+                      "
+                    >
+                      <User size={19} />
+                    </span>
+                  )}
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium text-gray-900 sm:text-base md:text-[17px]">
-                      {user.name}
-                    </p>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="
+                        block
+                        truncate
+                        text-[14px]
+                        font-bold
+                        text-[var(--text-primary)]
+                      "
+                    >
+                      {displayFirstName}
+                    </span>
 
-                    <p className="mt-0.5 text-[13px] font-normal text-gray-500 sm:mt-1 sm:text-sm">
-                      View Profile
-                    </p>
-                  </div>
+                    <span
+                      className="
+                        mt-0.5
+                        block
+                        text-[11px]
+                        text-[var(--text-muted)]
+                      "
+                    >
+                      View profile
+                    </span>
+                  </span>
 
                   <ChevronRight
-                    size={20}
-                    className="shrink-0 text-gray-400"
+                    size={17}
+                    className="text-[var(--text-muted)]"
                   />
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3.5 text-[15px] font-medium text-red-600 transition hover:bg-red-100 active:scale-[0.98] sm:py-3.5 sm:text-base md:text-[17px]"
-                >
-                  <LogOut size={19} />
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-2.5">
-                <Link
-                  to="/login"
-                  onClick={closeMenu}
-                  className="rounded-xl border border-indigo-200 bg-white py-3.5 text-center text-[15px] font-medium text-indigo-700 shadow-sm transition hover:border-indigo-400 hover:bg-indigo-50 active:scale-[0.98] sm:py-3.5 sm:text-base md:text-[17px]"
-                >
-                  Login
-                </Link>
-
-                <Link
-                  to="/register"
-                  onClick={closeMenu}
-                  className="rounded-xl bg-indigo-600 py-3.5 text-center text-[15px] font-medium text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.98] sm:py-3.5 sm:text-base md:text-[17px]"
-                >
-                  Register
                 </Link>
               </div>
             )}
           </div>
         </div>
-      </header>
-
-      {/* Notification overlay */}
-      <div
-        onClick={closeNotifications}
-        className={`fixed inset-0 z-[150] bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
-          notificationOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
-      />
-
-      {/* Notification drawer */}
-      <aside
-        ref={notificationDrawerRef}
-        className={`fixed right-0 top-0 z-[160] flex h-[100dvh] w-full max-w-[420px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
-          notificationOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3.5 sm:px-5 sm:py-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-50 text-yellow-500 ring-1 ring-yellow-100 sm:h-11 sm:w-11">
-              <Bell size={20} />
-            </div>
-
-            <div className="min-w-0">
-              <h2 className="truncate text-base font-medium text-gray-900 sm:text-lg">
-                Notifications
-              </h2>
-
-              <p className="text-xs text-gray-500 sm:text-sm">
-                {unreadCount > 0
-                  ? `${unreadCount} unread notification${
-                      unreadCount > 1 ? "s" : ""
-                    }`
-                  : "You're all caught up"}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={closeNotifications}
-            aria-label="Close notifications"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 active:scale-95 sm:h-10 sm:w-10"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {notifications.length > 0 && (
-          <div className="flex shrink-0 justify-end border-b border-gray-100 px-4 py-2.5 sm:px-5 sm:py-3">
-            <button
-              type="button"
-              onClick={handleDeleteAllNotifications}
-              disabled={deletingAll}
-              className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100 hover:text-red-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2 sm:text-sm"
-            >
-              {deletingAll ? (
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
-              ) : (
-                <Trash2 size={15} />
-              )}
-              Remove All
-            </button>
-          </div>
-        )}
-
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {notificationLoading ? (
-            <div className="flex min-h-[280px] items-center justify-center sm:min-h-[320px]">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-indigo-600" />
-
-                <p className="text-[13px] text-gray-500 sm:text-sm">
-                  Loading notifications...
-                </p>
-              </div>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center px-6 text-center sm:min-h-[360px]">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 sm:h-14 sm:w-14">
-                <Bell size={24} />
-              </div>
-
-              <h3 className="mt-4 text-base font-medium text-gray-900 sm:text-lg">
-                No notifications
-              </h3>
-
-              <p className="mt-1.5 max-w-xs text-[13px] leading-relaxed text-gray-500 sm:text-sm">
-                New tour plans, birthday plans and activities will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {notifications.map((notification) => {
-                const notificationId = notification?._id;
-
-                if (!notificationId) return null;
-
-                const isUnread = notification?.isRead === false;
-                const isDeleting = deletingId === notificationId;
-
-                return (
-                  <div
-                    key={notificationId}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`group relative cursor-pointer px-4 py-3.5 transition-colors active:bg-gray-100 sm:px-5 sm:py-4 ${
-                      isUnread
-                        ? "bg-yellow-50/30 hover:bg-yellow-50"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${
-                          isUnread
-                            ? "bg-yellow-50 text-yellow-500 ring-1 ring-yellow-100"
-                            : "bg-white text-gray-600 ring-1 ring-gray-200"
-                        }`}
-                      >
-                        {getNotificationIcon(notification)}
-                      </div>
-
-                      <div className="min-w-0 flex-1 pr-8 sm:pr-9">
-                        <div className="flex items-start gap-2">
-                          <h3
-                            className={`line-clamp-1 text-sm font-medium sm:text-base ${
-                              isUnread ? "text-gray-900" : "text-gray-800"
-                            }`}
-                          >
-                            {notification?.title || "Notification"}
-                          </h3>
-
-                          {isUnread && (
-                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-yellow-500" />
-                          )}
-                        </div>
-
-                        <p className="mt-1 break-words text-[13px] leading-relaxed text-gray-500 sm:mt-1.5 sm:text-sm">
-                          {notification?.message ||
-                            "You have a new notification."}
-                        </p>
-
-                        {getNotificationDate(notification) && (
-                          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400 sm:text-xs">
-                            <Clock size={12} />
-                            {getNotificationDate(notification)}
-                          </div>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={isDeleting}
-                        onClick={(event) =>
-                          handleDeleteNotification(event, notificationId)
-                        }
-                        aria-label="Remove notification"
-                        className="absolute right-3 top-3.5 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600 active:scale-95 sm:right-4 sm:top-4 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-                      >
-                        {isDeleting ? (
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-200 border-t-red-500" />
-                        ) : (
-                          <Trash2 size={15} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="shrink-0 border-t border-gray-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-4">
-          <button
-            type="button"
-            onClick={handleViewAllNotifications}
-            className="w-full rounded-xl bg-gray-950 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-600 hover:shadow-md active:scale-[0.99] sm:py-3.5 sm:text-base"
-          >
-            View All Notifications
-          </button>
-        </div>
-      </aside>
-    </>
+      </div>
+    </header>
   );
 };
 

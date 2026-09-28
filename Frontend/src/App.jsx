@@ -4,8 +4,9 @@ import { CheckCircle2 } from "lucide-react";
 
 import Layout from "./Components/Layout/Layout";
 import Home from "./Components/Home/Home";
+import ThemeToggle from "./Components/Layout/ThemeToggle";
 
-// ------------------------ User Data ------------------------------->
+// ------------------------ User Data -------------------------------> 
 import Register from "./Components/Pages/RegisterPage";
 import Login from "./Components/Pages/LoginPage";
 import VerifyOTP from "./Components/Pages/VerifyOTP";
@@ -19,7 +20,7 @@ import Event from "./Components/Pages/Event";
 import CorporateParty from "./Components/Pages/CorporateParty";
 import Notification from "./Components/Pages/Notification";
 
-// ------------------------ User Support ------------------------------->
+// ------------------------ User Support -------------------------------> 
 import Helpdesk from "./CustomerServices/HelpDesk";
 
 const ProtectedRoute = ({ children }) => {
@@ -46,10 +47,16 @@ function SuccessToast({ message }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-        <CheckCircle2 size={22} strokeWidth={2.5} className="text-indigo-500" />
+        <CheckCircle2
+          size={22}
+          strokeWidth={2.5}
+          className="text-indigo-500"
+        />
       </div>
 
-      <span className="text-sm font-semibold text-slate-800">{message}</span>
+      <span className="text-sm font-semibold text-slate-800">
+        {message}
+      </span>
     </div>
   );
 }
@@ -91,6 +98,8 @@ function App() {
           },
         }}
       />
+
+      <ThemeToggle />
 
       <Routes>
         <Route

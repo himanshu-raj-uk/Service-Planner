@@ -1,114 +1,458 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Banner = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const navigate = useNavigate();
+
+  const handleStartPlanning = () => {
+    const token = localStorage.getItem("userToken");
+
+    if (token) {
+      navigate("/tour");
+    } else {
+      navigate("/register");
+    }
+  };
 
   return (
-    <section className="relative w-full overflow-hidden bg-[#F4F6FA]">
-      <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-indigo-200/10 blur-3xl" />
+    <section
+      className="
+        relative
+        w-full
+        overflow-hidden
+        bg-[#f4f6fa]
+        text-slate-900
+        transition-colors
+        duration-500
+        dark:bg-[#0f172a]
+        dark:text-slate-100
+      "
+    >
+      {/* Background Grid Pattern */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              90deg,
+              var(--page-pattern-color) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              0deg,
+              var(--page-pattern-color) 1px,
+              transparent 1px
+            )
+          `,
+          backgroundSize: "48px 48px",
+        }}
+      />
 
-      <div className="absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-indigo-200/10 blur-3xl" />
-
-      <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-indigo-100/10 blur-3xl" />
-
-      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 py-10 sm:px-6 sm:py-12 md:grid-cols-2 md:gap-10 lg:px-8 lg:py-14 xl:gap-14">
-        <div className="relative z-10 min-w-0">
-          <span className="inline-flex items-center rounded-full bg-indigo-100 px-4 py-2 text-xs font-bold text-indigo-600 shadow-sm sm:text-sm">
-            Smart Planning Made Simple
-          </span>
-
-          <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-            Plan Your
-            <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-              Dream Experience
-            </span>
-          </h1>
-
-          <p className="mt-5 max-w-xl text-sm leading-6 text-slate-500 sm:mt-6 sm:text-lg sm:leading-7">
-            From luxury vacations to unforgettable birthdays, weddings and
-            events. We create complete plans according to your budget and
-            requirements.
-          </p>
-
-          <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4">
-            <button
-              type="button"
-              className="w-full rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-8 py-3 font-bold text-white shadow-lg shadow-indigo-200 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-auto"
+      {/* Main Content */}
+      <div
+        className="
+          relative
+          z-10
+          mx-auto
+          flex
+          w-full
+          max-w-7xl
+          items-center
+          px-5
+          pb-0
+          pt-8
+          sm:px-8
+          sm:pb-0
+          sm:pt-10
+          lg:px-10
+          lg:pb-0
+          lg:pt-12
+        "
+      >
+        <div
+          className="
+            grid
+            w-full
+            items-center
+            gap-10
+            lg:grid-cols-2
+            lg:gap-14
+            xl:gap-16
+          "
+        >
+          {/* Left Content */}
+          <div className="relative z-10 text-center">
+            <h1
+              className="
+                mx-auto
+                max-w-2xl
+                text-4xl
+                font-bold
+                leading-[1.12]
+                tracking-tight
+                text-slate-900
+                sm:text-5xl
+                lg:text-6xl
+                dark:text-white
+              "
             >
-              Start Planning
-            </button>
+              Plan Your Perfect
+              <span
+                className="
+                  block
+                  bg-gradient-to-r
+                  from-indigo-600
+                  via-purple-600
+                  to-pink-500
+                  bg-clip-text
+                  text-transparent
+                  dark:from-indigo-400
+                  dark:via-purple-400
+                  dark:to-pink-400
+                "
+              >
+                Journey With Ease
+              </span>
+            </h1>
 
-            <button
-              type="button"
-              className="w-full rounded-full border border-indigo-200 bg-white px-8 py-3 font-bold text-indigo-600 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-lg sm:w-auto"
+            <p
+              className="
+                mx-auto
+                mt-4
+                max-w-xl
+                text-sm
+                leading-6
+                text-slate-600
+                sm:text-base
+                sm:leading-7
+                lg:text-lg
+                dark:text-slate-300
+              "
             >
-              Explore Services
-            </button>
+              Organize your tours, birthdays, events, and corporate plans in
+              one simple place. Create memorable experiences without the
+              planning stress.
+            </p>
+
+            {/* Benefits */}
+            <div
+              className="
+                mt-5
+                flex
+                flex-wrap
+                justify-center
+                gap-x-5
+                gap-y-3
+                text-sm
+                font-medium
+                text-slate-700
+                dark:text-slate-300
+              "
+            >
+              <span className="flex items-center gap-2">
+                <span
+                  className="
+                    flex
+                    h-5
+                    w-5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-100
+                    text-xs
+                    font-bold
+                    text-emerald-600
+                    dark:bg-emerald-400/10
+                    dark:text-emerald-400
+                  "
+                >
+                  ✓
+                </span>
+                Easy Planning
+              </span>
+
+              <span className="flex items-center gap-2">
+                <span
+                  className="
+                    flex
+                    h-5
+                    w-5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-100
+                    text-xs
+                    font-bold
+                    text-emerald-600
+                    dark:bg-emerald-400/10
+                    dark:text-emerald-400
+                  "
+                >
+                  ✓
+                </span>
+                Smart Organization
+              </span>
+
+              <span className="flex items-center gap-2">
+                <span
+                  className="
+                    flex
+                    h-5
+                    w-5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-100
+                    text-xs
+                    font-bold
+                    text-emerald-600
+                    dark:bg-emerald-400/10
+                    dark:text-emerald-400
+                  "
+                >
+                  ✓
+                </span>
+                Stress-Free Experience
+              </span>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={handleStartPlanning}
+                className="
+                  rounded-xl
+                  bg-gradient-to-r
+                  from-indigo-600
+                  to-purple-600
+                  px-7
+                  py-3
+                  text-sm
+                  font-semibold
+                  text-white
+                  shadow-lg
+                  shadow-indigo-500/20
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:shadow-xl
+                  active:translate-y-0
+                  dark:from-indigo-500
+                  dark:to-purple-500
+                  dark:shadow-indigo-500/10
+                "
+              >
+                Start Planning
+              </button>
+            </div>
           </div>
 
-          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-slate-500 sm:mt-8 sm:gap-6 sm:text-sm">
-            <div>
-              <span className="font-bold text-indigo-600">SP</span> Smart
-              Planning
-            </div>
+          {/* Image */}
+          <div
+            className="
+              relative
+              flex
+              min-h-[300px]
+              items-center
+              justify-center
+              sm:min-h-[380px]
+              lg:min-h-[450px]
+            "
+          >
+            <div
+              className="
+                relative
+                z-10
+                w-full
+                max-w-[500px]
+                animate-[bannerFloat_3.5s_ease-in-out_infinite]
+              "
+            >
+              {/* Image Card */}
+              <div
+                className="
+                  relative
+                  overflow-hidden
+                  rounded-[1.75rem]
+                  border
+                  border-white
+                  bg-white
+                  p-2
+                  shadow-[0_18px_50px_rgba(15,23,42,0.14)]
+                  transition-transform
+                  duration-500
+                  hover:scale-[1.015]
+                  dark:border-emerald-400/60
+                  dark:bg-slate-900
+                  dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)]
+                "
+              >
+                {!imageLoaded && (
+                  <div
+                    className="
+                      absolute
+                      inset-2
+                      z-20
+                      flex
+                      items-center
+                      justify-center
+                      rounded-[1.4rem]
+                      bg-slate-100
+                      dark:bg-slate-800
+                    "
+                  >
+                    <div
+                      className="
+                        h-9
+                        w-9
+                        animate-spin
+                        rounded-full
+                        border-4
+                        border-slate-200
+                        border-t-indigo-600
+                        dark:border-slate-700
+                        dark:border-t-emerald-400
+                      "
+                    />
+                  </div>
+                )}
 
-            <div>
-              <span className="font-bold text-purple-600">24/7</span> Support
-            </div>
+                <div className="relative overflow-hidden rounded-[1.4rem]">
+                  <img
+                    src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85"
+                    alt="Beautiful tropical travel destination"
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
+                    className="
+                      aspect-[4/3]
+                      w-full
+                      object-cover
+                      transition-transform
+                      duration-700
+                      hover:scale-105
+                    "
+                  />
 
-            <div>
-              <span className="font-bold text-pink-500">100%</span> Personalized
-            </div>
-          </div>
-        </div>
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      inset-0
+                      bg-gradient-to-t
+                      from-slate-950/25
+                      via-transparent
+                      to-transparent
+                      dark:from-slate-950/45
+                    "
+                  />
+                </div>
+              </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-xl md:max-w-none">
-          <div className="absolute -inset-4 rounded-[2.5rem] bg-indigo-200/10 blur-2xl" />
+              {/* Floating Info */}
+              <div
+                className="
+                  absolute
+                  -bottom-4
+                  -left-3
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-4
+                  py-2.5
+                  shadow-lg
+                  sm:-left-5
+                  dark:border-slate-700
+                  dark:bg-slate-900
+                  dark:shadow-black/30
+                "
+              >
+                <p
+                  className="
+                    text-[11px]
+                    text-slate-500
+                    dark:text-slate-400
+                  "
+                >
+                  Your next adventure
+                </p>
 
-          <div className="relative overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/40 p-1.5 shadow-[0_20px_60px_rgba(79,70,229,0.12)] backdrop-blur-sm sm:rounded-[2rem] sm:p-2">
-            <div className="relative h-[280px] w-full overflow-hidden rounded-[1.2rem] bg-gray-200 sm:h-[380px] sm:rounded-[1.6rem] md:h-[400px] lg:h-[460px] xl:h-[480px]">
-              {!imageLoaded && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-600" />
+                <p
+                  className="
+                    mt-0.5
+                    text-sm
+                    font-semibold
+                    text-slate-900
+                    dark:text-white
+                  "
+                >
+                  Starts here ✈️
+                </p>
+              </div>
 
-                    <span className="text-xs font-medium text-gray-400">
-                      Loading image...
-                    </span>
+              {/* Floating Discovery */}
+              <div
+                className="
+                  absolute
+                  -right-3
+                  -top-4
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  px-4
+                  py-2.5
+                  shadow-lg
+                  sm:-right-5
+                  dark:border-slate-700
+                  dark:bg-slate-900
+                  dark:shadow-black/30
+                "
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="
+                      flex
+                      h-7
+                      w-7
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-indigo-50
+                      text-sm
+                      dark:bg-emerald-400/10
+                    "
+                  >
+                    📍
+                  </span>
+
+                  <div>
+                    <p
+                      className="
+                        text-[10px]
+                        text-slate-500
+                        dark:text-slate-400
+                      "
+                    >
+                      Discover
+                    </p>
+
+                    <p
+                      className="
+                        text-xs
+                        font-semibold
+                        text-slate-900
+                        dark:text-white
+                      "
+                    >
+                      New Places
+                    </p>
                   </div>
                 </div>
-              )}
-
-              <img
-                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
-                alt="Dream travel destination"
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageLoaded(true)}
-                className={`h-full w-full object-cover transition-all duration-700 ${
-                  imageLoaded ? "scale-100 opacity-100" : "scale-105 opacity-0"
-                }`}
-              />
+              </div>
             </div>
-          </div>
-
-          <div className="absolute -bottom-4 left-1 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-xl backdrop-blur-md sm:-bottom-5 sm:-left-5 sm:px-5 sm:py-4">
-            <p className="text-[10px] font-semibold text-indigo-500 sm:text-xs">
-              PLAN SMARTER
-            </p>
-
-            <p className="mt-1 text-xs font-bold text-slate-800 sm:text-sm">
-              Your perfect experience
-            </p>
-          </div>
-
-          <div className="absolute right-1 top-6 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-xl backdrop-blur-md sm:-right-5 sm:top-8 sm:px-5 sm:py-4">
-            <p className="text-[10px] font-semibold text-indigo-500 sm:text-xs">
-              SMART PLANNER
-            </p>
-
-            <p className="mt-1 text-xs font-bold text-slate-800 sm:text-sm">
-              Built for you
-            </p>
           </div>
         </div>
       </div>

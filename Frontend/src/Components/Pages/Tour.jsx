@@ -13,6 +13,7 @@ import {
   Utensils,
   MessageSquare,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   Minus,
   Plus,
@@ -35,6 +36,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+import Navbar from "../Layout/Navbar";
 import {
   createTour,
   getTripById,
@@ -42,529 +45,82 @@ import {
   cancelTrip,
 } from "../../Services/AuthAPI";
 
-const touristLocations = [
-  {
-    state: "Andhra Pradesh",
-    city: "Visakhapatnam",
-    places: ["Visakhapatnam", "Araku Valley", "Borra Caves"],
-  },
-  {
-    state: "Andhra Pradesh",
-    city: "Tirupati",
-    places: ["Tirupati", "Tirumala", "Sri Venkateswara Temple"],
-  },
-  {
-    state: "Arunachal Pradesh",
-    city: "Tawang",
-    places: [
-      "Tawang",
-      "Tawang Monastery",
-      "Sela Pass",
-      "Bum La Pass",
-      "Dirang",
-      "Bomdila",
-      "Ziro",
-      "Itanagar",
-    ],
-  },
-  {
-    state: "Assam",
-    city: "Guwahati",
-    places: ["Guwahati", "Kamakhya Temple"],
-  },
-  {
-    state: "Assam",
-    city: "Kaziranga",
-    places: ["Kaziranga National Park", "Majuli", "Jorhat"],
-  },
-  {
-    state: "Bihar",
-    city: "Gaya",
-    places: ["Gaya", "Bodh Gaya", "Mahabodhi Temple"],
-  },
-  {
-    state: "Bihar",
-    city: "Patna",
-    places: ["Patna", "Nalanda", "Rajgir", "Vaishali"],
-  },
-  {
-    state: "Chhattisgarh",
-    city: "Jagdalpur",
-    places: [
-      "Jagdalpur",
-      "Chitrakote Falls",
-      "Tirathgarh Falls",
-      "Kanger Valley National Park",
-    ],
-  },
-  {
-    state: "Goa",
-    city: "North Goa",
-    places: [
-      "North Goa",
-      "Calangute",
-      "Baga",
-      "Anjuna",
-      "Vagator",
-      "Candolim",
-      "Fort Aguada",
-    ],
-  },
-  {
-    state: "Goa",
-    city: "South Goa",
-    places: [
-      "South Goa",
-      "Palolem",
-      "Colva",
-      "Benaulim",
-      "Agonda",
-      "Dudhsagar Falls",
-    ],
-  },
-  {
-    state: "Gujarat",
-    city: "Ahmedabad",
-    places: ["Ahmedabad", "Sabarmati Ashram", "Adalaj Stepwell"],
-  },
-  {
-    state: "Gujarat",
-    city: "Kutch",
-    places: ["Kutch", "Rann of Kutch", "Dhordo", "Mandvi"],
-  },
-  {
-    state: "Gujarat",
-    city: "Dwarka",
-    places: [
-      "Dwarka",
-      "Somnath",
-      "Gir National Park",
-      "Diu",
-      "Statue of Unity",
-      "Vadodara",
-    ],
-  },
-  {
-    state: "Haryana",
-    city: "Gurugram",
-    places: ["Gurugram", "Kurukshetra", "Panipat"],
-  },
-  {
-    state: "Himachal Pradesh",
-    city: "Shimla",
-    places: ["Shimla", "Kufri", "Mashobra", "Chail", "Narkanda"],
-  },
-  {
-    state: "Himachal Pradesh",
-    city: "Manali",
-    places: [
-      "Manali",
-      "Solang Valley",
-      "Rohtang Pass",
-      "Kasol",
-      "Malana",
-      "Naggar",
-    ],
-  },
-  {
-    state: "Himachal Pradesh",
-    city: "Dharamshala",
-    places: ["Dharamshala", "McLeod Ganj", "Triund", "Bir Billing", "Palampur"],
-  },
-  {
-    state: "Himachal Pradesh",
-    city: "Spiti",
-    places: [
-      "Spiti Valley",
-      "Kaza",
-      "Key Monastery",
-      "Chandratal",
-      "Kibber",
-    ],
-  },
-  {
-    state: "Jammu and Kashmir",
-    city: "Srinagar",
-    places: [
-      "Srinagar",
-      "Dal Lake",
-      "Gulmarg",
-      "Pahalgam",
-      "Sonamarg",
-      "Doodhpathri",
-    ],
-  },
-  {
-    state: "Jharkhand",
-    city: "Ranchi",
-    places: [
-      "Ranchi",
-      "Hundru Falls",
-      "Dassam Falls",
-      "Netarhat",
-      "Deoghar",
-      "Betla National Park",
-    ],
-  },
-  {
-    state: "Karnataka",
-    city: "Bengaluru",
-    places: ["Bengaluru", "Nandi Hills", "Mysuru", "Coorg", "Chikmagalur"],
-  },
-  {
-    state: "Karnataka",
-    city: "Hampi",
-    places: ["Hampi", "Badami", "Aihole", "Pattadakal"],
-  },
-  {
-    state: "Karnataka",
-    city: "Coastal Karnataka",
-    places: [
-      "Gokarna",
-      "Udupi",
-      "Mangalore",
-      "Murudeshwar",
-      "Jog Falls",
-      "Dandeli",
-    ],
-  },
-  {
-    state: "Kerala",
-    city: "Kochi",
-    places: ["Kochi", "Fort Kochi", "Alappuzha", "Kumarakom"],
-  },
-  {
-    state: "Kerala",
-    city: "Munnar",
-    places: ["Munnar", "Thekkady", "Vagamon", "Wayanad"],
-  },
-  {
-    state: "Kerala",
-    city: "Thiruvananthapuram",
-    places: ["Thiruvananthapuram", "Kovalam", "Varkala", "Ponmudi"],
-  },
-  {
-    state: "Madhya Pradesh",
-    city: "Indore",
-    places: ["Indore", "Ujjain", "Omkareshwar", "Mandu"],
-  },
-  {
-    state: "Madhya Pradesh",
-    city: "Bhopal",
-    places: ["Bhopal", "Sanchi", "Bhimbetka", "Pachmarhi"],
-  },
-  {
-    state: "Madhya Pradesh",
-    city: "Khajuraho",
-    places: [
-      "Khajuraho",
-      "Kanha National Park",
-      "Bandhavgarh National Park",
-      "Pench National Park",
-    ],
-  },
-  {
-    state: "Maharashtra",
-    city: "Mumbai",
-    places: [
-      "Mumbai",
-      "Gateway of India",
-      "Marine Drive",
-      "Elephanta Caves",
-      "Juhu Beach",
-      "Sanjay Gandhi National Park",
-    ],
-  },
-  {
-    state: "Maharashtra",
-    city: "Pune",
-    places: ["Pune", "Lonavala", "Khandala", "Lavasa", "Sinhagad Fort"],
-  },
-  {
-    state: "Maharashtra",
-    city: "Mahabaleshwar",
-    places: ["Mahabaleshwar", "Panchgani", "Pratapgad Fort", "Kaas Plateau"],
-  },
-  {
-    state: "Maharashtra",
-    city: "Nashik",
-    places: ["Nashik", "Igatpuri", "Bhandardara", "Trimbakeshwar"],
-  },
-  {
-    state: "Maharashtra",
-    city: "Aurangabad",
-    places: ["Aurangabad", "Ajanta Caves", "Ellora Caves", "Daulatabad Fort"],
-  },
-  {
-    state: "Manipur",
-    city: "Imphal",
-    places: ["Imphal", "Loktak Lake", "Keibul Lamjao National Park"],
-  },
-  {
-    state: "Meghalaya",
-    city: "Shillong",
-    places: [
-      "Shillong",
-      "Cherrapunji",
-      "Mawsynram",
-      "Dawki",
-      "Mawlynnong",
-      "Nongriat",
-    ],
-  },
-  {
-    state: "Mizoram",
-    city: "Aizawl",
-    places: ["Aizawl", "Reiek", "Vantawng Falls"],
-  },
-  {
-    state: "Nagaland",
-    city: "Kohima",
-    places: ["Kohima", "Dzukou Valley", "Mokokchung"],
-  },
-  {
-    state: "Odisha",
-    city: "Bhubaneswar",
-    places: ["Bhubaneswar", "Puri", "Konark", "Chilika Lake"],
-  },
-  {
-    state: "Odisha",
-    city: "Simlipal",
-    places: ["Simlipal National Park", "Gopalpur", "Baripada"],
-  },
-  {
-    state: "Punjab",
-    city: "Amritsar",
-    places: ["Amritsar", "Golden Temple", "Jallianwala Bagh", "Wagah Border"],
-  },
-  {
-    state: "Rajasthan",
-    city: "Jaipur",
-    places: [
-      "Jaipur",
-      "Hawa Mahal",
-      "Amber Fort",
-      "City Palace",
-      "Jantar Mantar",
-    ],
-  },
-  {
-    state: "Rajasthan",
-    city: "Udaipur",
-    places: ["Udaipur", "City Palace Udaipur", "Lake Pichola", "Kumbhalgarh"],
-  },
-  {
-    state: "Rajasthan",
-    city: "Jodhpur",
-    places: ["Jodhpur", "Mehrangarh Fort", "Umaid Bhawan Palace"],
-  },
-  {
-    state: "Rajasthan",
-    city: "Jaisalmer",
-    places: ["Jaisalmer", "Sam Sand Dunes", "Jaisalmer Fort", "Khuri"],
-  },
-  {
-    state: "Rajasthan",
-    city: "Pushkar",
-    places: [
-      "Pushkar",
-      "Ajmer",
-      "Ranthambore",
-      "Mount Abu",
-      "Bundi",
-      "Bikaner",
-    ],
-  },
-  {
-    state: "Sikkim",
-    city: "Gangtok",
-    places: [
-      "Gangtok",
-      "Tsomgo Lake",
-      "Nathula Pass",
-      "Pelling",
-      "Lachung",
-      "Yuksom",
-    ],
-  },
-  {
-    state: "Tamil Nadu",
-    city: "Chennai",
-    places: [
-      "Chennai",
-      "Marina Beach",
-      "Mahabalipuram",
-      "Pondicherry",
-      "Kanchipuram",
-    ],
-  },
-  {
-    state: "Tamil Nadu",
-    city: "Ooty",
-    places: ["Ooty", "Coonoor", "Kotagiri", "Kodaikanal"],
-  },
-  {
-    state: "Tamil Nadu",
-    city: "Madurai",
-    places: ["Madurai", "Rameswaram", "Kanyakumari", "Thanjavur"],
-  },
-  {
-    state: "Telangana",
-    city: "Hyderabad",
-    places: ["Hyderabad", "Charminar", "Golconda Fort", "Ramoji Film City"],
-  },
-  {
-    state: "Uttar Pradesh",
-    city: "Agra",
-    places: ["Agra", "Taj Mahal", "Agra Fort", "Fatehpur Sikri"],
-  },
-  {
-    state: "Uttar Pradesh",
-    city: "Varanasi",
-    places: [
-      "Varanasi",
-      "Kashi Vishwanath Temple",
-      "Sarnath",
-      "Prayagraj",
-      "Ayodhya",
-    ],
-  },
-  {
-    state: "Uttarakhand",
-    city: "Nainital",
-    places: ["Nainital", "Bhimtal", "Sattal", "Naukuchiatal", "Mukteshwar"],
-  },
-  {
-    state: "Uttarakhand",
-    city: "Mussoorie",
-    places: ["Mussoorie", "Dhanaulti", "Landour", "Kanatal"],
-  },
-  {
-    state: "Uttarakhand",
-    city: "Rishikesh",
-    places: [
-      "Rishikesh",
-      "Haridwar",
-      "Rajaji National Park",
-      "Neer Garh Waterfall",
-    ],
-  },
-  {
-    state: "Uttarakhand",
-    city: "Kedarnath",
-    places: [
-      "Kedarnath",
-      "Badrinath",
-      "Valley of Flowers",
-      "Auli",
-      "Chopta",
-      "Jim Corbett National Park",
-    ],
-  },
-  {
-    state: "West Bengal",
-    city: "Kolkata",
-    places: [
-      "Kolkata",
-      "Victoria Memorial",
-      "Howrah Bridge",
-      "Darjeeling",
-      "Kalimpong",
-    ],
-  },
-  {
-    state: "West Bengal",
-    city: "Darjeeling",
-    places: ["Darjeeling", "Tiger Hill", "Siliguri", "Dooars", "Sundarbans"],
-  },
-  {
-    state: "Andaman and Nicobar Islands",
-    city: "Port Blair",
-    places: [
-      "Port Blair",
-      "Swaraj Dweep (Havelock)",
-      "Shaheed Dweep (Neil Island)",
-      "Cellular Jail",
-      "Radhanagar Beach",
-    ],
-  },
-  {
-    state: "Delhi",
-    city: "New Delhi",
-    places: [
-      "New Delhi",
-      "India Gate",
-      "Red Fort",
-      "Qutub Minar",
-      "Humayun's Tomb",
-      "Lotus Temple",
-    ],
-  },
-  {
-    state: "Ladakh",
-    city: "Leh",
-    places: [
-      "Leh",
-      "Nubra Valley",
-      "Pangong Lake",
-      "Khardung La",
-      "Tso Moriri",
-      "Lamayuru",
-    ],
-  },
-  {
-    state: "Puducherry",
-    city: "Puducherry",
-    places: ["Puducherry", "Auroville", "Promenade Beach", "Paradise Beach"],
-  },
-  {
-    state: "Chandigarh",
-    city: "Chandigarh",
-    places: ["Chandigarh", "Rock Garden", "Sukhna Lake"],
-  },
-  {
-    state: "Dadra and Nagar Haveli and Daman and Diu",
-    city: "Daman",
-    places: ["Daman", "Diu", "Silvassa", "Jampore Beach"],
-  },
-  {
-    state: "Lakshadweep",
-    city: "Lakshadweep",
-    places: ["Lakshadweep", "Agatti", "Bangaram", "Kavaratti", "Minicoy"],
-  },
-];
+/* =========================================================
+   DATA
+========================================================= */
+
+import INDIA_REGIONS from "../../Data/TouristPlaces"
 
 const locationSearchOptions = [
-  ...touristLocations.flatMap((group) => [
+  ...INDIA_REGIONS.flatMap((region) => [
     {
-      name: group.city,
-      city: group.city,
-      state: group.state,
-      type: "City",
+      name: region.capital,
+      city: region.capital,
+      state: region.name,
+      type: "Capital",
     },
-    ...group.places.map((place) => ({
-      name: place,
-      city: group.city,
-      state: group.state,
+
+    ...region.touristPlaces.map((place) => ({
+      name: place.name,
+      city: region.capital,
+      state: region.name,
       type: "Tourist Place",
     })),
   ]),
-  ...[...new Set(touristLocations.map((group) => group.state))].map(
-    (state) => ({
-      name: state,
-      city: state,
-      state,
-      type: "State",
-    }),
-  ),
+
+  ...INDIA_REGIONS.map((region) => ({
+    name: region.name,
+    city: region.capital,
+    state: region.name,
+    type:
+      region.type === "state"
+        ? "State"
+        : "Union Territory",
+  })),
 ].filter(
   (item, index, array) =>
     array.findIndex(
       (candidate) =>
         candidate.name.toLowerCase() === item.name.toLowerCase() &&
-        candidate.state.toLowerCase() === item.state.toLowerCase(),
+        candidate.state.toLowerCase() === item.state.toLowerCase() &&
+        candidate.type === item.type,
     ) === index,
 );
+
+const travelTypeOptions = [
+  "Solo",
+  "Couple",
+  "Family",
+  "Friends",
+  "Honeymoon",
+  "Adventure",
+  "Business",
+];
+
+const hotelTypeOptions = [
+  "Budget",
+  "Standard",
+  "Comfort",
+  "Luxury",
+  "Homestay",
+  "Resort",
+];
+
+const transportOptions = [
+  "Car",
+  "Bike",
+  "Train",
+  "Flight",
+  "Bus",
+];
+
+const foodOptions = [
+  "Any",
+  "Vegetarian",
+  "Non-Vegetarian",
+  "Vegan",
+  "Jain",
+];
 
 const loadingMessages = [
   "Creating your personalized travel plan...",
@@ -577,120 +133,293 @@ const loadingMessages = [
   "Your travel plan is being prepared...",
 ];
 
+const loadingSteps = [
+  {
+    label: "Finding the best places",
+    icon: Map,
+  },
+  {
+    label: "Calculating your budget",
+    icon: Wallet,
+  },
+  {
+    label: "Building your day-by-day itinerary",
+    icon: CalendarDays,
+  },
+  {
+    label: "Choosing hotels & food",
+    icon: Hotel,
+  },
+  {
+    label: "Adding hidden gems & tips",
+    icon: Lightbulb,
+  },
+];
+
+/* =========================================================
+   STYLES  (same background pattern + palette as Features)
+   Light  : #f4f6fa  + indigo / purple / pink
+   Dark   : #0f172a  + emerald / teal / cyan
+========================================================= */
+
 const styles = `
-  .tour-page {
-    --ink: #0d222c;
-    --paper: #f8f2e2;
-    --text: #1d2b30;
-    --muted: #8a8064;
-    --gold: #cf9d4b;
-    --gold-light: #e8c17c;
-    --teal: #4bb3a0;
+  .tour-root {
+    --page-bg: #f4f6fa;
 
-    min-height: 100vh;
-    background:
-      radial-gradient(
-        ellipse 70% 55% at 20% -10%,
-        rgba(75,179,160,.12),
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 60% 50% at 100% 110%,
-        rgba(207,157,75,.10),
-        transparent 60%
-      ),
-      var(--ink);
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #64748b;
 
+    --teal: #4f46e5;
+    --accent-2: #7c3aed;
+    --gold: #7c3aed;
+    --gold-light: #6d28d9;
+    --ink: #ffffff;
+
+    --accent-soft: rgba(79, 70, 229, 0.09);
+    --accent-ring: rgba(79, 70, 229, 0.18);
+
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-solid: #ffffff;
+    --tile: rgba(241, 245, 249, 0.85);
+    --input: #ffffff;
+
+    --border: rgba(15, 23, 42, 0.09);
+    --border-hover: rgba(15, 23, 42, 0.18);
+
+    --shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+    --tour-pattern: rgba(15, 23, 42, 0.045);
+
+    background: var(--page-bg);
     color: var(--text);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-      Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color 500ms ease, color 500ms ease;
   }
 
-  .tour-page *,
-  .tour-page *::before,
-  .tour-page *::after {
-    box-sizing: border-box;
+  .dark .tour-root {
+    --page-bg: #0f172a;
+
+    --text: #f8fafc;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+
+    --teal: #34d399;
+    --accent-2: #2dd4bf;
+    --gold: #2dd4bf;
+    --gold-light: #5eead4;
+    --ink: #04211c;
+
+    --accent-soft: rgba(52, 211, 153, 0.12);
+    --accent-ring: rgba(52, 211, 153, 0.2);
+
+    --surface: rgba(15, 23, 42, 0.78);
+    --surface-solid: #111b30;
+    --tile: rgba(30, 41, 59, 0.55);
+    --input: rgba(15, 23, 42, 0.7);
+
+    --border: rgba(148, 163, 184, 0.16);
+    --border-hover: rgba(148, 163, 184, 0.32);
+
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+    --tour-pattern: rgba(148, 163, 184, 0.07);
   }
 
-  .tour-page button,
-  .tour-page input,
-  .tour-page textarea {
-    font: inherit;
+  .tour-page {
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
   }
 
-  .tour-title {
-    font-size: clamp(2rem, 5vw, 3.6rem);
-    line-height: 1.1;
-    font-weight: 500;
-    letter-spacing: -0.035em;
+  /* ---------- Badge / labels ---------- */
+
+  .tour-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid rgba(79, 70, 229, 0.22);
+    border-radius: 9999px;
+    background: var(--surface-solid);
+    color: var(--teal);
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   }
 
-  .tour-subtitle {
-    font-size: clamp(.9rem, 1.8vw, 1.05rem);
-    line-height: 1.6;
-    font-weight: 400;
+  .dark .tour-badge {
+    border-color: rgba(52, 211, 153, 0.22);
   }
 
   .tour-label {
-    font-size: .65rem;
-    letter-spacing: .14em;
-    font-weight: 500;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
+    line-height: 1;
+    color: var(--muted);
   }
 
-  .tour-input {
-    font-size: .95rem;
-    line-height: 1.5;
-    font-weight: 400;
+  .tour-title-gradient {
+    background: linear-gradient(90deg, #4f46e5, #9333ea, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  .tour-button {
-    font-size: .85rem;
-    letter-spacing: .04em;
-    font-weight: 500;
+  .dark .tour-title-gradient {
+    background: linear-gradient(90deg, #34d399, #2dd4bf, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
+
+  /* ---------- Ticket card ---------- */
 
   .ticket-card {
-    background: var(--paper);
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .ticket-route {
+    border-bottom: 1px solid var(--border);
+    border-radius: 1.25rem 1.25rem 0 0;
+    background: linear-gradient(
+      135deg,
+      var(--accent-soft),
+      transparent 70%
+    );
+  }
+
+  .ticket-route-value {
+    min-width: 0;
     color: var(--text);
-    border-radius: 1.5rem;
-    box-shadow:
-      0 1.5rem 4rem rgba(0,0,0,.32),
-      0 0 0 1px rgba(255,255,255,.06);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .ticket-perf {
+    position: relative;
+    height: 1px;
+    margin: 0 1.75rem;
+    border-top: 1px dashed var(--border-hover);
   }
 
   .ticket-notch {
     position: absolute;
-    width: 1.75rem;
-    height: 1.75rem;
+    top: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 1px solid var(--border);
     border-radius: 9999px;
-    background: var(--ink);
-    z-index: 5;
+    background: var(--page-bg);
+    transform: translateY(-50%);
   }
 
-  .ticket-perf {
-    border-top: .125rem dashed rgba(29,43,48,.22);
-    margin: 0 1.75rem;
-  }
+  .ticket-notch-left { left: -0.6rem; }
+  .ticket-notch-right { right: -0.6rem; }
+
+  /* ---------- Fields ---------- */
 
   .field-focus {
-    background: rgba(255,255,255,.7);
+    position: relative;
+    min-width: 0;
+    border: 1px solid var(--border);
+    background: var(--input);
     transition:
-      border-color .2s ease,
-      box-shadow .2s ease,
-      transform .2s ease,
-      background .2s ease;
+      border-color 160ms ease,
+      background-color 160ms ease,
+      box-shadow 160ms ease;
   }
 
   .field-focus:hover {
-    background: rgba(255,255,255,.8);
+    border-color: var(--border-hover);
   }
 
   .field-focus:focus-within {
-    background: rgba(255,255,255,.85);
     border-color: var(--teal);
-    box-shadow: 0 8px 25px rgba(75,179,160,.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+  }
+
+  .field-error,
+  .field-error:hover,
+  .field-error:focus-within {
+    border-color: rgba(239, 68, 68, 0.75);
+  }
+
+  .field-focus:focus-within .tour-label {
+    color: var(--teal);
+  }
+
+  .tour-input {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .field-focus input,
+  .field-focus textarea {
+    padding: 0;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .tour-input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  .tour-input[type="number"]::-webkit-outer-spin-button,
+  .tour-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .tour-input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  .step-btn {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    background: var(--tile);
+    color: var(--text-soft);
+    transition: all 150ms ease;
+  }
+
+  .step-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  .step-btn:active {
+    transform: scale(0.92);
+  }
+
+  /* ---------- Dropdown ---------- */
+
+  .tour-dropdown {
+    border: 1px solid var(--border-hover);
+    background: var(--surface-solid);
+    box-shadow: 0 22px 55px rgba(15, 23, 42, 0.16);
+  }
+
+  .dark .tour-dropdown {
+    box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5);
   }
 
   .location-scroll,
@@ -698,120 +427,190 @@ const styles = `
     max-height: 240px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
+  }
+
+  .location-scroll::-webkit-scrollbar,
+  .custom-dropdown-scroll::-webkit-scrollbar,
+  .tour-root ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .location-scroll::-webkit-scrollbar-thumb,
+  .custom-dropdown-scroll::-webkit-scrollbar-thumb,
+  .tour-root ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--border-hover);
   }
 
   .dropdown-option {
-    background: transparent;
     color: var(--text);
-    transition: background .15s ease, color .15s ease;
+    transition: background-color 140ms ease;
   }
 
   .dropdown-option:hover,
-  .dropdown-option:focus {
-    background: rgba(75,179,160,.1);
-    color: var(--teal);
-    outline: none;
-  }
-
   .dropdown-option.selected {
-    background: rgba(75,179,160,.1);
+    background: var(--accent-soft);
+  }
+
+  /* ---------- Button ---------- */
+
+  .tour-button {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: 0 14px 34px rgba(79, 70, 229, 0.28);
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      filter 160ms ease;
+  }
+
+  .dark .tour-button {
+    background: linear-gradient(135deg, #10b981, #0d9488);
+    box-shadow: 0 14px 34px rgba(16, 185, 129, 0.22);
+  }
+
+  .tour-button:hover:not(:disabled) {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .tour-button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .tour-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .ghost-button {
+    border: 1px solid var(--border-hover);
+    background: var(--surface-solid);
+    color: var(--text);
+    transition: all 160ms ease;
+  }
+
+  .ghost-button:hover {
+    border-color: var(--teal);
     color: var(--teal);
   }
 
-  .result-card {
-    background:
-      radial-gradient(
-        ellipse 80% 80% at 100% 0%,
-        rgba(75,179,160,.1),
-        transparent 60%
-      ),
-      #f8f2e2;
+  /* ---------- Result ---------- */
+
+  .result-card,
+  .ai-loading-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 
   .result-section {
-    border: 1px solid rgba(29,43,48,.08);
-    background: rgba(255,255,255,.72);
-    border-radius: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    background: var(--tile);
   }
 
   .result-item {
-    border: 1px solid rgba(29,43,48,.07);
-    background: rgba(255,255,255,.72);
+    border: 1px solid var(--border);
     border-radius: 1rem;
+    background: var(--surface-solid);
   }
 
-  .ai-loading-card {
-    background:
-      radial-gradient(
-        ellipse 80% 80% at 50% 0%,
-        rgba(75,179,160,.12),
-        transparent 65%
-      ),
-      rgba(248,242,226,.98);
-    border: 1px solid rgba(255,255,255,.1);
+  .tile {
+    border: 1px solid var(--border);
+    background: var(--surface-solid);
   }
 
-  .budget-warning {
-    background: #17343a;
-    border: 1px solid rgba(207,157,75,.58);
-    color: #ffffff;
-    box-shadow:
-      0 22px 48px rgba(0,0,0,.4),
-      0 8px 20px rgba(13,34,44,.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+  .soft-tile {
+    background: var(--accent-soft);
+  }
+
+  @media (min-width: 640px) {
+    .tour-input { font-size: 0.975rem; }
+    .ticket-perf { margin: 0 2rem; }
+    .ticket-card { border-radius: 1.5rem; }
+    .ticket-route { border-radius: 1.5rem 1.5rem 0 0; }
   }
 
   @media (max-width: 640px) {
-    .ticket-card {
-      border-radius: 1.1rem;
-    }
+    .location-scroll,
+    .custom-dropdown-scroll { max-height: 210px; }
+  }
 
-    .ticket-perf {
-      margin: 0 1.1rem;
-    }
-
-    .ticket-notch {
-      width: 1.35rem;
-      height: 1.35rem;
-    }
+  @media (prefers-reduced-motion: reduce) {
+    .field-focus,
+    .tour-button,
+    .step-btn,
+    .tour-root { transition: none; }
   }
 `;
 
+const extractTripId = (source) => {
+  if (!source || typeof source !== "object") return null;
+
+  const candidates = [
+    source.tripId,
+    source._id,
+    source.id,
+    source.trip?._id,
+    source.trip?.tripId,
+    source.trip?.id,
+    source.data?._id,
+    source.data?.tripId,
+    source.data?.id,
+  ];
+
+  return candidates.find(Boolean) || null;
+};
+
+/* =========================================================
+   SHARED CLASSES
+========================================================= */
+
 const fieldWrap =
-  "field-focus group relative min-h-[78px] w-full rounded-2xl border border-[rgba(29,43,48,.12)] px-5 pb-3 pt-7 shadow-[0_2px_8px_rgba(13,34,44,.03)]";
+  "field-focus group relative min-h-[68px] w-full rounded-2xl px-3.5 pb-2.5 pt-6 sm:min-h-[78px] sm:px-5 sm:pb-3 sm:pt-7";
 
 const labelCls =
-  "tour-label pointer-events-none absolute left-5 top-2.5 z-10 text-[var(--muted)] transition-colors group-focus-within:text-[var(--teal)]";
+  "tour-label pointer-events-none absolute left-3.5 top-2.5 z-10 transition-colors sm:left-5";
 
 const iconBoxCls =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(75,179,160,.10)] text-[var(--teal)]";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--teal)] sm:h-9 sm:w-9";
 
 const dropdownCls =
-  "absolute left-0 right-0 top-[84px] z-[9999] overflow-hidden rounded-2xl border border-[rgba(29,43,48,.12)] bg-white shadow-[0_20px_50px_rgba(13,34,44,.18)]";
+  "tour-dropdown absolute left-0 right-0 top-[calc(100%+6px)] z-[9999] overflow-hidden rounded-2xl";
 
 const dropdownMotion = {
-  initial: {
-    opacity: 0,
-    y: -6,
-    scale: 0.985,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-  },
-  exit: {
-    opacity: 0,
-    y: -5,
-    scale: 0.985,
-  },
-  transition: {
-    duration: 0.16,
-    ease: "easeOut",
-  },
+  initial: { opacity: 0, y: -6, scale: 0.985 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -5, scale: 0.985 },
+  transition: { duration: 0.16, ease: "easeOut" },
 };
+
+const clearFieldError = (setFieldErrors, name) => {
+  setFieldErrors((prev) => {
+    if (!prev[name]) return prev;
+
+    const next = { ...prev };
+    delete next[name];
+    return next;
+  });
+};
+
+const FieldError = ({ message }) =>
+  message ? (
+    <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-500">
+      <AlertCircle size={14} className="shrink-0" />
+      <span>{message}</span>
+    </div>
+  ) : null;
+
+/* =========================================================
+   LOCATION FIELD
+========================================================= */
 
 const LocationField = ({
   name,
@@ -829,28 +628,17 @@ const LocationField = ({
 
   const locations = query
     ? locationSearchOptions
-        .filter((item) =>
-          [item.name, item.city, item.state, item.type].some((field) =>
-            field.toLowerCase().includes(query),
-          ),
-        )
-        .slice(0, 80)
+      .filter((item) =>
+        [item.name, item.city, item.state, item.type].some((field) =>
+          field.toLowerCase().includes(query),
+        ),
+      )
+      .slice(0, 80)
     : locationSearchOptions.slice(0, 80);
 
   const selectLocation = (location) => {
-    setForm((prev) => ({
-      ...prev,
-      [name]: location.name,
-    }));
-
-    setFieldErrors((prev) => {
-      if (!prev[name]) return prev;
-
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
-
+    setForm((prev) => ({ ...prev, [name]: location.name }));
+    clearFieldError(setFieldErrors, name);
     setActiveLocation(null);
   };
 
@@ -859,10 +647,10 @@ const LocationField = ({
       className={`relative w-full ${open ? "z-[100]" : "z-10"}`}
       data-location-field
     >
-      <div className={`${fieldWrap} ${error ? "border-red-400/70" : ""}`}>
+      <div className={`${fieldWrap} ${error ? "field-error" : ""}`}>
         <label className={labelCls}>{label}</label>
 
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <span className={iconBoxCls}>
             <Search size={16} />
           </span>
@@ -872,19 +660,8 @@ const LocationField = ({
             name={name}
             value={value}
             onChange={(e) => {
-              setForm((prev) => ({
-                ...prev,
-                [name]: e.target.value,
-              }));
-
-              setFieldErrors((prev) => {
-                if (!prev[name]) return prev;
-
-                const next = { ...prev };
-                delete next[name];
-                return next;
-              });
-
+              setForm((prev) => ({ ...prev, [name]: e.target.value }));
+              clearFieldError(setFieldErrors, name);
               setActiveLocation(name);
             }}
             onFocus={() => setActiveLocation(name)}
@@ -901,27 +678,22 @@ const LocationField = ({
             autoComplete="off"
             spellCheck="false"
             placeholder={`Search ${label.toLowerCase()}`}
-            className="tour-input min-w-0 flex-1 bg-transparent text-[var(--text)] outline-none placeholder:text-[var(--muted)]/45"
+            className="tour-input min-w-0 flex-1 bg-transparent outline-none"
           />
 
           <Icon
             size={17}
-            strokeWidth={1.7}
+            strokeWidth={1.8}
             className="shrink-0 text-[var(--muted)]"
           />
         </div>
 
-        {error && (
-          <div className="mt-2 flex items-center gap-2 text-xs font-medium text-red-500">
-            <AlertCircle size={14} />
-            <span>{error}</span>
-          </div>
-        )}
+        <FieldError message={error} />
 
         <AnimatePresence>
           {open && (
             <motion.div {...dropdownMotion} className={dropdownCls}>
-              <div className="location-scroll p-2">
+              <div className="location-scroll p-1.5 sm:p-2">
                 {locations.length ? (
                   locations.map((location, index) => (
                     <button
@@ -931,14 +703,14 @@ const LocationField = ({
                         e.preventDefault();
                         selectLocation(location);
                       }}
-                      className="dropdown-option flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-normal"
+                      className="dropdown-option flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm sm:px-4 sm:py-3"
                     >
                       <span className={iconBoxCls}>
                         <MapPin size={15} />
                       </span>
 
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">
+                        <span className="block truncate font-semibold">
                           {location.name}
                         </span>
 
@@ -969,6 +741,10 @@ const LocationField = ({
   );
 };
 
+/* =========================================================
+   NUMBER FIELD
+========================================================= */
+
 const NumberField = ({
   name,
   label,
@@ -994,106 +770,71 @@ const NumberField = ({
       };
     });
 
-    setFieldErrors((prev) => {
-      if (!prev[name]) return prev;
-
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
+    clearFieldError(setFieldErrors, name);
   };
 
   const handleNumberChange = (e) => {
-    const rawValue = e.target.value;
-
-    if (rawValue === "") {
-      setForm((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-
-      setFieldErrors((prev) => {
-        if (!prev[name]) return prev;
-
-        const next = { ...prev };
-        delete next[name];
-        return next;
-      });
-
-      return;
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: rawValue,
-    }));
-
-    setFieldErrors((prev) => {
-      if (!prev[name]) return prev;
-
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
+    setForm((prev) => ({ ...prev, [name]: e.target.value }));
+    clearFieldError(setFieldErrors, name);
   };
 
   return (
     <div className="relative z-10 w-full">
-      <div className={`${fieldWrap} ${error ? "border-red-400/70" : ""}`}>
+      <div className={`${fieldWrap} ${error ? "field-error" : ""}`}>
         <label className={labelCls}>{label}</label>
 
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <span className={iconBoxCls}>
             <Icon size={16} />
           </span>
 
           <div className="flex min-w-0 flex-1 items-center">
             {prefix && (
-              <span className="mr-1.5 shrink-0 text-base font-normal">
-                {prefix}
-              </span>
+              <span className="tour-input mr-1.5 shrink-0">{prefix}</span>
             )}
 
             <input
               type="number"
+              inputMode="numeric"
               min={minimum}
               step={step}
               name={name}
               value={value}
               onChange={handleNumberChange}
-              className="tour-input min-w-0 w-full bg-transparent outline-none"
+              className="tour-input w-full min-w-0 bg-transparent outline-none"
             />
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
+              aria-label={`Decrease ${label}`}
               onClick={() => changeNumber(-step)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(29,43,48,.12)] bg-white/70 transition hover:border-[var(--teal)] hover:text-[var(--teal)]"
+              className="step-btn"
             >
               <Minus size={14} />
             </button>
 
             <button
               type="button"
+              aria-label={`Increase ${label}`}
               onClick={() => changeNumber(step)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(29,43,48,.12)] bg-white/70 transition hover:border-[var(--teal)] hover:text-[var(--teal)]"
+              className="step-btn"
             >
               <Plus size={14} />
             </button>
           </div>
         </div>
 
-        {error && (
-          <div className="mt-2 flex items-center gap-2 text-xs font-medium text-red-500">
-            <AlertCircle size={14} />
-            <span>{error}</span>
-          </div>
-        )}
+        <FieldError message={error} />
       </div>
     </div>
   );
 };
+
+/* =========================================================
+   SELECT FIELD
+========================================================= */
 
 const getTransportIcon = (value) => {
   switch (value) {
@@ -1134,15 +875,13 @@ const SelectField = ({
       data-select-field
     >
       <div
-        className={`${fieldWrap} cursor-pointer ${
-          error ? "border-red-400/70" : ""
-        }`}
+        className={`${fieldWrap} cursor-pointer ${error ? "field-error" : ""}`}
         onClick={() => setActiveSelect(open ? null : name)}
         tabIndex={0}
+        role="button"
+        aria-expanded={open}
         onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            setActiveSelect(null);
-          }
+          if (e.key === "Escape") setActiveSelect(null);
 
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -1152,18 +891,15 @@ const SelectField = ({
       >
         <label className={labelCls}>{label}</label>
 
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <span className={iconBoxCls}>
             <SelectedIcon size={16} />
           </span>
 
           <div className="min-w-0 flex-1">
             <span
-              className={`tour-input block truncate ${
-                value
-                  ? "text-[var(--text)]"
-                  : "text-[var(--muted)]/45"
-              }`}
+              className={`tour-input block truncate ${value ? "" : "!text-[var(--muted)] opacity-70"
+                }`}
             >
               {value || `Select ${label}`}
             </span>
@@ -1171,18 +907,12 @@ const SelectField = ({
 
           <ChevronDown
             size={17}
-            className={`shrink-0 text-[var(--muted)] transition-transform ${
-              open ? "rotate-180" : ""
-            }`}
+            className={`shrink-0 text-[var(--muted)] transition-transform duration-200 ${open ? "rotate-180" : ""
+              }`}
           />
         </div>
 
-        {error && (
-          <div className="mt-2 flex items-center gap-2 text-xs font-medium text-red-500">
-            <AlertCircle size={14} />
-            <span>{error}</span>
-          </div>
-        )}
+        <FieldError message={error} />
 
         <AnimatePresence>
           {open && (
@@ -1191,7 +921,7 @@ const SelectField = ({
               className={dropdownCls}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="custom-dropdown-scroll p-2">
+              <div className="custom-dropdown-scroll p-1.5 sm:p-2">
                 {options.map((option) => {
                   const OptionIcon =
                     name === "transport" ? getTransportIcon(option) : Icon;
@@ -1204,19 +934,11 @@ const SelectField = ({
                       type="button"
                       onMouseDown={(e) => {
                         e.preventDefault();
-
-                        handleChange({
-                          target: {
-                            name,
-                            value: option,
-                          },
-                        });
-
+                        handleChange({ target: { name, value: option } });
                         setActiveSelect(null);
                       }}
-                      className={`dropdown-option ${
-                        selected ? "selected" : ""
-                      } flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-normal`}
+                      className={`dropdown-option ${selected ? "selected" : ""
+                        } flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium sm:px-4 sm:py-3`}
                     >
                       <span className={iconBoxCls}>
                         <OptionIcon size={15} />
@@ -1242,17 +964,23 @@ const SelectField = ({
   );
 };
 
+/* =========================================================
+   SMALL PIECES
+========================================================= */
+
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
-  <div className="mb-5 flex items-start gap-3">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(75,179,160,.12)] text-[var(--teal)]">
+  <div className="mb-4 flex items-start gap-3 sm:mb-5">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--teal)] sm:h-10 sm:w-10">
       <Icon size={18} />
     </div>
 
     <div className="min-w-0">
-      <h3 className="text-xl font-medium text-[var(--text)]">{title}</h3>
+      <h3 className="text-lg font-bold text-[var(--text)] sm:text-xl">
+        {title}
+      </h3>
 
       {subtitle && (
-        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+        <p className="mt-1 text-[13px] leading-5 text-[var(--muted)] sm:text-sm sm:leading-6">
           {subtitle}
         </p>
       )}
@@ -1260,90 +988,104 @@ const SectionTitle = ({ icon: Icon, title, subtitle }) => (
   </div>
 );
 
-const TourLoading = ({ message }) => (
+const TourLoading = ({ message, step }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="ai-loading-card mx-auto mt-8 w-full max-w-3xl rounded-3xl p-6 shadow-2xl sm:p-10"
+    className="ai-loading-card mx-auto w-full min-w-0 max-w-2xl rounded-[1.25rem] p-5 sm:rounded-3xl sm:p-9"
   >
-    <div className="flex flex-col items-center text-center">
-      <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(75,179,160,.12)]">
-        <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(75,179,160,.08)]" />
+    <div className="flex min-w-0 flex-col items-center text-center">
+      <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft)] sm:h-20 sm:w-20">
+        <div className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-soft)]" />
 
         <Loader2
-          size={34}
-          className="relative animate-spin text-[var(--teal)]"
+          size={28}
+          className="relative animate-spin text-[var(--teal)] sm:h-8 sm:w-8"
         />
       </div>
 
-      <p className="tour-label mt-7 text-[var(--muted)]">Travel Planner</p>
+      <p className="tour-label mt-5 sm:mt-6">Travel Planner</p>
 
-      <h2 className="mt-3 text-2xl font-medium text-[var(--text)] sm:text-3xl">
+      <h2 className="mt-2.5 text-lg font-bold leading-snug text-[var(--text)] sm:mt-3 sm:text-2xl md:text-3xl">
         {message}
       </h2>
 
-      <p className="mt-3 max-w-lg text-sm leading-6 text-[var(--muted)]">
-        Your request is being processed. This can take a little longer while
-        we prepare your personalized itinerary.
-      </p>
+      <ul className="mt-5 w-full max-w-sm space-y-1.5 text-left sm:mt-7 sm:space-y-2">
+        {loadingSteps.map((item, index) => {
+          const StepIcon = item.icon;
+          const done = index < step;
+          const active = index === step;
 
-      <div className="mt-7 flex items-center gap-2 text-sm text-[var(--teal)]">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--teal)]" />
-        <span>Your data is safe. Response coming soon...</span>
-      </div>
+          return (
+            <li
+              key={item.label}
+              className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-[13px] font-medium transition-all duration-500 sm:px-4 sm:py-3 sm:text-sm ${active
+                  ? "border-[var(--teal)] bg-[var(--accent-soft)] text-[var(--text)]"
+                  : done
+                    ? "border-transparent text-[var(--text-soft)]"
+                    : "border-transparent text-[var(--muted)] opacity-60"
+                }`}
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:h-8 sm:w-8 ${done
+                    ? "bg-[var(--teal)] text-[var(--ink)]"
+                    : "bg-[var(--accent-soft)] text-[var(--teal)]"
+                  }`}
+              >
+                {done ? (
+                  <Check size={15} strokeWidth={3} />
+                ) : active ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <StepIcon size={15} />
+                )}
+              </span>
 
-      <div className="mt-7 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-[rgba(29,43,48,.08)]">
-        <motion.div
-          initial={{ x: "-100%" }}
-          animate={{ x: "100%" }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.7,
-            ease: "easeInOut",
+              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-5 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-[var(--accent-soft)] sm:mt-6">
+        <div
+          className="h-full rounded-full bg-[var(--teal)] transition-all duration-700 ease-out"
+          style={{
+            width: `${((step + 1) / loadingSteps.length) * 100}%`,
           }}
-          className="h-full w-1/2 rounded-full bg-[var(--teal)]"
         />
       </div>
 
-      <p className="mt-5 text-xs text-[var(--muted)]">
-        Please don't refresh or close this page.
+      <p className="mt-4 text-[11px] leading-5 text-[var(--muted)] sm:mt-5 sm:text-xs">
+        Your data is safe. Please don't refresh or close this page.
       </p>
     </div>
   </motion.div>
 );
 
-const TourResult = ({
-  result,
-  onConfirm,
-  onCancel,
-  actionLoading,
-}) => {
+/* =========================================================
+   RESULT
+========================================================= */
+
+const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
   if (!result) return null;
 
   const plan = result.tripPlan || {};
   const budgetBreakdown = plan.budgetBreakdown || {};
 
-  const hotels = Array.isArray(plan.hotels) ? plan.hotels : [];
-  const restaurants = Array.isArray(plan.restaurants)
-    ? plan.restaurants
-    : [];
-  const touristPlaces = Array.isArray(plan.touristPlaces)
-    ? plan.touristPlaces
-    : [];
-  const hiddenGems = Array.isArray(plan.hiddenGems) ? plan.hiddenGems : [];
-  const dailyPlan = Array.isArray(plan.dailyPlan) ? plan.dailyPlan : [];
-  const packingList = Array.isArray(plan.packingList)
-    ? plan.packingList
-    : [];
-  const travelTips = Array.isArray(plan.travelTips) ? plan.travelTips : [];
-  const shoppingPlaces = Array.isArray(plan.shoppingPlaces)
-    ? plan.shoppingPlaces
-    : [];
-  const localFoods = Array.isArray(plan.localFoods) ? plan.localFoods : [];
+  const asArray = (value) => (Array.isArray(value) ? value : []);
 
-  const isConfirmed =
-    result.status === "Booked" || result.isBooked === true;
+  const hotels = asArray(plan.hotels);
+  const restaurants = asArray(plan.restaurants);
+  const touristPlaces = asArray(plan.touristPlaces);
+  const hiddenGems = asArray(plan.hiddenGems);
+  const dailyPlan = asArray(plan.dailyPlan);
+  const packingList = asArray(plan.packingList);
+  const travelTips = asArray(plan.travelTips);
+  const shoppingPlaces = asArray(plan.shoppingPlaces);
+  const localFoods = asArray(plan.localFoods);
 
+  const isConfirmed = result.status === "Booked" || result.isBooked === true;
   const isCancelled = result.status === "Cancelled";
 
   const money = (value) => {
@@ -1354,100 +1096,106 @@ const TourResult = ({
       : "₹0";
   };
 
+  const text = (item) =>
+    typeof item === "string" ? item : JSON.stringify(item);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="result-card overflow-hidden rounded-3xl p-4 shadow-2xl sm:p-7 lg:p-9"
+      className="result-card rounded-[1.25rem] p-4 sm:rounded-3xl sm:p-7 lg:p-9"
     >
-      <div className="mb-7 border-b border-[rgba(29,43,48,.1)] pb-7">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+      {/* Header */}
+      <div className="mb-6 border-b border-[var(--border)] pb-6 sm:mb-7 sm:pb-7">
+        <div className="flex flex-wrap items-start justify-between gap-4 sm:gap-5">
           <div className="min-w-0">
-            <p className="tour-label text-[var(--muted)]">
-              Your Personalized Tour
-            </p>
+            <p className="tour-label">Your Personalized Tour</p>
 
-            <h2 className="mt-2 break-words text-3xl font-medium leading-tight sm:text-4xl">
+            <h2 className="mt-2.5 break-words text-2xl font-bold leading-tight tracking-tight text-[var(--text)] sm:text-4xl">
               {result.startLocation || "Origin"}{" "}
               <span className="text-[var(--teal)]">→</span>{" "}
               {result.destination || "Destination"}
             </h2>
 
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+            <p className="mt-3 max-w-3xl text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm sm:leading-7">
               {plan.summary ||
                 "Your travel plan has been prepared according to your selected preferences."}
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 rounded-full bg-[rgba(75,179,160,.1)] px-4 py-2 text-sm text-[var(--teal)]">
+          <div className="flex shrink-0 items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3.5 py-2 text-xs font-semibold text-[var(--teal)] sm:px-4 sm:text-sm">
             <ShieldCheck size={16} />
             Plan Ready
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Quick stats */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
         {[
           ["People", result.people],
           ["Days", result.days],
           ["Budget", money(result.budget)],
           ["Transport", result.transport || "Any"],
         ].map(([label, value]) => (
-          <div
-            key={label}
-            className="min-w-0 rounded-2xl border border-[rgba(29,43,48,.08)] bg-white/80 p-4"
-          >
-            <p className="tour-label text-[var(--muted)]">{label}</p>
-            <p className="mt-2 truncate text-lg font-medium">{value}</p>
+          <div key={label} className="tile min-w-0 rounded-2xl p-3.5 sm:p-4">
+            <p className="tour-label">{label}</p>
+            <p className="mt-2 truncate text-base font-bold text-[var(--text)] sm:text-lg">
+              {value}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2.5 sm:mt-4 sm:grid-cols-3 sm:gap-3">
         {[
           ["Travel Type", result.travelType],
           ["Hotel", result.hotelType],
           ["Food", result.foodPreference],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl bg-white/80 p-5">
-            <p className="tour-label text-[var(--muted)]">{label}</p>
-            <p className="mt-2 font-normal">{value || "Not specified"}</p>
+          <div key={label} className="tile rounded-2xl p-4 sm:p-5">
+            <p className="tour-label">{label}</p>
+            <p className="mt-2 text-sm font-semibold text-[var(--text)] sm:text-base">
+              {value || "Not specified"}
+            </p>
           </div>
         ))}
       </div>
 
       {(plan.bestTimeToVisit || plan.weather) && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
           {plan.bestTimeToVisit && (
-            <div className="result-section p-5">
-              <p className="tour-label text-[var(--muted)]">
-                Best Time To Visit
+            <div className="result-section p-4 sm:p-5">
+              <p className="tour-label">Best Time To Visit</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--text)] sm:text-base">
+                {plan.bestTimeToVisit}
               </p>
-              <p className="mt-2 font-normal">{plan.bestTimeToVisit}</p>
             </div>
           )}
 
           {plan.weather && (
-            <div className="result-section p-5">
-              <p className="tour-label text-[var(--muted)]">Weather</p>
-              <p className="mt-2 leading-6">{plan.weather}</p>
+            <div className="result-section p-4 sm:p-5">
+              <p className="tour-label">Weather</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
+                {plan.weather}
+              </p>
             </div>
           )}
         </div>
       )}
 
       {result.specialRequest && (
-        <div className="result-section mt-4 p-5">
-          <p className="tour-label text-[var(--muted)]">Special Request</p>
-          <p className="mt-2 break-words text-sm leading-6">
+        <div className="result-section mt-3 p-4 sm:mt-4 sm:p-5">
+          <p className="tour-label">Special Request</p>
+          <p className="mt-2 break-words text-sm leading-6 text-[var(--text-soft)]">
             {result.specialRequest}
           </p>
         </div>
       )}
 
       {Object.keys(budgetBreakdown).length > 0 && (
-        <div className="result-section mt-8 p-5 sm:p-6">
+        <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
           <SectionTitle
             icon={Wallet}
             title="Budget Breakdown"
@@ -1456,7 +1204,7 @@ const TourResult = ({
             )}`}
           />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
             {[
               ["Hotel", budgetBreakdown.hotel],
               ["Food", budgetBreakdown.food],
@@ -1465,12 +1213,11 @@ const TourResult = ({
               ["Shopping", budgetBreakdown.shopping],
               ["Remaining", budgetBreakdown.remaining],
             ].map(([label, value]) => (
-              <div
-                key={label}
-                className="rounded-xl bg-[rgba(75,179,160,.07)] p-4"
-              >
+              <div key={label} className="soft-tile rounded-xl p-3.5 sm:p-4">
                 <p className="text-xs text-[var(--muted)]">{label}</p>
-                <p className="mt-1 font-medium">{money(value)}</p>
+                <p className="mt-1 text-sm font-bold text-[var(--text)] sm:text-base">
+                  {money(value)}
+                </p>
               </div>
             ))}
           </div>
@@ -1478,46 +1225,43 @@ const TourResult = ({
       )}
 
       {dailyPlan.length > 0 && (
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <SectionTitle
             icon={CalendarDays}
             title="Daily Itinerary"
             subtitle="A practical day-by-day plan for your journey."
           />
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {dailyPlan.map((day, index) => (
               <motion.div
                 key={`${day.day || index}-${index}`}
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="result-item overflow-hidden p-5"
+                className="result-item overflow-hidden p-4 sm:p-5"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--teal)] text-sm font-medium text-white">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--teal)] text-sm font-bold text-[var(--ink)] sm:h-11 sm:w-11">
                     {day.day || index + 1}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xl font-medium">
+                    <h4 className="text-base font-bold text-[var(--text)] sm:text-xl">
                       {day.title || `Day ${index + 1}`}
                     </h4>
 
                     {Array.isArray(day.activities) &&
                       day.activities.length > 0 && (
-                        <div className="mt-4 space-y-2">
+                        <div className="mt-3 space-y-2 sm:mt-4">
                           {day.activities.map((activity, activityIndex) => (
                             <div
                               key={activityIndex}
-                              className="flex items-start gap-2 text-sm leading-6"
+                              className="flex items-start gap-2 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm"
                             >
                               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)]" />
-
                               <span className="break-words">
-                                {typeof activity === "string"
-                                  ? activity
-                                  : JSON.stringify(activity)}
+                                {text(activity)}
                               </span>
                             </div>
                           ))}
@@ -1532,26 +1276,26 @@ const TourResult = ({
       )}
 
       {hotels.length > 0 && (
-        <div className="result-section mt-8 p-5 sm:p-6">
+        <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
           <SectionTitle
             icon={Hotel}
             title="Recommended Hotels"
             subtitle="Accommodation options matching your hotel preference."
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {hotels.map((hotel, index) => (
               <div
                 key={`${hotel.name || "hotel"}-${index}`}
-                className="result-item p-5"
+                className="result-item p-4 sm:p-5"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h4 className="min-w-0 break-words font-medium">
+                  <h4 className="min-w-0 break-words font-bold text-[var(--text)]">
                     {hotel.name}
                   </h4>
 
                   {hotel.rating && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-[rgba(207,157,75,.14)] px-2 py-1 text-xs">
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-1 text-xs font-semibold text-[var(--teal)]">
                       <Star size={12} />
                       {hotel.rating}
                     </span>
@@ -1559,13 +1303,13 @@ const TourResult = ({
                 </div>
 
                 {hotel.pricePerNight && (
-                  <p className="mt-2 text-sm text-[var(--teal)]">
+                  <p className="mt-2 text-sm font-semibold text-[var(--teal)]">
                     {hotel.pricePerNight}
                   </p>
                 )}
 
                 {hotel.reason && (
-                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  <p className="mt-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
                     {hotel.reason}
                   </p>
                 )}
@@ -1576,26 +1320,26 @@ const TourResult = ({
       )}
 
       {restaurants.length > 0 && (
-        <div className="result-section mt-8 p-5 sm:p-6">
+        <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
           <SectionTitle
             icon={Coffee}
             title="Recommended Restaurants"
             subtitle="Places to eat according to your food preference."
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {restaurants.map((restaurant, index) => (
               <div
                 key={`${restaurant.name || "restaurant"}-${index}`}
-                className="result-item p-5"
+                className="result-item p-4 sm:p-5"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h4 className="min-w-0 break-words font-medium">
+                  <h4 className="min-w-0 break-words font-bold text-[var(--text)]">
                     {restaurant.name}
                   </h4>
 
                   {restaurant.rating && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-[rgba(207,157,75,.14)] px-2 py-1 text-xs">
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-1 text-xs font-semibold text-[var(--teal)]">
                       <Star size={12} />
                       {restaurant.rating}
                     </span>
@@ -1603,7 +1347,7 @@ const TourResult = ({
                 </div>
 
                 {restaurant.speciality && (
-                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  <p className="mt-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
                     {restaurant.speciality}
                   </p>
                 )}
@@ -1614,29 +1358,31 @@ const TourResult = ({
       )}
 
       {touristPlaces.length > 0 && (
-        <div className="result-section mt-8 p-5 sm:p-6">
+        <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
           <SectionTitle
             icon={Map}
             title="Places To Visit"
             subtitle="Must-see attractions for your trip."
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {touristPlaces.map((place, index) => (
               <div
                 key={`${place.name || "place"}-${index}`}
-                className="result-item p-5"
+                className="result-item p-4 sm:p-5"
               >
-                <h4 className="break-words font-medium">{place.name}</h4>
+                <h4 className="break-words font-bold text-[var(--text)]">
+                  {place.name}
+                </h4>
 
                 {place.description && (
-                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  <p className="mt-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
                     {place.description}
                   </p>
                 )}
 
                 {place.entryFee && (
-                  <div className="mt-3 inline-flex rounded-full bg-[rgba(75,179,160,.1)] px-3 py-1 text-xs text-[var(--teal)]">
+                  <div className="mt-3 inline-flex rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--teal)]">
                     Entry: {place.entryFee}
                   </div>
                 )}
@@ -1647,23 +1393,25 @@ const TourResult = ({
       )}
 
       {hiddenGems.length > 0 && (
-        <div className="result-section mt-8 p-5 sm:p-6">
+        <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
           <SectionTitle
             icon={MapPin}
             title="Hidden Gems"
             subtitle="Less obvious places worth exploring."
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {hiddenGems.map((gem, index) => (
               <div
                 key={`${gem.name || "gem"}-${index}`}
-                className="result-item p-5"
+                className="result-item p-4 sm:p-5"
               >
-                <h4 className="break-words font-medium">{gem.name}</h4>
+                <h4 className="break-words font-bold text-[var(--text)]">
+                  {gem.name}
+                </h4>
 
                 {gem.description && (
-                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  <p className="mt-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
                     {gem.description}
                   </p>
                 )}
@@ -1674,18 +1422,18 @@ const TourResult = ({
       )}
 
       {(shoppingPlaces.length > 0 || localFoods.length > 0) && (
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5 lg:grid-cols-2">
           {shoppingPlaces.length > 0 && (
-            <div className="result-section p-5 sm:p-6">
+            <div className="result-section p-4 sm:p-6">
               <SectionTitle icon={ShoppingBag} title="Shopping" />
 
               <div className="space-y-2">
                 {shoppingPlaces.map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-xl bg-white/70 px-4 py-3 text-sm leading-6"
+                    className="tile rounded-xl px-4 py-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm"
                   >
-                    {typeof item === "string" ? item : JSON.stringify(item)}
+                    {text(item)}
                   </div>
                 ))}
               </div>
@@ -1693,16 +1441,16 @@ const TourResult = ({
           )}
 
           {localFoods.length > 0 && (
-            <div className="result-section p-5 sm:p-6">
+            <div className="result-section p-4 sm:p-6">
               <SectionTitle icon={Utensils} title="Local Foods" />
 
               <div className="space-y-2">
                 {localFoods.map((item, index) => (
                   <div
                     key={index}
-                    className="rounded-xl bg-white/70 px-4 py-3 text-sm leading-6"
+                    className="tile rounded-xl px-4 py-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm"
                   >
-                    {typeof item === "string" ? item : JSON.stringify(item)}
+                    {text(item)}
                   </div>
                 ))}
               </div>
@@ -1712,24 +1460,19 @@ const TourResult = ({
       )}
 
       {(packingList.length > 0 || travelTips.length > 0) && (
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:mt-8 sm:gap-5 lg:grid-cols-2">
           {packingList.length > 0 && (
-            <div className="result-section p-5 sm:p-6">
+            <div className="result-section p-4 sm:p-6">
               <SectionTitle icon={Backpack} title="Packing List" />
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {packingList.map((item, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-2 rounded-xl bg-white/70 px-4 py-3 text-sm"
+                    className="tile flex items-start gap-2 rounded-xl px-4 py-3 text-[13px] text-[var(--text-soft)] sm:text-sm"
                   >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)]" />
-
-                    <span className="break-words">
-                      {typeof item === "string"
-                        ? item
-                        : JSON.stringify(item)}
-                    </span>
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)]" />
+                    <span className="break-words">{text(item)}</span>
                   </div>
                 ))}
               </div>
@@ -1737,25 +1480,20 @@ const TourResult = ({
           )}
 
           {travelTips.length > 0 && (
-            <div className="result-section p-5 sm:p-6">
+            <div className="result-section p-4 sm:p-6">
               <SectionTitle icon={Lightbulb} title="Travel Tips" />
 
               <div className="space-y-2">
                 {travelTips.map((item, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-2 rounded-xl bg-white/70 px-4 py-3 text-sm leading-6"
+                    className="tile flex items-start gap-2 rounded-xl px-4 py-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm"
                   >
                     <Lightbulb
                       size={15}
                       className="mt-1 shrink-0 text-[var(--gold)]"
                     />
-
-                    <span className="break-words">
-                      {typeof item === "string"
-                        ? item
-                        : JSON.stringify(item)}
-                    </span>
+                    <span className="break-words">{text(item)}</span>
                   </div>
                 ))}
               </div>
@@ -1768,89 +1506,58 @@ const TourResult = ({
         (plan.emergencyContacts.hospital ||
           plan.emergencyContacts.police ||
           plan.emergencyContacts.helpline) && (
-          <div className="result-section mt-8 p-5 sm:p-6">
+          <div className="result-section mt-6 p-4 sm:mt-8 sm:p-6">
             <SectionTitle
               icon={ShieldCheck}
               title="Emergency Contacts"
               subtitle="Keep these details available during your journey."
             />
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {plan.emergencyContacts.hospital && (
-                <div className="flex items-start gap-3 rounded-xl bg-white/70 p-4">
-                  <Hospital
-                    size={18}
-                    className="mt-0.5 shrink-0 text-[var(--teal)]"
-                  />
+            <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-3">
+              {[
+                ["Hospital", plan.emergencyContacts.hospital, Hospital],
+                ["Police", plan.emergencyContacts.police, ShieldCheck],
+                ["Helpline", plan.emergencyContacts.helpline, Phone],
+              ]
+                .filter(([, value]) => value)
+                .map(([label, value, ContactIcon]) => (
+                  <div
+                    key={label}
+                    className="tile flex items-start gap-3 rounded-xl p-4"
+                  >
+                    <ContactIcon
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[var(--teal)]"
+                    />
 
-                  <div>
-                    <p className="text-xs text-[var(--muted)]">Hospital</p>
-
-                    <p className="mt-1 text-sm">
-                      {plan.emergencyContacts.hospital}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="text-xs text-[var(--muted)]">{label}</p>
+                      <p className="mt-1 break-words text-sm font-medium text-[var(--text)]">
+                        {value}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {plan.emergencyContacts.police && (
-                <div className="flex items-start gap-3 rounded-xl bg-white/70 p-4">
-                  <ShieldCheck
-                    size={18}
-                    className="mt-0.5 shrink-0 text-[var(--teal)]"
-                  />
-
-                  <div>
-                    <p className="text-xs text-[var(--muted)]">Police</p>
-
-                    <p className="mt-1 text-sm">
-                      {plan.emergencyContacts.police}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {plan.emergencyContacts.helpline && (
-                <div className="flex items-start gap-3 rounded-xl bg-white/70 p-4">
-                  <Phone
-                    size={18}
-                    className="mt-0.5 shrink-0 text-[var(--teal)]"
-                  />
-
-                  <div>
-                    <p className="text-xs text-[var(--muted)]">Helpline</p>
-
-                    <p className="mt-1 text-sm">
-                      {plan.emergencyContacts.helpline}
-                    </p>
-                  </div>
-                </div>
-              )}
+                ))}
             </div>
           </div>
         )}
 
-      <div className="mt-10 border-t border-[rgba(29,43,48,.1)] pt-8">
+      {/* Status */}
+      <div className="mt-8 border-t border-[var(--border)] pt-7 sm:mt-10 sm:pt-8">
         <div className="text-center">
-          <p className="tour-label text-[var(--muted)]">
-            Tour Plan Status
-          </p>
+          <p className="tour-label">Tour Plan Status</p>
 
-          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+          <p className="mt-2 text-[13px] leading-6 text-[var(--muted)] sm:text-sm">
             Confirm or cancel your tour plan.
           </p>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 sm:mt-6 sm:grid-cols-2">
           <button
             type="button"
             onClick={onConfirm}
-            disabled={
-              actionLoading ||
-              isConfirmed ||
-              isCancelled
-            }
-            className="flex min-h-13 items-center justify-center gap-2 rounded-xl bg-[var(--teal)] px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={actionLoading || isConfirmed || isCancelled}
+            className="tour-button flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold"
           >
             {actionLoading ? (
               <Loader2 size={17} className="animate-spin" />
@@ -1864,12 +1571,8 @@ const TourResult = ({
           <button
             type="button"
             onClick={onCancel}
-            disabled={
-              actionLoading ||
-              isCancelled ||
-              isConfirmed
-            }
-            className="flex min-h-13 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={actionLoading || isCancelled || isConfirmed}
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400"
           >
             {actionLoading ? (
               <Loader2 size={17} className="animate-spin" />
@@ -1882,14 +1585,14 @@ const TourResult = ({
         </div>
 
         {isConfirmed && (
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">
             <Check size={16} />
             Your trip plan has been confirmed.
           </div>
         )}
 
         {isCancelled && (
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">
             <AlertCircle size={16} />
             Your trip plan has been cancelled.
           </div>
@@ -1898,6 +1601,62 @@ const TourResult = ({
     </motion.div>
   );
 };
+
+/* =========================================================
+   PAGE SHELL  (Navbar + Features-style grid background)
+========================================================= */
+
+const PageShell = ({ children }) => (
+  <div className="tour-root min-h-screen w-full overflow-x-clip">
+    <style>{styles}</style>
+
+    <Navbar />
+
+    <main
+      className="
+        tour-page
+        min-h-[calc(100vh-110px)]
+        px-3
+        pb-6
+        pt-3
+        sm:px-6
+        sm:pb-10
+        sm:pt-5
+        lg:px-8
+        lg:pb-14
+        lg:pt-6
+      "
+    >
+      {/* Background grid pattern */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              90deg,
+              var(--page-pattern-color, var(--tour-pattern)) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              0deg,
+              var(--page-pattern-color, var(--tour-pattern)) 1px,
+              transparent 1px
+            )
+          `,
+          backgroundSize: "48px 48px",
+        }}
+      />
+
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-5xl">
+        {children}
+      </div>
+    </main>
+  </div>
+);
+
+/* =========================================================
+   TOUR PAGE
+========================================================= */
 
 const Tour = () => {
   const location = useLocation();
@@ -1926,11 +1685,12 @@ const Tour = () => {
   const [loadingTrip, setLoadingTrip] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [tourResult, setTourResult] = useState(null);
-  const [loadingMessage, setLoadingMessage] = useState(
-    loadingMessages[0],
-  );
+  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+  const [loadingStep, setLoadingStep] = useState(0);
 
   const reduceMotion = useReducedMotion();
+
+  const activeTripId = tripId || extractTripId(tourResult);
 
   const budgetNumber = Number(form.budget);
 
@@ -1938,21 +1698,54 @@ const Tour = () => {
     form.budget !== "" &&
     (!Number.isFinite(budgetNumber) || budgetNumber < 5000);
 
+  /* ---------- Loading message rotation ---------- */
+
   useEffect(() => {
     if (!loading) {
       setLoadingMessage(loadingMessages[0]);
+      setLoadingStep(0);
       return;
     }
 
-    let index = 0;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    let tick = 0;
 
     const interval = setInterval(() => {
-      index = (index + 1) % loadingMessages.length;
-      setLoadingMessage(loadingMessages[index]);
+      tick += 1;
+
+      setLoadingMessage(loadingMessages[tick % loadingMessages.length]);
+
+      if (tick % 2 === 0) {
+        setLoadingStep((previous) =>
+          Math.min(previous + 1, loadingSteps.length - 1),
+        );
+      }
     }, 2600);
 
     return () => clearInterval(interval);
   }, [loading]);
+
+  /* ---------- 1 person => Solo (auto) ---------- */
+
+  useEffect(() => {
+    if (isViewingTrip) return;
+
+    const people = Number(form.people);
+
+    if (people === 1) {
+      setForm((prev) =>
+        prev.travelType === "Solo" ? prev : { ...prev, travelType: "Solo" },
+      );
+      clearFieldError(setFieldErrors, "travelType");
+    } else if (people > 1) {
+      setForm((prev) =>
+        prev.travelType === "Solo" ? { ...prev, travelType: "" } : prev,
+      );
+    }
+  }, [form.people, isViewingTrip]);
+
+  /* ---------- Destination passed via navigation state ---------- */
 
   useEffect(() => {
     if (location.state?.destination && !tripId) {
@@ -1962,6 +1755,8 @@ const Tour = () => {
       }));
     }
   }, [location.state, tripId]);
+
+  /* ---------- Load saved trip ---------- */
 
   useEffect(() => {
     const loadTrip = async () => {
@@ -1982,9 +1777,7 @@ const Tour = () => {
         }
 
         const trip =
-          responseData?.data ??
-          responseData?.trip ??
-          responseData;
+          responseData?.data ?? responseData?.trip ?? responseData;
 
         if (!trip || typeof trip !== "object") {
           throw new Error("Saved trip data was not found");
@@ -2020,8 +1813,8 @@ const Tour = () => {
 
         toast.error(
           error?.response?.data?.message ||
-            error?.message ||
-            "Unable to load your saved trip",
+          error?.message ||
+          "Unable to load your saved trip",
         );
       } finally {
         setLoadingTrip(false);
@@ -2030,6 +1823,8 @@ const Tour = () => {
 
     loadTrip();
   }, [tripId]);
+
+  /* ---------- Close dropdowns on outside click ---------- */
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -2049,30 +1844,20 @@ const Tour = () => {
     };
   }, []);
 
+  /* ---------- Handlers ---------- */
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setFieldErrors((prev) => {
-      if (!prev[name]) return prev;
-
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
+    setForm((prev) => ({ ...prev, [name]: value }));
+    clearFieldError(setFieldErrors, name);
   };
 
   const getBudgetMessage = (budget) => {
     if (!Number.isFinite(budget) || budget < 1000) {
       return (
         "😂 Are you kidding? ₹" +
-        (Number.isFinite(budget)
-          ? budget.toLocaleString("en-IN")
-          : "0") +
+        (Number.isFinite(budget) ? budget.toLocaleString("en-IN") : "0") +
         " won't even cover the basics of a trip!"
       );
     }
@@ -2148,7 +1933,7 @@ const Tour = () => {
 
       toast.error(
         getBudgetMessage(safeBudget) ||
-          "Please enter a realistic travel budget of at least ₹5,000.",
+        "Please enter a realistic travel budget of at least ₹5,000.",
       );
 
       return;
@@ -2185,48 +1970,38 @@ const Tour = () => {
       const responseData = response?.data;
 
       if (!responseData?.status) {
-        toast.error(
-          responseData?.message || "Unable to generate tour plan",
-        );
+        toast.error(responseData?.message || "Unable to generate tour plan");
         return;
       }
 
-      const createdTrip = responseData?.data;
+      const createdTrip = responseData?.data ?? responseData?.trip;
 
       if (!createdTrip) {
         toast.error(
           responseData?.message ||
-            "Tour was created but no trip data was returned",
+          "Tour was created but no trip data was returned",
         );
         return;
       }
 
       const createdTripId =
-        createdTrip.tripId ||
-        createdTrip._id ||
-        createdTrip.id ||
-        createdTrip.trip?._id ||
-        createdTrip.trip?.tripId ||
-        createdTrip.trip?.id;
+        extractTripId(createdTrip) || extractTripId(responseData);
 
       if (!createdTripId) {
-        setTourResult(createdTrip);
+        console.warn("CREATE TOUR: no trip id in response", responseData);
+
+        setTourResult(createdTrip.trip || createdTrip);
 
         toast.success(
-          responseData.message ||
-            "Tour plan generated successfully",
+          responseData.message || "Tour plan generated successfully",
         );
 
         return;
       }
 
-      toast.success(
-        responseData.message || "Tour plan saved successfully",
-      );
+      toast.success(responseData.message || "Tour plan saved successfully");
 
-      navigate(`/tour/${createdTripId}`, {
-        replace: true,
-      });
+      navigate(`/tour/${createdTripId}`, { replace: true });
     } catch (error) {
       console.error("CREATE TOUR ERROR:", error);
 
@@ -2235,8 +2010,7 @@ const Tour = () => {
         error?.response?.data?.error?.message;
 
       const statusCode =
-        error?.response?.status ||
-        error?.response?.data?.error?.code;
+        error?.response?.status || error?.response?.data?.error?.code;
 
       if (
         statusCode === 503 ||
@@ -2258,7 +2032,7 @@ const Tour = () => {
       } else {
         toast.error(
           backendMessage ||
-            "Unable to create your tour plan. Please try again.",
+          "Unable to create your tour plan. Please try again.",
         );
       }
     } finally {
@@ -2266,9 +2040,21 @@ const Tour = () => {
     }
   };
 
+  const extractUpdated = (body) => {
+    if (body?.data?.data && typeof body.data.data === "object") {
+      return body.data.data;
+    }
+
+    if (body?.data && typeof body.data === "object") {
+      return body.data;
+    }
+
+    return null;
+  };
+
   const handleConfirmTrip = async () => {
     if (
-      !tripId ||
+      !activeTripId ||
       actionLoading ||
       tourResult?.status === "Booked" ||
       tourResult?.status === "Cancelled"
@@ -2279,47 +2065,32 @@ const Tour = () => {
     try {
       setActionLoading(true);
 
-      const response = await confirmTrip(tripId);
+      const response = await confirmTrip(activeTripId);
 
       const body =
-        response?.data &&
-        typeof response.data === "object"
+        response?.data && typeof response.data === "object"
           ? response.data
           : response;
 
       if (body?.status === false) {
-        throw new Error(
-          body.message || "Unable to confirm trip plan",
-        );
+        throw new Error(body.message || "Unable to confirm trip plan");
       }
-
-      const updated =
-        body?.data?.data &&
-        typeof body.data.data === "object"
-          ? body.data.data
-          : body?.data &&
-              typeof body.data === "object"
-            ? body.data
-            : null;
 
       setTourResult((previous) => ({
         ...previous,
-        ...(updated || {}),
+        ...(extractUpdated(body) || {}),
         status: "Booked",
         isBooked: true,
       }));
 
-      toast.success(
-        body?.message ||
-          "Trip plan confirmed successfully",
-      );
+      toast.success(body?.message || "Trip plan confirmed successfully");
     } catch (error) {
       console.error("CONFIRM TRIP ERROR:", error);
 
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Unable to confirm trip plan",
+        error?.message ||
+        "Unable to confirm trip plan",
       );
     } finally {
       setActionLoading(false);
@@ -2328,7 +2099,7 @@ const Tour = () => {
 
   const handleCancelTrip = async () => {
     if (
-      !tripId ||
+      !activeTripId ||
       actionLoading ||
       tourResult?.status === "Cancelled" ||
       tourResult?.status === "Booked"
@@ -2339,475 +2110,361 @@ const Tour = () => {
     try {
       setActionLoading(true);
 
-      const response = await cancelTrip(tripId);
+      const response = await cancelTrip(activeTripId);
 
       const body =
-        response?.data &&
-        typeof response.data === "object"
+        response?.data && typeof response.data === "object"
           ? response.data
           : response;
 
       if (body?.status === false) {
-        throw new Error(
-          body.message || "Unable to cancel trip plan",
-        );
+        throw new Error(body.message || "Unable to cancel trip plan");
       }
-
-      const updated =
-        body?.data?.data &&
-        typeof body.data.data === "object"
-          ? body.data.data
-          : body?.data &&
-              typeof body.data === "object"
-            ? body.data
-            : null;
 
       setTourResult((previous) => ({
         ...previous,
-        ...(updated || {}),
+        ...(extractUpdated(body) || {}),
         status: "Cancelled",
         isBooked: false,
       }));
 
-      toast.success(
-        body?.message ||
-          "Trip plan cancelled successfully",
-      );
+      toast.success(body?.message || "Trip plan cancelled successfully");
     } catch (error) {
       console.error("CANCEL TRIP ERROR:", error);
 
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Unable to cancel trip plan",
+        error?.message ||
+        "Unable to cancel trip plan",
       );
     } finally {
       setActionLoading(false);
     }
   };
 
-  const origin =
-    form.startLocation.trim().toUpperCase() || "ORIGIN";
+  const origin = form.startLocation.trim() || "Origin";
+  const destination = form.destination.trim() || "Destination";
 
-  const destination =
-    form.destination.trim().toUpperCase() || "DESTINATION";
+  const budgetError =
+    fieldErrors.budget ||
+    (budgetIsInvalid ? "Minimum budget is ₹5,000" : undefined);
+
+  const fadeIn = reduceMotion
+    ? {}
+    : {
+      initial: { opacity: 0, y: 18 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+    };
+
+  const showResult = isViewingTrip || Boolean(tourResult);
+
+  /* ---------- Loading a saved trip ---------- */
 
   if (loadingTrip) {
     return (
-      <main className="tour-page flex min-h-screen items-center justify-center px-4">
-        <style>{styles}</style>
-
-        <div className="w-full max-w-md text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(75,179,160,.12)]">
-            <Loader2
-              size={25}
-              className="animate-spin text-[var(--teal)]"
-            />
+      <PageShell>
+        <div className="mx-auto flex min-h-[50vh] w-full max-w-md flex-col items-center justify-center text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft)]">
+            <Loader2 size={25} className="animate-spin text-[var(--teal)]" />
           </div>
 
-          <h2 className="mt-5 text-2xl font-medium text-white">
+          <h2 className="mt-5 text-xl font-bold text-[var(--text)] sm:text-2xl">
             Loading your trip
           </h2>
 
-          <p className="mt-2 text-sm font-normal text-white/50">
+          <p className="mt-2 text-sm text-[var(--muted)]">
             Fetching your saved tour plan...
           </p>
         </div>
-      </main>
+      </PageShell>
     );
   }
 
+  /* ---------- Saved trip not found ---------- */
+
   if (isViewingTrip && !tourResult) {
     return (
-      <main className="tour-page flex min-h-screen items-center justify-center px-4">
-        <style>{styles}</style>
-
-        <div className="w-full max-w-md text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(207,157,75,.12)]">
-            <MapPin
-              size={28}
-              className="text-[var(--gold-light)]"
-            />
+      <PageShell>
+        <div className="mx-auto flex min-h-[50vh] w-full max-w-md flex-col items-center justify-center text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)]">
+            <MapPin size={28} className="text-[var(--teal)]" />
           </div>
 
-          <h2 className="mt-5 text-2xl font-medium text-white">
+          <h2 className="mt-5 text-xl font-bold text-[var(--text)] sm:text-2xl">
             Trip not found
           </h2>
 
-          <p className="mt-2 text-sm leading-6 text-white/50">
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
             We could not find this saved travel plan.
           </p>
 
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] px-5 py-3 text-sm font-medium text-[var(--ink)] transition hover:opacity-90"
+            className="tour-button mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold"
           >
             Back to Dashboard
             <ArrowRight size={17} />
           </button>
         </div>
-      </main>
+      </PageShell>
     );
   }
 
+  /* ---------- Main page ---------- */
+
   return (
-    <main className="tour-page min-h-screen overflow-x-hidden px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-      <style>{styles}</style>
+    <PageShell>
+      {showResult ? (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setTourResult(null);
+              navigate("/tour");
+            }}
+            className="ghost-button mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold sm:mb-5 sm:text-sm"
+          >
+            <ArrowLeft size={15} />
+            Plan another trip
+          </button>
 
-      <div className="mx-auto w-full max-w-5xl">
-        {isViewingTrip ? (
-          <>
-            <div className="text-center">
-              <h1 className="mb-4 text-4xl text-white">
-                Your Tour Plan
+          <TourResult
+            result={tourResult}
+            onConfirm={handleConfirmTrip}
+            onCancel={handleCancelTrip}
+            actionLoading={actionLoading}
+          />
+        </>
+      ) : (
+        <>
+          {/* Header (hidden while the plan is being generated) */}
+          {!loading && (
+            <motion.div
+              {...fadeIn}
+              className="mx-auto mb-5 max-w-3xl px-1 text-center sm:mb-7 md:mb-8"
+            >
+              <h1 className="text-[1.9rem] font-bold leading-[1.12] tracking-tight text-slate-900 dark:text-white sm:text-4xl md:text-5xl">
+                Create Your
+                <span className="tour-title-gradient mt-1 block">
+                  Perfect Tour
+                </span>
               </h1>
 
-              <p className="tour-subtitle mx-auto mb-5 max-w-xl text-white/90">
-                Your personalized travel plan is ready.
+              <p className="mx-auto mt-3 max-w-xl px-2 text-[13px] leading-6 text-slate-600 dark:text-slate-300 sm:mt-4 sm:text-base sm:leading-7">
+                Choose your starting location, destination, budget and travel
+                preferences.
               </p>
-            </div>
+            </motion.div>
+          )}
 
-            <TourResult
-              result={tourResult}
-              onConfirm={handleConfirmTrip}
-              onCancel={handleCancelTrip}
-              actionLoading={actionLoading}
-            />
-          </>
-        ) : (
-          <>
-            <div className="mb-10 text-center">
-              <h1 className="mt-3 text-4xl font-bold text-[#4d4dff]">
-                Create Your Tour
-              </h1>
-
-              <p className="tour-subtitle mx-auto mt-4 max-w-xl text-white/90">
-                Choose your starting location, destination, budget
-                and travel preferences.
-              </p>
-            </div>
-
-            {loading ? (
-              <TourLoading message={loadingMessage} />
-            ) : (
-              <motion.form
-                onSubmit={handleSubmit}
-                initial={
-                  reduceMotion
-                    ? false
-                    : {
-                        opacity: 0,
-                        y: 12,
-                      }
-                }
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                transition={{
-                  duration: 0.4,
-                }}
-                className="ticket-card relative overflow-visible"
-              >
-                <div className="flex flex-col gap-5 px-6 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-9">
-                  <div className="min-w-0 flex-1">
-                    <p className="tour-label text-[var(--muted)]">
-                      From
-                    </p>
-
-                    <p className="mt-1 truncate text-xl font-normal">
-                      {origin.length > 20
-                        ? `${origin.slice(0, 20)}…`
-                        : origin}
+          {loading ? (
+            <TourLoading message={loadingMessage} step={loadingStep} />
+          ) : (
+            <motion.form
+              {...fadeIn}
+              onSubmit={handleSubmit}
+              noValidate
+              className="ticket-card"
+            >
+              {/* Route header */}
+              <div className="ticket-route px-4 py-4 sm:px-7 sm:py-6 md:px-9">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-5">
+                  <div className="min-w-0">
+                    <p className="tour-label">From</p>
+                    <p className="ticket-route-value mt-1.5 truncate text-sm sm:text-lg">
+                      {origin}
                     </p>
                   </div>
 
-                  <div className="flex h-10 w-10 shrink-0 self-center items-center justify-center rounded-full bg-[rgba(75,179,160,.15)] text-[var(--teal)]">
-                    <Navigation size={17} />
-                  </div>
+                  <div className="flex items-center gap-1.5 text-[var(--teal)] sm:gap-2">
+                    <span className="hidden h-px w-6 border-t border-dashed border-current opacity-50 sm:block sm:w-10" />
 
-                  <div className="min-w-0 flex-1 sm:text-right">
-                    <p className="tour-label text-[var(--muted)]">
-                      To
-                    </p>
-
-                    <p className="mt-1 truncate text-xl font-normal">
-                      {destination.length > 20
-                        ? `${destination.slice(0, 20)}…`
-                        : destination}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <span
-                    className="ticket-notch -left-3 -translate-x-1/2"
-                    style={{ top: "-0.875rem" }}
-                  />
-
-                  <span
-                    className="ticket-notch -right-3 translate-x-1/2"
-                    style={{ top: "-0.875rem" }}
-                  />
-
-                  <div className="ticket-perf" />
-                </div>
-
-                <div className="px-6 py-7 sm:px-9 sm:py-9">
-                  <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="tour-label text-[var(--muted)]">
-                      Passenger & Trip Details
-                    </h2>
-
-                    <span className="tour-label rounded-full border border-[rgba(29,43,48,.15)] bg-white/40 px-2.5 py-1 text-[var(--muted)]">
-                      Required Fields
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft)] sm:h-10 sm:w-10">
+                      <Plane size={16} className="sm:h-[18px] sm:w-[18px]" />
                     </span>
+
+                    <span className="hidden h-px w-6 border-t border-dashed border-current opacity-50 sm:block sm:w-10" />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <LocationField
-                      name="startLocation"
-                      label="Starting Location"
-                      icon={Navigation}
-                      value={form.startLocation}
-                      activeLocation={activeLocation}
-                      setActiveLocation={setActiveLocation}
-                      setForm={setForm}
-                      setFieldErrors={setFieldErrors}
-                      error={fieldErrors.startLocation}
-                    />
+                  <div className="min-w-0 text-right">
+                    <p className="tour-label">To</p>
+                    <p className="ticket-route-value mt-1.5 truncate text-sm sm:text-lg">
+                      {destination}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                    <LocationField
-                      name="destination"
-                      label="Destination"
-                      icon={MapPin}
-                      value={form.destination}
-                      activeLocation={activeLocation}
-                      setActiveLocation={setActiveLocation}
-                      setForm={setForm}
-                      setFieldErrors={setFieldErrors}
-                      error={fieldErrors.destination}
-                    />
+              <div className="ticket-perf">
+                <span className="ticket-notch ticket-notch-left" />
+                <span className="ticket-notch ticket-notch-right" />
+              </div>
 
-                    <div
-                      className={`relative w-full ${
-                        budgetIsInvalid ? "z-[200]" : "z-10"
-                      }`}
-                    >
-                      <NumberField
-                        name="budget"
-                        label="Budget"
-                        icon={Wallet}
-                        step={100}
-                        minimum={5000}
-                        prefix="₹"
-                        value={form.budget}
-                        setForm={setForm}
-                        setFieldErrors={setFieldErrors}
-                        error={fieldErrors.budget}
-                      />
+              {/* Fields */}
+              <div className="min-w-0 px-3.5 py-5 sm:px-7 sm:py-8 md:px-9">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+                  <LocationField
+                    name="startLocation"
+                    label="Starting Location"
+                    icon={Navigation}
+                    value={form.startLocation}
+                    activeLocation={activeLocation}
+                    setActiveLocation={setActiveLocation}
+                    setForm={setForm}
+                    setFieldErrors={setFieldErrors}
+                    error={fieldErrors.startLocation}
+                  />
 
-                      <AnimatePresence>
-                        {budgetIsInvalid && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            transition={{
-                              duration: 0.18,
-                              ease: "easeOut",
-                            }}
-                            className="budget-warning absolute left-0 right-0 top-[calc(100%+8px)] z-[9999] rounded-2xl px-4 py-3"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgba(207,157,75,.18)]">
-                                <AlertCircle
-                                  size={17}
-                                  className="text-[var(--gold)]"
-                                />
-                              </div>
+                  <LocationField
+                    name="destination"
+                    label="Destination"
+                    icon={MapPin}
+                    value={form.destination}
+                    activeLocation={activeLocation}
+                    setActiveLocation={setActiveLocation}
+                    setForm={setForm}
+                    setFieldErrors={setFieldErrors}
+                    error={fieldErrors.destination}
+                  />
 
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-white">
-                                  Budget must be at least ₹5,000
-                                </p>
+                  <NumberField
+                    name="budget"
+                    label="Budget"
+                    icon={Wallet}
+                    step={1000}
+                    minimum={5000}
+                    prefix="₹"
+                    value={form.budget}
+                    setForm={setForm}
+                    setFieldErrors={setFieldErrors}
+                    error={budgetError}
+                  />
 
-                                <p className="mt-1 text-xs leading-5 text-white/75">
-                                  {getBudgetMessage(budgetNumber) ||
-                                    "Please enter a budget of ₹5,000 or more for your trip."}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                  <NumberField
+                    name="people"
+                    label="Number of People"
+                    icon={Users}
+                    step={1}
+                    minimum={1}
+                    value={form.people}
+                    setForm={setForm}
+                    setFieldErrors={setFieldErrors}
+                    error={fieldErrors.people}
+                  />
 
-                    <NumberField
-                      name="people"
-                      label="Number of People"
-                      icon={Users}
-                      step={1}
-                      minimum={1}
-                      value={form.people}
-                      setForm={setForm}
-                      setFieldErrors={setFieldErrors}
-                      error={fieldErrors.people}
-                    />
+                  <NumberField
+                    name="days"
+                    label="Number of Days"
+                    icon={CalendarDays}
+                    step={1}
+                    minimum={1}
+                    value={form.days}
+                    setForm={setForm}
+                    setFieldErrors={setFieldErrors}
+                    error={fieldErrors.days}
+                  />
 
-                    <NumberField
-                      name="days"
-                      label="Number of Days"
-                      icon={CalendarDays}
-                      step={1}
-                      minimum={1}
-                      value={form.days}
-                      setForm={setForm}
-                      setFieldErrors={setFieldErrors}
-                      error={fieldErrors.days}
-                    />
+                  <SelectField
+                    name="travelType"
+                    label="Travel Type"
+                    icon={Heart}
+                    options={travelTypeOptions}
+                    value={form.travelType}
+                    handleChange={handleChange}
+                    activeSelect={activeSelect}
+                    setActiveSelect={setActiveSelect}
+                    error={fieldErrors.travelType}
+                  />
 
-                    <SelectField
-                      name="travelType"
-                      label="Travel Type"
-                      icon={Heart}
-                      value={form.travelType}
-                      handleChange={handleChange}
-                      options={[
-                        "Solo",
-                        "Couple",
-                        "Family",
-                        "Friends",
-                        "Business",
-                      ]}
-                      activeSelect={activeSelect}
-                      setActiveSelect={setActiveSelect}
-                      error={fieldErrors.travelType}
-                    />
+                  <SelectField
+                    name="hotelType"
+                    label="Hotel Type"
+                    icon={Hotel}
+                    options={hotelTypeOptions}
+                    value={form.hotelType}
+                    handleChange={handleChange}
+                    activeSelect={activeSelect}
+                    setActiveSelect={setActiveSelect}
+                    error={fieldErrors.hotelType}
+                  />
 
-                    <SelectField
-                      name="hotelType"
-                      label="Hotel Type"
-                      icon={Hotel}
-                      value={form.hotelType}
-                      handleChange={handleChange}
-                      options={[
-                        "Budget",
-                        "Standard",
-                        "Luxury",
-                      ]}
-                      activeSelect={activeSelect}
-                      setActiveSelect={setActiveSelect}
-                      error={fieldErrors.hotelType}
-                    />
+                  <SelectField
+                    name="transport"
+                    label="Transport"
+                    icon={Bus}
+                    options={transportOptions}
+                    value={form.transport}
+                    handleChange={handleChange}
+                    activeSelect={activeSelect}
+                    setActiveSelect={setActiveSelect}
+                    error={fieldErrors.transport}
+                  />
 
-                    <SelectField
-                      name="transport"
-                      label="Transport"
-                      icon={Bus}
-                      value={form.transport}
-                      handleChange={handleChange}
-                      options={[
-                        "Car",
-                        "Bike",
-                        "Bus",
-                        "Train",
-                        "Flight",
-                        "Any",
-                      ]}
-                      activeSelect={activeSelect}
-                      setActiveSelect={setActiveSelect}
-                      error={fieldErrors.transport}
-                    />
-
+                  <div className="md:col-span-2">
                     <SelectField
                       name="foodPreference"
                       label="Food Preference"
                       icon={Utensils}
+                      options={foodOptions}
                       value={form.foodPreference}
                       handleChange={handleChange}
-                      options={[
-                        "Vegetarian",
-                        "Non-Vegetarian",
-                        "Vegan",
-                        "Jain",
-                        "Any",
-                      ]}
                       activeSelect={activeSelect}
                       setActiveSelect={setActiveSelect}
                       error={fieldErrors.foodPreference}
                     />
+                  </div>
 
-                    <div className="md:col-span-2">
-                      <div
-                        className={`${fieldWrap} min-h-[130px]`}
-                      >
-                        <label className={labelCls}>
-                          Special Request
-                        </label>
+                  <div className="relative z-10 md:col-span-2">
+                    <div className={fieldWrap}>
+                      <label className={labelCls}>
+                        Special Request (Optional)
+                      </label>
 
-                        <div className="flex items-start gap-3">
-                          <span className={iconBoxCls}>
-                            <MessageSquare size={16} />
-                          </span>
+                      <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
+                        <span className={`${iconBoxCls} mt-0.5`}>
+                          <MessageSquare size={16} />
+                        </span>
 
-                          <textarea
-                            name="specialRequest"
-                            value={form.specialRequest}
-                            onChange={handleChange}
-                            rows={4}
-                            placeholder="Anything you want us to consider..."
-                            className="tour-input min-h-[90px] w-full resize-none bg-transparent pr-2 outline-none placeholder:text-[var(--muted)]/50"
-                          />
-                        </div>
+                        <textarea
+                          name="specialRequest"
+                          rows={3}
+                          value={form.specialRequest}
+                          onChange={handleChange}
+                          placeholder="Anything special? Trekking, photography spots, kid-friendly..."
+                          className="tour-input min-w-0 flex-1 resize-none bg-transparent outline-none"
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="relative">
-                  <span
-                    className="ticket-notch -left-3 -translate-x-1/2"
-                    style={{ top: "-0.875rem" }}
-                  />
+              <div className="ticket-perf">
+                <span className="ticket-notch ticket-notch-left" />
+                <span className="ticket-notch ticket-notch-right" />
+              </div>
 
-                  <span
-                    className="ticket-notch -right-3 translate-x-1/2"
-                    style={{ top: "-0.875rem" }}
-                  />
+              {/* Submit */}
+              <div className="px-3.5 py-5 sm:px-7 sm:py-7 md:px-9 md:py-8">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="tour-button group flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl px-5 text-sm font-bold sm:min-h-14 sm:text-base"
+                >
+                  Create Tour Plan
+                </button>
 
-                  <div className="ticket-perf" />
-                </div>
-
-                <div className="px-6 py-6 sm:px-9 sm:py-8">
-                  <motion.button
-                    type="submit"
-                    disabled={loading}
-                    whileHover={
-                      loading ? {} : { y: -2 }
-                    }
-                    whileTap={
-                      loading ? {} : { scale: 0.98 }
-                    }
-                    className="group flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] px-6 text-[var(--ink)] shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <span className="tour-button uppercase">
-                      Create Tour Plan
-                    </span>
-
-                    <ArrowRight
-                      size={18}
-                      className="transition-transform duration-200 group-hover:translate-x-1"
-                    />
-                  </motion.button>
-                </div>
-              </motion.form>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+                <p className="mt-3 text-center text-[11px] text-[var(--muted)] sm:text-xs">
+                  Minimum budget ₹5,000 • Your plan is saved automatically
+                </p>
+              </div>
+            </motion.form>
+          )}
+        </>
+      )}
+    </PageShell>
   );
 };
 
