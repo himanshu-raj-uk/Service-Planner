@@ -83,13 +83,6 @@ const GoogleAuthButton = ({
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-    console.log("Google Client ID:", clientId);
-
-    if (!clientId) {
-      console.error("VITE_GOOGLE_CLIENT_ID is missing.");
-      return;
-    }
-
     let attempts = 0;
     let timer = null;
 
