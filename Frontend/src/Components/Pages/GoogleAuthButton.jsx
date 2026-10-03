@@ -83,6 +83,13 @@ const GoogleAuthButton = ({
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+    console.log("Google Client ID:", clientId);
+
+    if (!clientId) {
+      console.error("VITE_GOOGLE_CLIENT_ID is missing.");
+      return;
+    }
+
     let attempts = 0;
     let timer = null;
 
@@ -92,6 +99,8 @@ const GoogleAuthButton = ({
       if (!google?.accounts?.id || !googleRef.current) {
         if (attempts++ < 50) {
           timer = setTimeout(setup, 100);
+        } else {
+          console.error("Google Identity Services failed to load.");
         }
 
         return;
@@ -100,7 +109,9 @@ const GoogleAuthButton = ({
       if (!googleInitialized) {
         google.accounts.id.initialize({
           client_id: clientId,
-          callback: (response) => currentHandler?.(response),
+          callback: (response) => {
+            currentHandler?.(response);
+          },
         });
 
         googleInitialized = true;
