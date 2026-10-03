@@ -1,7 +1,3 @@
-// Saves tokens + user info after a successful login / Google sign-in.
-// Works with the backend response shape:
-// { status, message, data: { user: {...}, accessToken, refreshToken } }
-
 export const saveSession = (response, fallbackEmail = "") => {
   const body = response?.data || response || {};
   const payload = body?.data || body;

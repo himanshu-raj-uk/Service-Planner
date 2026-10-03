@@ -11,7 +11,7 @@ const Notification = require("../Model/AppNotificationModel");
 const PendingUser = require("../Model/PendingUserModel");
 const Support = require("../Model/UserSupport");
 const googleClient = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_ID
 );
 
 const {
@@ -182,6 +182,15 @@ const googleLogin = async (req, res, next) => {
       );
     }
 
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error("GOOGLE_CLIENT_ID is missing from server environment");
+
+      throw new ApiError(
+        500,
+        "Google authentication is not configured",
+      );
+    }
+
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -224,7 +233,7 @@ const googleLogin = async (req, res, next) => {
       email: normalizedEmail,
     });
 
-    if (user && user.isBlocked) {
+    if (user?.isBlocked) {
       throw new ApiError(
         403,
         "Your account has been blocked",
@@ -233,7 +242,7 @@ const googleLogin = async (req, res, next) => {
 
     if (!user) {
       user = await User.create({
-        name: name || "",
+        name: name || "Google User",
         email: normalizedEmail,
         googleId,
         authProvider: "google",
@@ -244,15 +253,19 @@ const googleLogin = async (req, res, next) => {
         },
       });
     } else {
-      if (!user.googleId) {
-        user.googleId = googleId;
+      if (user.googleId && user.googleId !== googleId) {
+        throw new ApiError(
+          401,
+          "Google account does not match this email",
+        );
       }
+
+      user.googleId = googleId;
+      user.isVerified = true;
 
       if (!user.authProvider) {
         user.authProvider = "google";
       }
-
-      user.isVerified = true;
 
       if (!user.name && name) {
         user.name = name;
@@ -304,7 +317,7 @@ const googleLogin = async (req, res, next) => {
     } catch (notificationError) {
       console.error(
         "NOTIFICATION CREATION ERROR:",
-        notificationError,
+        notificationError.message,
       );
     }
 
@@ -331,10 +344,11 @@ const googleLogin = async (req, res, next) => {
       },
     });
   } catch (err) {
+    console.error("GOOGLE LOGIN ERROR:", err.message);
+
     next(err);
   }
 };
-
 // USER LOGIN
 
 const login = async (req, res, next) => {

@@ -206,7 +206,9 @@ const Login = () => {
       setLoading(true);
 
       // NOTE: the key name must match what your backend expects
-      const response = await registerUserByGoogle({ token: credential });
+      const response = await registerUserByGoogle({
+        credential,
+      });
 
       const responseData = response?.data || {};
 

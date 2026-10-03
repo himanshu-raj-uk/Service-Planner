@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 let googleInitialized = false;
 let currentHandler = null;
 
-const BUTTON_HEIGHT = 44; // matches authButtonClass / Create account
-const GOOGLE_HEIGHT = 40; // Google's "large" button height
+const BUTTON_HEIGHT = 44;
+const GOOGLE_HEIGHT = 40;
 
 const LABELS = {
   signup_with: "Sign up with Google",
@@ -43,39 +43,45 @@ const GoogleAuthButton = ({
   const googleRef = useRef(null);
   const [width, setWidth] = useState(0);
 
-  // Always call the latest handler passed by the page
   useEffect(() => {
     currentHandler = onCredential;
 
     return () => {
-      if (currentHandler === onCredential) currentHandler = null;
+      if (currentHandler === onCredential) {
+        currentHandler = null;
+      }
     };
   }, [onCredential]);
 
-  // Measure the available width so Google's button fills it
   useEffect(() => {
     const element = wrapperRef.current;
 
     if (!element) return;
 
-    const update = () =>
+    const update = () => {
       setWidth(Math.round(element.getBoundingClientRect().width));
+    };
 
     update();
 
     if (typeof ResizeObserver !== "undefined") {
       const observer = new ResizeObserver(update);
       observer.observe(element);
+
       return () => observer.disconnect();
     }
 
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+
+    return () => {
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
-  // Initialize once, then (re)render Google's button at the right width
   useEffect(() => {
     if (!width) return;
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     let attempts = 0;
     let timer = null;
@@ -83,17 +89,20 @@ const GoogleAuthButton = ({
     const setup = () => {
       const google = window.google;
 
-      // The GSI script loads async, so retry for a few seconds
       if (!google?.accounts?.id || !googleRef.current) {
-        if (attempts++ < 50) timer = setTimeout(setup, 100);
+        if (attempts++ < 50) {
+          timer = setTimeout(setup, 100);
+        }
+
         return;
       }
 
       if (!googleInitialized) {
         google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          client_id: clientId,
           callback: (response) => currentHandler?.(response),
         });
+
         googleInitialized = true;
       }
 
@@ -112,7 +121,9 @@ const GoogleAuthButton = ({
     setup();
 
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timer) {
+        clearTimeout(timer);
+      }
     };
   }, [text, width]);
 
@@ -124,7 +135,6 @@ const GoogleAuthButton = ({
       className="group relative w-full overflow-hidden rounded-xl"
       style={{ height: BUTTON_HEIGHT }}
     >
-      {/* Visible button: same look as "Create an account" */}
       <div
         aria-hidden="true"
         className={`
@@ -160,7 +170,6 @@ const GoogleAuthButton = ({
         {label}
       </div>
 
-      {/* Google's real button, invisible, stretched to cover ours */}
       <div
         className={`absolute left-0 top-0 w-full cursor-pointer overflow-hidden opacity-[0.01] ${disabled ? "pointer-events-none" : ""
           }`}
