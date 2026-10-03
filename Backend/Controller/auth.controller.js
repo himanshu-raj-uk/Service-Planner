@@ -9,12 +9,10 @@ const {
   verifyOTPService,
   resetPasswordService,
   sendEmail,
-  loginEmail,
   resendOTPService,
 } = require("../Middleware/AllServices");
 
 const emailTemplate = require("../Template/EmailTemplate");
-const loginSuccess = require("../Template/LoginTemplate");
 const getDeviceInfo = require("../Utilities/DeviceInfo");
 const getLocation = require("../Utilities/getLocation");
 const {
