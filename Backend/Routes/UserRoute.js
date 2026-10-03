@@ -11,7 +11,6 @@ const {
   verifyOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  updateProfileSchema
 } = require("../ValidateJoi/Validate");
 
 const {
@@ -67,7 +66,7 @@ app.post("/resend-otp", ResendOtp);
 
 app.post("/logout", auth, logout);
 
-app.get("/profile", auth, validate(updateProfileSchema), profile);
+app.get("/profile", auth, profile);
 
 app.get("/dashboard", auth, getDashboard);
 
