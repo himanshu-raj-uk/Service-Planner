@@ -11,6 +11,8 @@ const sendEmail = require("../Config/MailSender");
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
+// USER REFRESH TOKEN
+
 const refreshTokenService = async (token) => {
   if (!token) {
     throw new ApiError(401, "Refresh token is required.");
@@ -46,6 +48,8 @@ const refreshTokenService = async (token) => {
 
   return accessToken;
 };
+
+// USER FORGOT PASSWORD
 
 const forgotPasswordService = async (email, role) => {
   const user = await User.findOne({
@@ -97,6 +101,8 @@ const forgotPasswordService = async (email, role) => {
 
   return token;
 };
+
+// USER VERIFY OTP 
 
 const verifyOTPService = async (token, otp) => {
   if (!token) {
@@ -220,6 +226,8 @@ const verifyOTPService = async (token, otp) => {
   }
 };
 
+// USER RESEND OTP
+
 const resendOTPService = async (token) => {
   if (!token) {
     throw new ApiError(401, "Verification token is required.");
@@ -292,6 +300,8 @@ const resendOTPService = async (token) => {
     throw err;
   }
 };
+
+// USER RESET PASSWORD
 
 const resetPasswordService = async (token, password) => {
   if (!token) {
@@ -376,6 +386,8 @@ const resetPasswordService = async (token, password) => {
 
   return true;
 };
+
+// USER NOTIFICATION
 
 const createNotification = async ({ user, title, message, type }) => {
   try {

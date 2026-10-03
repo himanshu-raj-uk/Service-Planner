@@ -13,8 +13,10 @@ import {
   ShieldCheck,
   Zap,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { createSupportRequest } from "../Services/AuthAPI";
+import Navbar from "../Components/Layout/Navbar";
 
 const categories = [
   "Login Problem",
@@ -39,14 +41,27 @@ const initialForm = {
   message: "",
 };
 
+const initialErrors = {
+  name: "",
+  email: "",
+  category: "",
+  subject: "",
+  message: "",
+  file: "",
+};
+
 const fieldStyle =
-  "helpdesk-field w-full rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none ring-0 transition-colors duration-300 ease-in-out hover:border-indigo-400 hover:bg-[#eef0ff] focus:border-indigo-500 focus:bg-[#eef0ff] focus:outline-none focus:ring-0";
+  "helpdesk-field w-full rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none ring-0 transition-colors duration-300 ease-in-out hover:border-indigo-400 hover:bg-[#eef0ff] focus:border-indigo-500 focus:bg-[#eef0ff] focus:outline-none focus:ring-0 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100 dark:hover:border-emerald-400/60 dark:hover:bg-emerald-400/5 dark:focus:border-emerald-400 dark:focus:bg-emerald-400/5";
+
+const errorFieldStyle =
+  "border-red-400 bg-red-50 hover:border-red-500 hover:bg-red-50 focus:border-red-500 focus:bg-red-50 dark:border-red-500/70 dark:bg-red-500/5 dark:hover:border-red-400 dark:hover:bg-red-500/10 dark:focus:border-red-400 dark:focus:bg-red-500/10";
 
 const Helpdesk = () => {
   const [form, setForm] = useState(initialForm);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [errors, setErrors] = useState(initialErrors);
 
   const categoryRef = useRef(null);
   const priorityRef = useRef(null);
@@ -68,6 +83,13 @@ const Helpdesk = () => {
     };
   }, []);
 
+  const clearFieldError = (field) => {
+    setErrors((previous) => ({
+      ...previous,
+      [field]: "",
+    }));
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -75,6 +97,8 @@ const Helpdesk = () => {
       ...previous,
       [name]: value,
     }));
+
+    clearFieldError(name);
   };
 
   const handleDropdownChange = (name, value) => {
@@ -83,6 +107,7 @@ const Helpdesk = () => {
       [name]: value,
     }));
 
+    clearFieldError(name);
     setOpenDropdown(null);
   };
 
@@ -92,41 +117,86 @@ const Helpdesk = () => {
     if (!selectedFile) return;
 
     if (selectedFile.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB.");
+      setErrors((previous) => ({
+        ...previous,
+        file: "File size must be less than 5MB.",
+      }));
+
       event.target.value = "";
       return;
     }
+
+    setErrors((previous) => ({
+      ...previous,
+      file: "",
+    }));
 
     setFile(selectedFile);
   };
 
   const removeFile = () => {
     setFile(null);
+
+    setErrors((previous) => ({
+      ...previous,
+      file: "",
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      ...initialErrors,
+    };
+
+    const trimmedName = form.name.trim();
+    const trimmedEmail = form.email.trim();
+    const trimmedSubject = form.subject.trim();
+    const trimmedMessage = form.message.trim();
+
+    if (!trimmedName) {
+      newErrors.name = "Please enter your name.";
+    } else if (trimmedName.length < 2) {
+      newErrors.name = "Name must be at least 2 characters.";
+    }
+
+    if (!trimmedEmail) {
+      newErrors.email = "Please enter your email address.";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailRegex.test(trimmedEmail)) {
+        newErrors.email = "Please enter a valid email address.";
+      }
+    }
+
+    if (!form.category) {
+      newErrors.category = "Please select a problem category.";
+    }
+
+    if (!trimmedSubject) {
+      newErrors.subject = "Please enter a subject.";
+    } else if (trimmedSubject.length < 3) {
+      newErrors.subject = "Subject must be at least 3 characters.";
+    }
+
+    if (!trimmedMessage) {
+      newErrors.message = "Please describe your problem.";
+    } else if (trimmedMessage.length < 10) {
+      newErrors.message =
+        "Please describe your problem in at least 10 characters.";
+    }
+
+    setErrors(newErrors);
+
+    return !Object.values(newErrors).some(Boolean);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (
-      !form.name.trim() ||
-      !form.email.trim() ||
-      !form.category ||
-      !form.subject.trim() ||
-      !form.message.trim()
-    ) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
+    const isValid = validateForm();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(form.email.trim())) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-
-    if (form.message.trim().length < 10) {
-      toast.error("Please describe your problem in more detail.");
+    if (!isValid) {
       return;
     }
 
@@ -148,6 +218,7 @@ const Helpdesk = () => {
 
       setForm(initialForm);
       setFile(null);
+      setErrors(initialErrors);
       setOpenDropdown(null);
     } catch (error) {
       console.error("SUPPORT REQUEST ERROR:", error);
@@ -159,6 +230,21 @@ const Helpdesk = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderError = (message) => {
+    if (!message) return null;
+
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -3 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-red-500 dark:text-red-400"
+      >
+        <AlertCircle size={13} className="shrink-0" />
+        {message}
+      </motion.p>
+    );
   };
 
   const renderDropdown = (
@@ -177,17 +263,19 @@ const Helpdesk = () => {
           onClick={() =>
             setOpenDropdown(isOpen ? null : name)
           }
-          className={`${fieldStyle} flex h-12 items-center justify-between px-4 text-left ${
+          className={`${fieldStyle} ${
+            errors[name] ? errorFieldStyle : ""
+          } flex h-12 items-center justify-between px-4 text-left ${
             isOpen
-              ? "border-indigo-500 bg-[#eef0ff]"
+              ? "border-indigo-500 bg-[#eef0ff] dark:border-emerald-400 dark:bg-emerald-400/5"
               : ""
           }`}
         >
           <span
             className={
               selectedValue
-                ? "text-slate-800"
-                : "text-slate-400"
+                ? "text-slate-800 dark:text-slate-100"
+                : "text-slate-400 dark:text-slate-500"
             }
           >
             {selectedValue || placeholder}
@@ -197,8 +285,8 @@ const Helpdesk = () => {
             size={18}
             className={`shrink-0 transition-transform duration-300 ${
               isOpen
-                ? "rotate-180 text-indigo-500"
-                : "text-slate-400"
+                ? "rotate-180 text-indigo-500 dark:text-emerald-400"
+                : "text-slate-400 dark:text-slate-500"
             }`}
           />
         </button>
@@ -211,7 +299,7 @@ const Helpdesk = () => {
               duration: 0.2,
               ease: "easeOut",
             }}
-            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-xl shadow-indigo-500/10"
+            className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-xl shadow-indigo-500/10 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20"
           >
             <div className="helpdesk-scrollbar max-h-52 overflow-y-auto p-1.5">
               {options.map((option) => {
@@ -226,8 +314,8 @@ const Helpdesk = () => {
                     }
                     className={`w-full rounded-lg px-3 py-2.5 text-left text-sm transition-all duration-200 ${
                       isSelected
-                        ? "bg-indigo-100 font-semibold text-indigo-600"
-                        : "text-slate-700 hover:bg-[#eef0ff] hover:pl-4 hover:text-indigo-600"
+                        ? "bg-indigo-100 font-semibold text-indigo-600 dark:bg-emerald-400/10 dark:text-emerald-400"
+                        : "text-slate-700 hover:bg-[#eef0ff] hover:pl-4 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-emerald-400/5 dark:hover:text-emerald-400"
                     }`}
                   >
                     {option}
@@ -243,6 +331,8 @@ const Helpdesk = () => {
 
   return (
     <>
+      <Navbar />
+
       <style>{`
         .helpdesk-field,
         .helpdesk-field:hover,
@@ -285,26 +375,46 @@ const Helpdesk = () => {
           width: 0;
           height: 0;
         }
+
+        .dark .helpdesk-field:focus {
+          border-color: #34d399 !important;
+        }
+
+        .dark .helpdesk-scrollbar {
+          scrollbar-color: #34d399 #1e293b;
+        }
+
+        .dark .helpdesk-scrollbar::-webkit-scrollbar-track {
+          background: #1e293b;
+        }
+
+        .dark .helpdesk-scrollbar::-webkit-scrollbar-thumb {
+          background: #34d399;
+        }
+
+        .dark .helpdesk-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6ee7b7;
+        }
       `}</style>
 
-      <main className="min-h-screen bg-[#f8fafc] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+      <main className="min-h-screen bg-[#f4f6fa] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
             className="mb-8 text-center"
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-colors duration-300 dark:bg-emerald-400/10 dark:text-emerald-400">
               <Headphones size={17} />
               24/7 Helpdesk Support
             </div>
 
-            <h1 className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-3xl font-black tracking-tight text-transparent sm:text-4xl lg:text-5xl">
+            <h1 className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-3xl font-black tracking-tight text-transparent sm:text-4xl lg:text-5xl dark:from-emerald-300 dark:via-emerald-400 dark:to-teal-300">
               How Can We Help You?
             </h1>
 
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 transition-colors duration-300 sm:text-base dark:text-slate-400">
               Facing a problem while using Service Planner?
               Tell us what happened and our support team will
               help you.
@@ -316,17 +426,18 @@ const Helpdesk = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className="relative overflow-hidden rounded-3xl bg-[#0d222c] p-6 text-white shadow-xl sm:p-8"
+              className="relative overflow-hidden rounded-3xl bg-[#0d222c] p-6 text-white shadow-xl transition-all duration-300 sm:p-8 dark:border dark:border-slate-800"
             >
-              <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-indigo-500/10" />
-              <div className="absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-cyan-400/10" />
+              <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-indigo-500/10 dark:bg-emerald-400/10" />
+
+              <div className="absolute -bottom-24 -left-20 h-60 w-60 rounded-full bg-cyan-400/10 dark:bg-emerald-400/10" />
 
               <div className="relative z-10">
                 <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
                   <Headphones size={28} />
                 </div>
 
-                <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-cyan-300">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-cyan-300 dark:text-emerald-300">
                   We're Here For You
                 </p>
 
@@ -397,7 +508,7 @@ const Helpdesk = () => {
                   <div className="flex gap-3">
                     <CircleHelp
                       size={20}
-                      className="mt-0.5 shrink-0 text-cyan-300"
+                      className="mt-0.5 shrink-0 text-cyan-300 dark:text-emerald-300"
                     />
 
                     <div>
@@ -420,20 +531,20 @@ const Helpdesk = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-500 hover:shadow-xl hover:shadow-indigo-500/5 sm:p-8"
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-indigo-500/5 sm:p-8 dark:border-slate-700/70 dark:bg-slate-900/70 dark:hover:border-emerald-400/20 dark:hover:shadow-black/20"
             >
               <div className="mb-7">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all duration-300 hover:scale-105 hover:bg-indigo-100">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-all duration-300 hover:scale-105 hover:bg-indigo-100 dark:bg-emerald-400/10 dark:text-emerald-400 dark:hover:bg-emerald-400/15">
                     <MessageCircle size={21} />
                   </div>
 
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                       Submit a Support Request
                     </h2>
 
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                       Fields marked with * are required.
                     </p>
                   </div>
@@ -446,7 +557,7 @@ const Helpdesk = () => {
               >
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Your Name{" "}
                       <span className="text-red-500">*</span>
                     </label>
@@ -457,12 +568,16 @@ const Helpdesk = () => {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="Enter your name"
-                      className={`${fieldStyle} h-12 px-4 placeholder:text-slate-400`}
+                      className={`${fieldStyle} ${
+                        errors.name ? errorFieldStyle : ""
+                      } h-12 px-4 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                     />
+
+                    {renderError(errors.name)}
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Email Address{" "}
                       <span className="text-red-500">*</span>
                     </label>
@@ -473,14 +588,18 @@ const Helpdesk = () => {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="Enter your email"
-                      className={`${fieldStyle} h-12 px-4 placeholder:text-slate-400`}
+                      className={`${fieldStyle} ${
+                        errors.email ? errorFieldStyle : ""
+                      } h-12 px-4 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                     />
+
+                    {renderError(errors.email)}
                   </div>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Problem Category{" "}
                       <span className="text-red-500">*</span>
                     </label>
@@ -491,10 +610,12 @@ const Helpdesk = () => {
                       "Select problem category",
                       categoryRef,
                     )}
+
+                    {renderError(errors.category)}
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Priority
                     </label>
 
@@ -508,7 +629,7 @@ const Helpdesk = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Subject{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -520,12 +641,16 @@ const Helpdesk = () => {
                     onChange={handleChange}
                     placeholder="Briefly describe your problem"
                     autoComplete="off"
-                    className={`${fieldStyle} h-12 px-4 placeholder:text-slate-400`}
+                    className={`${fieldStyle} ${
+                      errors.subject ? errorFieldStyle : ""
+                    } h-12 px-4 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
+
+                  {renderError(errors.subject)}
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Describe Your Problem{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -537,32 +662,38 @@ const Helpdesk = () => {
                     rows={6}
                     placeholder="Tell us what happened, what you were trying to do, and what problem you faced..."
                     autoComplete="off"
-                    className={`${fieldStyle} resize-none px-4 py-3 leading-6 placeholder:text-slate-400`}
+                    className={`${fieldStyle} ${
+                      errors.message ? errorFieldStyle : ""
+                    } resize-none px-4 py-3 leading-6 placeholder:text-slate-400 dark:placeholder:text-slate-500`}
                   />
+
+                  {renderError(errors.message)}
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Attachment{" "}
-                    <span className="font-normal text-slate-400">
+                    <span className="font-normal text-slate-400 dark:text-slate-500">
                       (Optional)
                     </span>
                   </label>
 
                   {!file ? (
                     <label
-                      className={`${fieldStyle} group flex min-h-24 cursor-pointer flex-col items-center justify-center border-2 border-dashed px-4 py-5 text-center`}
+                      className={`${fieldStyle} ${
+                        errors.file ? errorFieldStyle : ""
+                      } group flex min-h-24 cursor-pointer flex-col items-center justify-center border-2 border-dashed px-4 py-5 text-center`}
                     >
                       <Paperclip
                         size={22}
-                        className="mb-2 text-slate-400 transition-all duration-300 group-hover:scale-110 group-hover:text-indigo-500"
+                        className="mb-2 text-slate-400 transition-all duration-300 group-hover:scale-110 group-hover:text-indigo-500 dark:text-slate-500 dark:group-hover:text-emerald-400"
                       />
 
-                      <span className="text-sm font-medium text-slate-600 transition-colors duration-300 group-hover:text-indigo-600">
+                      <span className="text-sm font-medium text-slate-600 transition-colors duration-300 group-hover:text-indigo-600 dark:text-slate-300 dark:group-hover:text-emerald-400">
                         Click to attach a file
                       </span>
 
-                      <span className="mt-1 text-xs text-slate-400">
+                      <span className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                         Maximum file size: 5MB
                       </span>
 
@@ -577,16 +708,16 @@ const Helpdesk = () => {
                       className={`${fieldStyle} flex items-center justify-between gap-3 px-4 py-3`}
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-emerald-400">
                           <Paperclip size={18} />
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-700">
+                          <p className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
                             {file.name}
                           </p>
 
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-400 dark:text-slate-500">
                             {(file.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
@@ -595,12 +726,14 @@ const Helpdesk = () => {
                       <button
                         type="button"
                         onClick={removeFile}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-300 hover:bg-white hover:text-red-500 hover:shadow-sm"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-300 hover:bg-white hover:text-red-500 hover:shadow-sm dark:hover:bg-slate-800"
                       >
                         <X size={18} />
                       </button>
                     </div>
                   )}
+
+                  {renderError(errors.file)}
                 </div>
 
                 <div
@@ -609,10 +742,10 @@ const Helpdesk = () => {
                   <div className="flex gap-3">
                     <Zap
                       size={18}
-                      className="mt-0.5 shrink-0 text-indigo-500"
+                      className="mt-0.5 shrink-0 text-indigo-500 dark:text-emerald-400"
                     />
 
-                    <p className="text-xs leading-5 text-slate-500">
+                    <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
                       Please avoid sharing passwords, OTPs, or
                       other sensitive information in your support
                       message.
@@ -623,11 +756,11 @@ const Helpdesk = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="group flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-slate-950 dark:shadow-emerald-500/10 dark:hover:bg-emerald-400"
                 >
                   {loading ? (
                     <>
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white dark:border-slate-950/30 dark:border-t-slate-950" />
                       Submitting Request...
                     </>
                   ) : (
@@ -651,15 +784,15 @@ const Helpdesk = () => {
               duration: 0.5,
               delay: 0.15,
             }}
-            className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:border-indigo-100 hover:shadow-md"
+            className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:border-indigo-100 hover:shadow-md dark:border-slate-700/70 dark:bg-slate-900/70 dark:hover:border-emerald-400/20 dark:hover:shadow-black/20"
           >
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               Can't find the right category?
             </p>
 
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
               Select{" "}
-              <span className="font-semibold text-slate-500">
+              <span className="font-semibold text-slate-500 dark:text-slate-400">
                 Other
               </span>{" "}
               and explain your issue in the message.

@@ -10,6 +10,7 @@ const adminRoutes = require("./Routes/AdminRoute");
 const authRoutes = require("./Routes/AuthRoute");
 const tourplan = require("./Routes/TripRoute");
 const birthdayplan = require("./Routes/BirthdayRoute");
+const eventplan = require("./Routes/EventRoute");
 
 const errorMiddleware = require("./Middleware/Error");
 
@@ -44,6 +45,7 @@ app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/tour", tourplan);
 app.use("/birthday", birthdayplan);
+app.use("/event",eventplan);
 
 app.use(errorMiddleware);
 

@@ -29,7 +29,7 @@ const BirthdaySchema = new mongoose.Schema(
     budget: {
       type: Number,
       required: true,
-      min: 1,
+      min: 1000,
     },
 
     people: {
@@ -52,7 +52,7 @@ const BirthdaySchema = new mongoose.Schema(
 
     venueType: {
       type: String,
-      enum: ["Cafe", "Restaurant", "Rooftop", "Banquet", "Outdoor", "Any"],
+      enum: ["Cafe", "Home","Hotel", "Restaurant", "Rooftop", "Banquet","Community Hall","Resort", "Outdoor", "Any"],
       default: "Any",
     },
 

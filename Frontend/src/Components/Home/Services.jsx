@@ -59,7 +59,7 @@ const Services = () => {
       icon: Hotel,
       iconBg: "bg-emerald-100 dark:bg-emerald-400/10",
       iconColor: "text-emerald-600 dark:text-emerald-300",
-      route: "/event",
+      route: "/corporate",
     },
     {
       title: "Transportation",
@@ -68,7 +68,7 @@ const Services = () => {
       icon: Car,
       iconBg: "bg-orange-100 dark:bg-orange-400/10",
       iconColor: "text-orange-600 dark:text-orange-300",
-      route: "/event",
+      route: "/corporate",
     },
   ];
 

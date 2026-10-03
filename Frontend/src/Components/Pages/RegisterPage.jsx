@@ -1,8 +1,22 @@
 import { useState } from "react";
-import { User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { registerUser } from "../../Services/AuthAPI";
+import { registerUser, registerUserByGoogle } from "../../Services/AuthAPI";
+import AuthLayout, { AuthField, authButtonClass } from "./AuthLayout";
+import GoogleAuthButton from "./GoogleAuthButton";
+
+const EyeButton = ({ visible, onClick, disabled }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={visible ? "Hide password" : "Show password"}
+    className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 outline-none transition-colors hover:text-emerald-500 focus:outline-none focus:ring-0 disabled:opacity-50 dark:hover:text-emerald-400"
+  >
+    {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+  </button>
+);
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,29 +35,18 @@ const Register = () => {
 
   const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     const updatedValue =
       name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: updatedValue,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
+    setFormData((previous) => ({ ...previous, [name]: updatedValue }));
+    setErrors((previous) => ({ ...previous, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    const nameRegex = /^[A-Za-z ]{2,50}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
 
     const name = formData.name.trim();
     const email = formData.email.trim().toLowerCase();
@@ -51,19 +54,19 @@ const Register = () => {
 
     if (!name) {
       newErrors.name = "Name is required.";
-    } else if (!nameRegex.test(name)) {
-      newErrors.name = "Enter a valid name.";
+    } else if (!/^[A-Za-z ]{2,50}$/.test(name)) {
+      newErrors.name = "Enter a valid name (letters and spaces only).";
     }
 
     if (!email) {
       newErrors.email = "Email is required.";
-    } else if (!emailRegex.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "Enter a valid email address.";
     }
 
     if (!phone) {
       newErrors.phone = "Phone number is required.";
-    } else if (!phoneRegex.test(phone)) {
+    } else if (!/^[6-9]\d{9}$/.test(phone)) {
       newErrors.phone = "Enter a valid 10-digit phone number.";
     }
 
@@ -84,53 +87,67 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const goToVerify = (email) => {
+    navigate("/verify-otp", {
+      replace: true,
+      state: { email, type: "register" },
+    });
+  };
 
-    if (!validateForm()) {
-      return;
-    }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!validateForm()) return;
+
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim(),
+      password: formData.password,
+    };
 
     try {
       setLoading(true);
 
-      const payload = {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        password: formData.password,
-      };
-
       const res = await registerUser(payload);
 
-      if (res.data.status) {
+      if (res?.data?.status) {
         const verificationToken =
-          res.data.token ||
           res.data.verificationToken ||
+          res.data.token ||
           res.data.data?.verificationToken;
 
         if (verificationToken) {
           localStorage.setItem("verificationToken", verificationToken);
         }
 
-        toast.success(res.data.message || "Registration successful.");
+        toast.success(res.data.message || "OTP sent successfully.");
 
-        navigate("/verify-otp", {
-          state: {
-            email: payload.email,
-            type: "register",
-          },
-        });
+        goToVerify(payload.email);
       }
     } catch (err) {
       console.error("REGISTER ERROR:", err);
 
       const status = err.response?.status;
-      const message = err.response?.data?.message || "";
+      const data = err.response?.data || {};
+      const message = data.message || "";
       const lowerMessage = message.toLowerCase();
 
       if (status === 429) {
         toast.error("Too many attempts. Please try again after some time.");
+        return;
+      }
+
+      // Backend saved the pending user but the OTP email failed (503).
+      // Keep the token and let the user use "Resend OTP" on the verify page.
+      if (status === 503 && data.verificationToken) {
+        localStorage.setItem("verificationToken", data.verificationToken);
+
+        toast.error(
+          message || "OTP email could not be sent. Please resend the OTP.",
+        );
+
+        goToVerify(payload.email);
         return;
       }
 
@@ -140,316 +157,242 @@ const Register = () => {
           lowerMessage.includes("registered") ||
           lowerMessage.includes("already"))
       ) {
-        setErrors((prev) => ({
-          ...prev,
+        setErrors((previous) => ({
+          ...previous,
           email: "Email is already registered.",
         }));
         return;
       }
 
       if (lowerMessage.includes("phone") || lowerMessage.includes("mobile")) {
-        setErrors((prev) => ({
-          ...prev,
+        setErrors((previous) => ({
+          ...previous,
           phone: message || "Phone number is already registered.",
         }));
         return;
       }
 
-      toast.error(message || "Registration failed.");
+      toast.error(message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getFieldClass = (field) => {
-    const hasError = errors[field];
+  const handleGoogleResponse = async (googleResponse) => {
+    const credential = googleResponse?.credential;
 
-    if (hasError) {
-      return "border-red-500 bg-red-50 hover:border-red-500 focus:border-red-500";
+    if (!credential) {
+      toast.error("Google sign-in failed. Please try again.");
+      return;
     }
 
-    return "border-slate-200 bg-white hover:border-indigo-500 hover:bg-indigo-50 focus:border-indigo-500 focus:bg-indigo-50";
+    try {
+      setLoading(true);
+
+      // NOTE: the key name must match what your backend expects
+      const response = await registerUserByGoogle({ token: credential });
+
+      const responseData = response?.data || {};
+
+      const accessToken =
+        responseData?.userToken ||
+        responseData?.accessToken ||
+        responseData?.token ||
+        responseData?.data?.userToken ||
+        responseData?.data?.accessToken ||
+        responseData?.data?.token;
+
+      const refreshToken =
+        responseData?.userRefreshToken ||
+        responseData?.refreshToken ||
+        responseData?.data?.userRefreshToken ||
+        responseData?.data?.refreshToken;
+
+      if (!accessToken) {
+        toast.error(responseData?.message || "Google sign-in failed.");
+        return;
+      }
+
+      localStorage.setItem("userToken", accessToken);
+
+      if (refreshToken) {
+        localStorage.setItem("userRefreshToken", refreshToken);
+      }
+
+      window.dispatchEvent(new CustomEvent("userLogin"));
+
+      toast.success(responseData?.message || "Login successful!");
+
+      navigate("/profile", { replace: true });
+    } catch (error) {
+      console.error("GOOGLE AUTH ERROR:", error);
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Google sign-in failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <section className="flex min-h-screen w-full items-start justify-center bg-[#E8EDF5] px-4 pb-8 pt-12 sm:px-6 sm:pt-16 lg:px-8">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-[#F8FAFC] p-5 shadow-[0_8px_30px_rgba(15,23,42,0.10)] sm:p-8 md:p-10">
-        <div className="mb-8 text-center">
-          <h1 className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-2xl font-bold tracking-wide text-transparent sm:text-3xl">
-            All Services Planner
-          </h1>
+    <AuthLayout
+      heading="Start planning"
+      highlight="your first memory."
+      description="Create your free account and organize trips, birthdays and events in one simple planning space."
+    >
+      {/* Heading */}
+      <div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-600 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400">
+          <Sparkles size={11} />
+          Get started
+        </span>
 
-          <p className="mt-2 text-xs font-medium text-slate-500 sm:text-sm">
-            Your Complete Planning & Booking Platform
-          </p>
+        <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-[-0.03em] text-slate-900 sm:text-[26px] dark:text-white">
+          Create your account
+        </h2>
 
-          <h2 className="mt-7 text-xl font-medium text-[#0f172a] sm:text-2xl">
-            Create Account
-          </h2>
-
-          <p className="mt-2 text-xs font-medium text-slate-500 sm:text-sm">
-            Register to start planning your journey.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="w-full space-y-5">
-          <div className="group relative w-full min-w-0">
-            <div className="relative h-[78px] w-full">
-              <label className="pointer-events-none absolute left-5 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition-colors duration-200 group-hover:text-indigo-500 group-focus-within:text-indigo-500">
-                Full Name
-              </label>
-
-              <User
-                size={17}
-                strokeWidth={1.9}
-                className={`absolute left-5 top-1/2 z-10 -translate-y-1/2 ${
-                  errors.name ? "text-red-500" : "text-indigo-500"
-                }`}
-              />
-
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="name"
-                placeholder="Enter your full name"
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className={`h-full w-full appearance-none rounded-2xl border pl-14 pr-5 pt-5 text-[15px] font-medium leading-6 text-[#0f172a] outline-none shadow-none transition-colors duration-200 placeholder:text-slate-400/60 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-70 ${getFieldClass(
-                  "name",
-                )}`}
-              />
-            </div>
-
-            {errors.name && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                {errors.name}
-              </p>
-            )}
-          </div>
-
-          <div className="group relative w-full min-w-0">
-            <div className="relative h-[78px] w-full">
-              <label className="pointer-events-none absolute left-5 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition-colors duration-200 group-hover:text-indigo-500 group-focus-within:text-indigo-500">
-                Email Address
-              </label>
-
-              <Mail
-                size={17}
-                strokeWidth={1.9}
-                className={`absolute left-5 top-1/2 z-10 -translate-y-1/2 ${
-                  errors.email ? "text-red-500" : "text-indigo-500"
-                }`}
-              />
-
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="email"
-                placeholder="Enter your email address"
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className={`h-full w-full appearance-none rounded-2xl border pl-14 pr-5 pt-5 text-[15px] font-medium leading-6 text-[#0f172a] outline-none shadow-none transition-colors duration-200 placeholder:text-slate-400/60 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-70 ${getFieldClass(
-                  "email",
-                )}`}
-              />
-            </div>
-
-            {errors.email && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          <div className="group relative w-full min-w-0">
-            <div className="relative h-[78px] w-full">
-              <label className="pointer-events-none absolute left-5 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition-colors duration-200 group-hover:text-indigo-500 group-focus-within:text-indigo-500">
-                Phone Number
-              </label>
-
-              <Phone
-                size={17}
-                strokeWidth={1.9}
-                className={`absolute left-5 top-1/2 z-10 -translate-y-1/2 ${
-                  errors.phone ? "text-red-500" : "text-indigo-500"
-                }`}
-              />
-
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="tel"
-                inputMode="numeric"
-                maxLength={10}
-                placeholder="Enter your phone number"
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className={`h-full w-full appearance-none rounded-2xl border pl-14 pr-5 pt-5 text-[15px] font-medium leading-6 text-[#0f172a] outline-none shadow-none transition-colors duration-200 placeholder:text-slate-400/60 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-70 ${getFieldClass(
-                  "phone",
-                )}`}
-              />
-            </div>
-
-            {errors.phone && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                {errors.phone}
-              </p>
-            )}
-          </div>
-
-          <div className="group relative w-full min-w-0">
-            <div className="relative h-[78px] w-full">
-              <label className="pointer-events-none absolute left-5 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition-colors duration-200 group-hover:text-indigo-500 group-focus-within:text-indigo-500">
-                Password
-              </label>
-
-              <Lock
-                size={17}
-                strokeWidth={1.9}
-                className={`absolute left-5 top-1/2 z-10 -translate-y-1/2 ${
-                  errors.password ? "text-red-500" : "text-indigo-500"
-                }`}
-              />
-
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="new-password"
-                placeholder="Create your password"
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className={`h-full w-full appearance-none rounded-2xl border pl-14 pr-14 pt-5 text-[15px] font-medium leading-6 text-[#0f172a] outline-none shadow-none transition-colors duration-200 placeholder:text-slate-400/60 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-70 ${getFieldClass(
-                  "password",
-                )}`}
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                disabled={loading}
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className="absolute right-5 top-1/2 z-10 -translate-y-1/2 text-slate-400 outline-none transition-colors duration-200 hover:text-indigo-500 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:opacity-50"
-              >
-                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-              </button>
-            </div>
-
-            {errors.password && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                {errors.password}
-              </p>
-            )}
-          </div>
-
-          <div className="group relative w-full min-w-0">
-            <div className="relative h-[78px] w-full">
-              <label className="pointer-events-none absolute left-5 top-2.5 z-10 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition-colors duration-200 group-hover:text-indigo-500 group-focus-within:text-indigo-500">
-                Confirm Password
-              </label>
-
-              <Lock
-                size={17}
-                strokeWidth={1.9}
-                className={`absolute left-5 top-1/2 z-10 -translate-y-1/2 ${
-                  errors.confirmPassword ? "text-red-500" : "text-indigo-500"
-                }`}
-              />
-
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                disabled={loading}
-                autoComplete="new-password"
-                placeholder="Confirm your password"
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className={`h-full w-full appearance-none rounded-2xl border pl-14 pr-14 pt-5 text-[15px] font-medium leading-6 text-[#0f172a] outline-none shadow-none transition-colors duration-200 placeholder:text-slate-400/60 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-70 ${getFieldClass(
-                  "confirmPassword",
-                )}`}
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((prev) => !prev)}
-                disabled={loading}
-                style={{
-                  outline: "none",
-                  boxShadow: "none",
-                }}
-                className="absolute right-5 top-1/2 z-10 -translate-y-1/2 text-slate-400 outline-none transition-colors duration-200 hover:text-indigo-500 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:opacity-50"
-              >
-                {showConfirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-              </button>
-            </div>
-
-            {errors.confirmPassword && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              outline: "none",
-              boxShadow: "none",
-            }}
-            className="flex h-14 w-full items-center justify-center rounded-2xl bg-indigo-500 px-4 text-sm font-semibold text-white outline-none shadow-none transition-colors duration-200 hover:bg-indigo-600 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Creating Account...
-              </span>
-            ) : (
-              <>
-                <User size={18} className="mr-2" />
-                Create Account
-              </>
-            )}
-          </button>
-
-          <p className="text-center text-xs font-medium text-slate-600 sm:text-sm">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-indigo-600 transition-colors duration-200 hover:text-indigo-700"
-            >
-              Login
-            </Link>
-          </p>
-        </form>
+        <p className="mt-1 hidden text-[12.5px] leading-5 text-slate-500 sm:block dark:text-slate-400">
+          Register to start planning your journey.
+        </p>
       </div>
-    </section>
+
+      {/* Form */}
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5"
+      >
+        <AuthField
+          id="name"
+          name="name"
+          type="text"
+          label="Name"
+          icon={User}
+          value={formData.name}
+          onChange={handleChange}
+          error={errors.name}
+          disabled={loading}
+          autoComplete="name"
+          placeholder="Enter your name"
+        />
+
+        <AuthField
+          id="email"
+          name="email"
+          type="email"
+          label="Email"
+          icon={Mail}
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+          disabled={loading}
+          autoComplete="email"
+          placeholder="Enter your email"
+        />
+
+        <AuthField
+          id="phone"
+          name="phone"
+          type="tel"
+          label="Phone"
+          icon={Phone}
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          disabled={loading}
+          autoComplete="tel"
+          inputMode="numeric"
+          maxLength={10}
+          placeholder="Enter your phone number"
+        />
+
+        <AuthField
+          id="password"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          label="Password"
+          icon={Lock}
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          disabled={loading}
+          autoComplete="new-password"
+          placeholder="Create a password"
+          rightSlot={
+            <EyeButton
+              visible={showPassword}
+              disabled={loading}
+              onClick={() => setShowPassword((previous) => !previous)}
+            />
+          }
+        />
+
+        <AuthField
+          id="confirmPassword"
+          name="confirmPassword"
+          type={showConfirmPassword ? "text" : "password"}
+          label="Confirm password"
+          icon={Lock}
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          error={errors.confirmPassword}
+          disabled={loading}
+          autoComplete="new-password"
+          placeholder="Confirm your password"
+          rightSlot={
+            <EyeButton
+              visible={showConfirmPassword}
+              disabled={loading}
+              onClick={() => setShowConfirmPassword((previous) => !previous)}
+            />
+          }
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`${authButtonClass} !mt-3`}
+        >
+          {loading ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400/40 border-t-slate-500 dark:border-slate-500/40 dark:border-t-slate-300" />
+              Creating account...
+            </>
+          ) : (
+            "Create account"
+          )}
+        </button>
+      </form>
+
+      {/* Google (below Create account) */}
+      <div className="my-2.5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">
+          Or
+        </span>
+        <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+      </div>
+
+      <GoogleAuthButton
+        text="signin_with"
+        onCredential={handleGoogleResponse}
+        disabled={loading}
+      />
+
+      {/* Small login link (plain text, no button) */}
+      <p className="mt-3 text-center text-[12px] font-medium text-slate-500 dark:text-slate-400">
+        Already have an account?{" "}
+        <Link
+          to="/login"
+          replace
+          className="font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+        >
+          Login
+        </Link>
+      </p>
+    </AuthLayout>
   );
 };
 

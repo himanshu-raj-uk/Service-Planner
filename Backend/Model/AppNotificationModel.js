@@ -20,6 +20,12 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
 
+    eventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
+
     title: {
       type: String,
       required: true,

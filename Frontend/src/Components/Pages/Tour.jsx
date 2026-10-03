@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
@@ -34,6 +34,8 @@ import {
   ChevronDown,
   Check,
   AlertCircle,
+  ExternalLink,
+  Globe,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -45,14 +47,10 @@ import {
   cancelTrip,
 } from "../../Services/AuthAPI";
 
-/* =========================================================
-   DATA
-========================================================= */
+import { INDIA_REGIONS, loadIndiaAdministrativeData } from "../../Data/TouristPlaces";
 
-import INDIA_REGIONS from "../../Data/TouristPlaces"
-
-const locationSearchOptions = [
-  ...INDIA_REGIONS.flatMap((region) => [
+const buildLocationSearchOptions = (regions) => [
+  ...regions.flatMap((region) => [
     {
       name: region.capital,
       city: region.capital,
@@ -65,18 +63,33 @@ const locationSearchOptions = [
       city: region.capital,
       state: region.name,
       type: "Tourist Place",
+      description: place.description || "",
+      tags: Array.isArray(place.tags) ? place.tags : [],
     })),
-  ]),
 
-  ...INDIA_REGIONS.map((region) => ({
-    name: region.name,
-    city: region.capital,
-    state: region.name,
-    type:
-      region.type === "state"
-        ? "State"
-        : "Union Territory",
-  })),
+    {
+      name: region.name,
+      city: region.capital,
+      state: region.name,
+      type: region.type === "state" ? "State" : "Union Territory",
+    },
+
+    ...region.districts.flatMap((district) => [
+      {
+        name: district.name,
+        city: district.name,
+        state: region.name,
+        type: "District",
+      },
+
+      ...district.subDistricts.map((subDistrict) => ({
+        name: subDistrict.name,
+        city: district.name,
+        state: region.name,
+        type: "Sub-district",
+      })),
+    ]),
+  ]),
 ].filter(
   (item, index, array) =>
     array.findIndex(
@@ -106,21 +119,9 @@ const hotelTypeOptions = [
   "Resort",
 ];
 
-const transportOptions = [
-  "Car",
-  "Bike",
-  "Train",
-  "Flight",
-  "Bus",
-];
+const transportOptions = ["Car", "Bike", "Train", "Flight", "Bus"];
 
-const foodOptions = [
-  "Any",
-  "Vegetarian",
-  "Non-Vegetarian",
-  "Vegan",
-  "Jain",
-];
+const foodOptions = ["Any", "Vegetarian", "Non-Vegetarian", "Vegan", "Jain"];
 
 const loadingMessages = [
   "Creating your personalized travel plan...",
@@ -134,33 +135,12 @@ const loadingMessages = [
 ];
 
 const loadingSteps = [
-  {
-    label: "Finding the best places",
-    icon: Map,
-  },
-  {
-    label: "Calculating your budget",
-    icon: Wallet,
-  },
-  {
-    label: "Building your day-by-day itinerary",
-    icon: CalendarDays,
-  },
-  {
-    label: "Choosing hotels & food",
-    icon: Hotel,
-  },
-  {
-    label: "Adding hidden gems & tips",
-    icon: Lightbulb,
-  },
+  { label: "Finding the best places", icon: Map },
+  { label: "Calculating your budget", icon: Wallet },
+  { label: "Building your day-by-day itinerary", icon: CalendarDays },
+  { label: "Choosing hotels & food", icon: Hotel },
+  { label: "Adding hidden gems & tips", icon: Lightbulb },
 ];
-
-/* =========================================================
-   STYLES  (same background pattern + palette as Features)
-   Light  : #f4f6fa  + indigo / purple / pink
-   Dark   : #0f172a  + emerald / teal / cyan
-========================================================= */
 
 const styles = `
   .tour-root {
@@ -229,8 +209,6 @@ const styles = `
     overflow-x: clip;
   }
 
-  /* ---------- Badge / labels ---------- */
-
   .tour-badge {
     display: inline-flex;
     align-items: center;
@@ -272,8 +250,6 @@ const styles = `
     color: transparent;
   }
 
-  /* ---------- Ticket card ---------- */
-
   .ticket-card {
     position: relative;
     width: 100%;
@@ -288,11 +264,7 @@ const styles = `
   .ticket-route {
     border-bottom: 1px solid var(--border);
     border-radius: 1.25rem 1.25rem 0 0;
-    background: linear-gradient(
-      135deg,
-      var(--accent-soft),
-      transparent 70%
-    );
+    background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
   }
 
   .ticket-route-value {
@@ -322,8 +294,6 @@ const styles = `
 
   .ticket-notch-left { left: -0.6rem; }
   .ticket-notch-right { right: -0.6rem; }
-
-  /* ---------- Fields ---------- */
 
   .field-focus {
     position: relative;
@@ -410,8 +380,6 @@ const styles = `
     transform: scale(0.92);
   }
 
-  /* ---------- Dropdown ---------- */
-
   .tour-dropdown {
     border: 1px solid var(--border-hover);
     background: var(--surface-solid);
@@ -452,8 +420,6 @@ const styles = `
   .dropdown-option.selected {
     background: var(--accent-soft);
   }
-
-  /* ---------- Button ---------- */
 
   .tour-button {
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -497,7 +463,26 @@ const styles = `
     color: var(--teal);
   }
 
-  /* ---------- Result ---------- */
+  .tour-progress-track {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tour-progress-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    border-radius: 9999px;
+    background: var(--teal);
+    animation: tour-progress-slide 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes tour-progress-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(250%); }
+  }
 
   .result-card,
   .ai-loading-card {
@@ -546,6 +531,8 @@ const styles = `
     .tour-button,
     .step-btn,
     .tour-root { transition: none; }
+
+    .tour-progress-bar { animation: none; width: 100%; opacity: 0.6; }
   }
 `;
 
@@ -566,10 +553,6 @@ const extractTripId = (source) => {
 
   return candidates.find(Boolean) || null;
 };
-
-/* =========================================================
-   SHARED CLASSES
-========================================================= */
 
 const fieldWrap =
   "field-focus group relative min-h-[68px] w-full rounded-2xl px-3.5 pb-2.5 pt-6 sm:min-h-[78px] sm:px-5 sm:pb-3 sm:pt-7";
@@ -608,10 +591,6 @@ const FieldError = ({ message }) =>
     </div>
   ) : null;
 
-/* =========================================================
-   LOCATION FIELD
-========================================================= */
-
 const LocationField = ({
   name,
   label,
@@ -622,19 +601,25 @@ const LocationField = ({
   setForm,
   setFieldErrors,
   error,
+  locationOptions,
 }) => {
   const open = activeLocation === name;
   const query = value.trim().toLowerCase();
 
   const locations = query
-    ? locationSearchOptions
+    ? locationOptions
       .filter((item) =>
-        [item.name, item.city, item.state, item.type].some((field) =>
-          field.toLowerCase().includes(query),
-        ),
+        [
+          item.name,
+          item.city,
+          item.state,
+          item.type,
+          item.description,
+          ...(item.tags || []),
+        ].some((field) => String(field || "").toLowerCase().includes(query)),
       )
       .slice(0, 80)
-    : locationSearchOptions.slice(0, 80);
+    : locationOptions.slice(0, 80);
 
   const selectLocation = (location) => {
     setForm((prev) => ({ ...prev, [name]: location.name }));
@@ -741,10 +726,6 @@ const LocationField = ({
   );
 };
 
-/* =========================================================
-   NUMBER FIELD
-========================================================= */
-
 const NumberField = ({
   name,
   label,
@@ -831,10 +812,6 @@ const NumberField = ({
     </div>
   );
 };
-
-/* =========================================================
-   SELECT FIELD
-========================================================= */
 
 const getTransportIcon = (value) => {
   switch (value) {
@@ -964,10 +941,6 @@ const SelectField = ({
   );
 };
 
-/* =========================================================
-   SMALL PIECES
-========================================================= */
-
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
   <div className="mb-4 flex items-start gap-3 sm:mb-5">
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--teal)] sm:h-10 sm:w-10">
@@ -995,16 +968,7 @@ const TourLoading = ({ message, step }) => (
     className="ai-loading-card mx-auto w-full min-w-0 max-w-2xl rounded-[1.25rem] p-5 sm:rounded-3xl sm:p-9"
   >
     <div className="flex min-w-0 flex-col items-center text-center">
-      <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-soft)] sm:h-20 sm:w-20">
-        <div className="absolute inset-0 animate-ping rounded-full bg-[var(--accent-soft)]" />
-
-        <Loader2
-          size={28}
-          className="relative animate-spin text-[var(--teal)] sm:h-8 sm:w-8"
-        />
-      </div>
-
-      <p className="tour-label mt-5 sm:mt-6">Travel Planner</p>
+      <p className="tour-label">Travel Planner</p>
 
       <h2 className="mt-2.5 text-lg font-bold leading-snug text-[var(--text)] sm:mt-3 sm:text-2xl md:text-3xl">
         {message}
@@ -1047,13 +1011,8 @@ const TourLoading = ({ message, step }) => (
         })}
       </ul>
 
-      <div className="mt-5 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-[var(--accent-soft)] sm:mt-6">
-        <div
-          className="h-full rounded-full bg-[var(--teal)] transition-all duration-700 ease-out"
-          style={{
-            width: `${((step + 1) / loadingSteps.length) * 100}%`,
-          }}
-        />
+      <div className="tour-progress-track mt-5 h-1.5 w-full max-w-sm rounded-full bg-[var(--accent-soft)] sm:mt-6">
+        <div className="tour-progress-bar" />
       </div>
 
       <p className="mt-4 text-[11px] leading-5 text-[var(--muted)] sm:mt-5 sm:text-xs">
@@ -1063,14 +1022,10 @@ const TourLoading = ({ message, step }) => (
   </motion.div>
 );
 
-/* =========================================================
-   RESULT
-========================================================= */
-
 const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
   if (!result) return null;
 
-  const plan = result.tripPlan || {};
+  const plan = result.tripPlan || result.aiPlan || {};
   const budgetBreakdown = plan.budgetBreakdown || {};
 
   const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -1099,6 +1054,15 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
   const text = (item) =>
     typeof item === "string" ? item : JSON.stringify(item);
 
+  const withProtocol = (url) =>
+    /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
+  const getMapsUrl = (hotel) =>
+    hotel.googleMapsUrl ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${hotel.name || ""} ${result.destination || ""}`.trim(),
+    )}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -1106,7 +1070,6 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
       transition={{ duration: 0.5 }}
       className="result-card rounded-[1.25rem] p-4 sm:rounded-3xl sm:p-7 lg:p-9"
     >
-      {/* Header */}
       <div className="mb-6 border-b border-[var(--border)] pb-6 sm:mb-7 sm:pb-7">
         <div className="flex flex-wrap items-start justify-between gap-4 sm:gap-5">
           <div className="min-w-0">
@@ -1131,7 +1094,6 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
         </div>
       </div>
 
-      {/* Quick stats */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
         {[
           ["People", result.people],
@@ -1308,11 +1270,44 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
                   </p>
                 )}
 
+                {hotel.address && (
+                  <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-[var(--muted)]">
+                    <MapPin size={13} className="mt-0.5 shrink-0" />
+                    <span className="break-words">{hotel.address}</span>
+                  </p>
+                )}
+
                 {hotel.reason && (
                   <p className="mt-3 text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
                     {hotel.reason}
                   </p>
                 )}
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={getMapsUrl(hotel)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ghost-button inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                  >
+                    <MapPin size={13} />
+                    View on Maps
+                    <ExternalLink size={12} />
+                  </a>
+
+                  {hotel.websiteUrl && (
+                    <a
+                      href={withProtocol(hotel.websiteUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ghost-button inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                    >
+                      <Globe size={13} />
+                      Website
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -1542,7 +1537,6 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
           </div>
         )}
 
-      {/* Status */}
       <div className="mt-8 border-t border-[var(--border)] pt-7 sm:mt-10 sm:pt-8">
         <div className="text-center">
           <p className="tour-label">Tour Plan Status</p>
@@ -1602,10 +1596,6 @@ const TourResult = ({ result, onConfirm, onCancel, actionLoading }) => {
   );
 };
 
-/* =========================================================
-   PAGE SHELL  (Navbar + Features-style grid background)
-========================================================= */
-
 const PageShell = ({ children }) => (
   <div className="tour-root min-h-screen w-full overflow-x-clip">
     <style>{styles}</style>
@@ -1627,7 +1617,6 @@ const PageShell = ({ children }) => (
         lg:pt-6
       "
     >
-      {/* Background grid pattern */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
@@ -1654,10 +1643,6 @@ const PageShell = ({ children }) => (
   </div>
 );
 
-/* =========================================================
-   TOUR PAGE
-========================================================= */
-
 const Tour = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1678,6 +1663,15 @@ const Tour = () => {
     specialRequest: "",
   });
 
+  const [locationRegions, setLocationRegions] = useState(() => [
+    ...INDIA_REGIONS,
+  ]);
+
+  const locationSearchOptions = useMemo(
+    () => buildLocationSearchOptions(locationRegions),
+    [locationRegions],
+  );
+
   const [activeLocation, setActiveLocation] = useState(null);
   const [activeSelect, setActiveSelect] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -1692,13 +1686,28 @@ const Tour = () => {
 
   const activeTripId = tripId || extractTripId(tourResult);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    loadIndiaAdministrativeData({ signal: controller.signal })
+      .then((regions) => {
+        setLocationRegions([...regions]);
+      })
+      .catch((error) => {
+        if (error?.name !== "AbortError") {
+          setLocationRegions([...INDIA_REGIONS]);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
+
   const budgetNumber = Number(form.budget);
 
   const budgetIsInvalid =
     form.budget !== "" &&
     (!Number.isFinite(budgetNumber) || budgetNumber < 5000);
-
-  /* ---------- Loading message rotation ---------- */
 
   useEffect(() => {
     if (!loading) {
@@ -1726,8 +1735,6 @@ const Tour = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
-  /* ---------- 1 person => Solo (auto) ---------- */
-
   useEffect(() => {
     if (isViewingTrip) return;
 
@@ -1745,8 +1752,6 @@ const Tour = () => {
     }
   }, [form.people, isViewingTrip]);
 
-  /* ---------- Destination passed via navigation state ---------- */
-
   useEffect(() => {
     if (location.state?.destination && !tripId) {
       setForm((prev) => ({
@@ -1755,8 +1760,6 @@ const Tour = () => {
       }));
     }
   }, [location.state, tripId]);
-
-  /* ---------- Load saved trip ---------- */
 
   useEffect(() => {
     const loadTrip = async () => {
@@ -1776,8 +1779,7 @@ const Tour = () => {
           throw new Error("Saved trip was not found");
         }
 
-        const trip =
-          responseData?.data ?? responseData?.trip ?? responseData;
+        const trip = responseData?.data ?? responseData?.trip ?? responseData;
 
         if (!trip || typeof trip !== "object") {
           throw new Error("Saved trip data was not found");
@@ -1824,8 +1826,6 @@ const Tour = () => {
     loadTrip();
   }, [tripId]);
 
-  /* ---------- Close dropdowns on outside click ---------- */
-
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (!event.target.closest("[data-location-field]")) {
@@ -1843,8 +1843,6 @@ const Tour = () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
-
-  /* ---------- Handlers ---------- */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1992,14 +1990,8 @@ const Tour = () => {
 
         setTourResult(createdTrip.trip || createdTrip);
 
-        toast.success(
-          responseData.message || "Tour plan generated successfully",
-        );
-
         return;
       }
-
-      toast.success(responseData.message || "Tour plan saved successfully");
 
       navigate(`/tour/${createdTripId}`, { replace: true });
     } catch (error) {
@@ -2159,8 +2151,6 @@ const Tour = () => {
 
   const showResult = isViewingTrip || Boolean(tourResult);
 
-  /* ---------- Loading a saved trip ---------- */
-
   if (loadingTrip) {
     return (
       <PageShell>
@@ -2180,8 +2170,6 @@ const Tour = () => {
       </PageShell>
     );
   }
-
-  /* ---------- Saved trip not found ---------- */
 
   if (isViewingTrip && !tourResult) {
     return (
@@ -2212,8 +2200,6 @@ const Tour = () => {
     );
   }
 
-  /* ---------- Main page ---------- */
-
   return (
     <PageShell>
       {showResult ? (
@@ -2224,9 +2210,8 @@ const Tour = () => {
               setTourResult(null);
               navigate("/tour");
             }}
-            className="ghost-button mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold sm:mb-5 sm:text-sm"
+            className="ghost-button mb-4 cursor-pointer inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold sm:mb-5 sm:text-sm"
           >
-            <ArrowLeft size={15} />
             Plan another trip
           </button>
 
@@ -2239,17 +2224,13 @@ const Tour = () => {
         </>
       ) : (
         <>
-          {/* Header (hidden while the plan is being generated) */}
           {!loading && (
             <motion.div
               {...fadeIn}
               className="mx-auto mb-5 max-w-3xl px-1 text-center sm:mb-7 md:mb-8"
             >
-              <h1 className="text-[1.9rem] font-bold leading-[1.12] tracking-tight text-slate-900 dark:text-white sm:text-4xl md:text-5xl">
-                Create Your
-                <span className="tour-title-gradient mt-1 block">
-                  Perfect Tour
-                </span>
+              <h1 className="whitespace-nowrap text-[clamp(1.5rem,4vw,2.75rem)] font-medium leading-tight tracking-[-0.02em] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Create Your Perfect Tour
               </h1>
 
               <p className="mx-auto mt-3 max-w-xl px-2 text-[13px] leading-6 text-slate-600 dark:text-slate-300 sm:mt-4 sm:text-base sm:leading-7">
@@ -2268,7 +2249,6 @@ const Tour = () => {
               noValidate
               className="ticket-card"
             >
-              {/* Route header */}
               <div className="ticket-route px-4 py-4 sm:px-7 sm:py-6 md:px-9">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-5">
                   <div className="min-w-0">
@@ -2302,7 +2282,6 @@ const Tour = () => {
                 <span className="ticket-notch ticket-notch-right" />
               </div>
 
-              {/* Fields */}
               <div className="min-w-0 px-3.5 py-5 sm:px-7 sm:py-8 md:px-9">
                 <div className="grid min-w-0 grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                   <LocationField
@@ -2315,6 +2294,7 @@ const Tour = () => {
                     setForm={setForm}
                     setFieldErrors={setFieldErrors}
                     error={fieldErrors.startLocation}
+                    locationOptions={locationSearchOptions}
                   />
 
                   <LocationField
@@ -2327,6 +2307,7 @@ const Tour = () => {
                     setForm={setForm}
                     setFieldErrors={setFieldErrors}
                     error={fieldErrors.destination}
+                    locationOptions={locationSearchOptions}
                   />
 
                   <NumberField
@@ -2446,7 +2427,6 @@ const Tour = () => {
                 <span className="ticket-notch ticket-notch-right" />
               </div>
 
-              {/* Submit */}
               <div className="px-3.5 py-5 sm:px-7 sm:py-7 md:px-9 md:py-8">
                 <button
                   type="submit"

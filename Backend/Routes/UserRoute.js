@@ -11,6 +11,7 @@ const {
   verifyOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema
 } = require("../ValidateJoi/Validate");
 
 const {
@@ -23,6 +24,7 @@ const {
 
 const {
   register,
+  googleLogin,
   login,
   logout,
   changePassword,
@@ -39,12 +41,17 @@ const {
   getBirthdayById,
   confirmBirthday,
   cancelBirthday,
+  getEventById,
+  confirmEvent,
+  cancelEvent,
   createSupportRequest,
   getMySupportRequests,
   getSupportRequestById,
 } = require("../Controller/user.controller");
 
 app.post("/register", validate(registerSchema), Register_Limiter, register);
+
+app.post("/google", googleLogin);
 
 app.post("/login", validate(loginSchema), Login_Limit, login);
 
@@ -60,7 +67,7 @@ app.post("/resend-otp", ResendOtp);
 
 app.post("/logout", auth, logout);
 
-app.get("/profile", auth, profile);
+app.get("/profile", auth, validate(updateProfileSchema), profile);
 
 app.get("/dashboard", auth, getDashboard);
 
@@ -75,6 +82,12 @@ app.get("/getBirthdayById", auth, getBirthdayById);
 app.patch("/birthday/:birthdayId/confirm", auth, confirmBirthday);
 
 app.patch("/birthday/:birthdayId/cancel", auth, cancelBirthday);
+
+app.get("/getEventById", auth, getEventById);
+
+app.patch("/event/:eventId/confirm", auth, confirmEvent);
+
+app.patch("/event/:eventId/cancel", auth, cancelEvent);
 
 app.put("/profile", auth, upload.single("profileImage"), updateProfile);
 

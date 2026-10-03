@@ -6,6 +6,10 @@ export const registerUser = (data) => {
   return axiosInstance.post("/user/register", data);
 };
 
+export const registerUserByGoogle = (data) => {
+  return axiosInstance.post("/user/google", data);
+};
+
 export const loginUser = (data) => {
   return axiosInstance.post("/user/login", data);
 };
@@ -123,6 +127,30 @@ export const confirmBirthday = async (birthdayId) => {
 
 export const cancelBirthday = async (birthdayId) => {
   return axiosInstance.patch(`/user/birthday/${birthdayId}/cancel`);
+};
+
+// --------------------------------------------------Create Event plan-----------------------------------
+
+export const createEvent = (data) => {
+  return axiosInstance.post("/event/create", data);
+};
+
+export const getEventById = async (eventId) => {
+  const response = await axiosInstance.get("/user/getEventById", {
+    params: {
+      eventId,
+    },
+  });
+
+  return response.data;
+};
+
+export const confirmEvent = async (eventId) => {
+  return axiosInstance.patch(`/user/event/${eventId}/confirm`);
+};
+
+export const cancelEvent = async (eventId) => {
+  return axiosInstance.patch(`/user/event/${eventId}/cancel`);
 };
 
 // --------------------------------------------------Notification-----------------------------------

@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const User = require("../Model/UserModel");
+const { OAuth2Client } = require("google-auth-library");
 const TripModel = require("../Model/TripModel");
 const BirthdayModel = require("../Model/BirthdayModel");
 const jwt = require("jsonwebtoken");
@@ -9,18 +10,18 @@ const cloudinary = require("../Config/Cloudinary");
 const Notification = require("../Model/AppNotificationModel");
 const PendingUser = require("../Model/PendingUserModel");
 const Support = require("../Model/UserSupport");
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+);
 
 const {
   forgotPasswordService,
   verifyOTPService,
   resetPasswordService,
   resendOTPService,
-  // sendEmail,
-  loginEmail,
 } = require("../Middleware/AllServices");
 
 const emailTemplate = require("../Template/EmailTemplate");
-const loginSuccess = require("../Template/LoginTemplate");
 const getDeviceInfo = require("../Utilities/DeviceInfo");
 const getLocation = require("../Utilities/getLocation");
 
@@ -29,6 +30,9 @@ const {
   AccessToken,
   RefreshToken,
 } = require("../Config/Token");
+
+
+// USER REGISTER
 
 const register = async (req, res, next) => {
   try {
@@ -165,6 +169,174 @@ const register = async (req, res, next) => {
   }
 };
 
+// USER REGISTER BY GOOGLE
+
+const googleLogin = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      throw new ApiError(
+        400,
+        "Google authentication credential is required",
+      );
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      throw new ApiError(
+        401,
+        "Invalid Google authentication",
+      );
+    }
+
+    const {
+      sub: googleId,
+      email,
+      email_verified: emailVerified,
+      name,
+      picture,
+    } = payload;
+
+    if (!googleId || !email) {
+      throw new ApiError(
+        401,
+        "Google account information is incomplete",
+      );
+    }
+
+    if (!emailVerified) {
+      throw new ApiError(
+        401,
+        "Google email is not verified",
+      );
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    let user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    if (user && user.isBlocked) {
+      throw new ApiError(
+        403,
+        "Your account has been blocked",
+      );
+    }
+
+    if (!user) {
+      user = await User.create({
+        name: name || "",
+        email: normalizedEmail,
+        googleId,
+        authProvider: "google",
+        isVerified: true,
+        profileImage: {
+          url: picture || "",
+          public_id: "",
+        },
+      });
+    } else {
+      if (!user.googleId) {
+        user.googleId = googleId;
+      }
+
+      if (!user.authProvider) {
+        user.authProvider = "google";
+      }
+
+      user.isVerified = true;
+
+      if (!user.name && name) {
+        user.name = name;
+      }
+
+      if (
+        picture &&
+        (!user.profileImage || !user.profileImage.url)
+      ) {
+        user.profileImage = {
+          url: picture,
+          public_id: "",
+        };
+      }
+
+      await user.save();
+    }
+
+    const accessToken = AccessToken(user);
+    const refreshToken = RefreshToken(user);
+
+    user.refreshToken = refreshToken;
+
+    await user.save();
+
+    const deviceInfo = getDeviceInfo(
+      req.headers["user-agent"],
+    );
+
+    const ip =
+      req.headers["x-forwarded-for"] ||
+      req.socket.remoteAddress ||
+      "";
+
+    const location = getLocation(ip);
+
+    const loginTime = new Date().toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+    try {
+      await Notification.create({
+        user: user._id,
+        title: "Google Login Successful",
+        message: `Your account was logged in from ${deviceInfo} at ${location} on ${loginTime}.`,
+        type: "Login",
+      });
+    } catch (notificationError) {
+      console.error(
+        "NOTIFICATION CREATION ERROR:",
+        notificationError,
+      );
+    }
+
+    const profileCompleted =
+      Boolean(user.phone) &&
+      Boolean(user.password);
+
+    return res.status(200).json({
+      status: true,
+      message: "Google sign-in successful",
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || "",
+          role: user.role,
+          isVerified: user.isVerified,
+          authProvider: user.authProvider,
+          profileCompleted,
+        },
+        accessToken,
+        refreshToken,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// USER LOGIN
+
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -179,6 +351,12 @@ const login = async (req, res, next) => {
 
     if (user.isBlocked) {
       throw new ApiError(403, "Your account has been blocked");
+    }
+    if (!user.password) {
+      throw new ApiError(
+        400,
+        "This account uses Google sign-in. Please continue with Google.",
+      );
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -235,6 +413,8 @@ const login = async (req, res, next) => {
   }
 };
 
+// USER VERIFY OTP
+
 const verifyOTP = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
@@ -279,6 +459,29 @@ const verifyOTP = async (req, res, next) => {
   }
 };
 
+// USER RESEND OTP
+
+const ResendOtp = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization");
+
+    if (!token) {
+      throw new ApiError(401, "Verification token required");
+    }
+
+    await resendOTPService(token, "user");
+
+    res.status(200).json({
+      status: true,
+      message: "OTP resent successfully.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// USER FORGOT PASSWORD
+
 const forgotPasswords = async (req, res, next) => {
   try {
     const token = await forgotPasswordService(req.body.email, "user");
@@ -292,6 +495,8 @@ const forgotPasswords = async (req, res, next) => {
     next(err);
   }
 };
+
+// USER RESET PASSWORD
 
 const resetPasswords = async (req, res, next) => {
   try {
@@ -316,60 +521,8 @@ const resetPasswords = async (req, res, next) => {
   }
 };
 
-const ResendOtp = async (req, res, next) => {
-  try {
-    const token = req.header("Authorization");
+// USER CHANGE PASSWORD
 
-    if (!token) {
-      throw new ApiError(401, "Verification token required");
-    }
-
-    await resendOTPService(token, "user");
-
-    res.status(200).json({
-      status: true,
-      message: "OTP resent successfully.",
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-const logout = async (req, res, next) => {
-  try {
-    req.user.refreshToken = null;
-
-    await req.user.save();
-
-    res.status(200).json({
-      status: true,
-      message: "Logout successful",
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-const profile = async (req, res, next) => {
-  try {
-    if (!req.user) {
-      throw new ApiError(401, "Please login first.");
-    }
-
-    const user = req.user.toObject();
-
-    delete user.password;
-    delete user.otp;
-    delete user.refreshToken;
-
-    res.status(200).json({
-      status: true,
-      data: user,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
 const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -420,6 +573,48 @@ const changePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// USER LOGOUT
+
+const logout = async (req, res, next) => {
+  try {
+    req.user.refreshToken = null;
+
+    await req.user.save();
+
+    res.status(200).json({
+      status: true,
+      message: "Logout successful",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// USER PROFILE
+
+const profile = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, "Please login first.");
+    }
+
+    const user = req.user.toObject();
+
+    delete user.password;
+    delete user.otp;
+    delete user.refreshToken;
+
+    res.status(200).json({
+      status: true,
+      data: user,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// USER UPDATE PROFILE
 
 const updateProfile = async (req, res, next) => {
   try {
@@ -506,6 +701,8 @@ const updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// USER DASHBOARD
 
 const getDashboard = async (req, res, next) => {
   try {
@@ -606,6 +803,8 @@ const getDashboard = async (req, res, next) => {
     next(error);
   }
 };
+
+// USER TRIP NOTIFICATIONS 
 
 const getTripById = async (req, res, next) => {
   try {
@@ -743,6 +942,8 @@ const cancelTrip = async (req, res, next) => {
     next(error);
   }
 };
+
+// USER BIRTHDAY NOTIFICATIONS 
 
 const getBirthdayById = async (req, res, next) => {
   try {
@@ -884,6 +1085,151 @@ const cancelBirthday = async (req, res, next) => {
   }
 };
 
+// USER EVENT NOTIFICATION
+const getEventById = async (req, res, next) => {
+  try {
+    const { eventId } = req.query;
+    if (!eventId) {
+      throw new ApiError(400, "Event ID is required.");
+    }
+    if (!req.user?._id) {
+      throw new ApiError(401, "User authentication is required.");
+    }
+    const event = await Event.findOne({
+      _id: eventId,
+      user: req.user._id,
+    }).lean();
+
+    if (!event) {
+      throw new ApiError(404, "Event not found.");
+    }
+    return res.status(200).json({
+      status: true,
+      message: "Event loaded successfully.",
+      data: {
+        _id: event._id,
+        eventId: event._id,
+        eventName: event.eventName || "",
+        eventType: event.eventType || "",
+        eventDate: event.eventDate,
+        startTime: event.startTime || "",
+        endTime: event.endTime || "",
+        people: event.people ?? 1,
+        budget: event.budget ?? 0,
+        location: {
+          country: event.location?.country || "India",
+          state: event.location?.state || "",
+          city: event.location?.city || "",
+          area: event.location?.area || "",
+          address: event.location?.address || "",
+        },
+        venueType: event.venueType || "Any",
+        theme: event.theme || "",
+        foodPreference: event.foodPreference || "Any",
+        catering: event.catering || false,
+        decoration: event.decoration || false,
+        photography: event.photography || false,
+        entertainment: event.entertainment || false,
+        music: event.music || false,
+        specialRequest: event.specialRequest || "",
+        status: event.status || "Created",
+        estimatedCost: event.estimatedCost ?? 0,
+        isBooked: event.isBooked || false,
+        isPaid: event.isPaid || false,
+        eventPlan: event.aiPlan || {},
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const confirmEvent = async (req, res, next) => {
+  try {
+    const { eventId } = req.params;
+    if (!req.user?._id) {
+      throw new ApiError(401, "User authentication is required.");
+    }
+    if (!eventId) {
+      throw new ApiError(400, "Event ID is required.");
+    }
+    const event = await Event.findOne({
+      _id: eventId,
+      user: req.user._id,
+    });
+    if (!event) {
+      throw new ApiError(404, "Event plan not found.");
+    }
+    if (event.status === "Cancelled") {
+      throw new ApiError(
+        400,
+        "Cancelled event plans cannot be confirmed.",
+      );
+    }
+    if (event.status === "Completed") {
+      throw new ApiError(
+        400,
+        "Completed event plans cannot be confirmed.",
+      );
+    }
+    event.status = "Booked";
+    event.isBooked = true;
+    await event.save();
+    return res.status(200).json({
+      status: true,
+      message: "Event plan confirmed successfully.",
+      data: event,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const cancelEvent = async (req, res, next) => {
+  try {
+    const { eventId } = req.params;
+    if (!req.user?._id) {
+      throw new ApiError(401, "User authentication is required.");
+    }
+    if (!eventId) {
+      throw new ApiError(400, "Event ID is required.");
+    }
+    const event = await Event.findOne({
+      _id: eventId,
+      user: req.user._id,
+    });
+    if (!event) {
+      throw new ApiError(404, "Event plan not found.");
+    }
+    if (event.status === "Booked") {
+      throw new ApiError(
+        400,
+        "Confirmed event plans cannot be cancelled.",
+      );
+    }
+    if (event.status === "Completed") {
+      throw new ApiError(
+        400,
+        "Completed event plans cannot be cancelled.",
+      );
+    }
+    event.status = "Cancelled";
+    event.isBooked = false;
+    await event.save();
+    return res.status(200).json({
+      status: true,
+      message: "Event plan cancelled successfully.",
+      data: event,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// USER SUPPORT REQUEST
+
 const createSupportRequest = async (req, res, next) => {
   try {
     if (!req.user?._id) {
@@ -981,6 +1327,7 @@ const getSupportRequestById = async (req, res, next) => {
 
 module.exports = {
   register,
+  googleLogin,
   login,
   logout,
   changePassword,
@@ -997,6 +1344,9 @@ module.exports = {
   getBirthdayById,
   confirmBirthday,
   cancelBirthday,
+  getEventById,
+  confirmEvent,
+  cancelEvent,
   createSupportRequest,
   getMySupportRequests,
   getSupportRequestById,

@@ -3,7 +3,7 @@ const emailTemplate = ({
   heading,
   message,
   buttonText = "Explore Now",
-  buttonLink = "https://himanshu-raj-uk.github.io/Raj-Trendz/home.html",
+  buttonLink = "https://himanshu-raj-uk.github.io/Service-Planner/",
   footer = "Thank you for choosing All Services Planner",
 }) => {
   return `

@@ -18,8 +18,7 @@ function Footer() {
 
   const companyLinks = [
     { label: "About Us", path: "/about" },
-    { label: "Pricing", path: "/pricing" },
-    { label: "Privacy Policy", path: "/privacy" },
+    { label: "Privacy Policy", path: "/privacy-policy" },
     { label: "Terms & Conditions", path: "/terms" },
   ];
 
@@ -85,17 +84,8 @@ function Footer() {
         dark:text-slate-100
       "
     >
-      {/* =========================================================
-          BACKGROUND GRID
-          Same pattern as Services / Features
-      ========================================================= */}
       <div
-        className="
-          pointer-events-none
-          absolute
-          inset-0
-          opacity-100
-        "
+        className="pointer-events-none absolute inset-0 opacity-100"
         style={{
           backgroundImage: `
             linear-gradient(
@@ -114,9 +104,6 @@ function Footer() {
         }}
       />
 
-      {/* =========================================================
-          AMBIENT ACCENTS
-      ========================================================= */}
       <div
         className="
           pointer-events-none
@@ -147,9 +134,6 @@ function Footer() {
         "
       />
 
-      {/* =========================================================
-          MAIN FOOTER CONTENT
-      ========================================================= */}
       <div
         className="
           relative
@@ -158,28 +142,25 @@ function Footer() {
           w-full
           max-w-7xl
           px-4
-          py-5
+          py-4
           sm:px-6
-          sm:py-6
+          sm:py-5
           lg:px-8
-          lg:py-7
+          lg:py-6
         "
       >
         <div
           className="
             grid
             grid-cols-1
-            gap-6
+            gap-5
             sm:grid-cols-2
             sm:gap-x-8
-            sm:gap-y-6
+            sm:gap-y-5
             lg:grid-cols-12
-            lg:gap-8
+            lg:gap-7
           "
         >
-          {/* =====================================================
-              BRAND
-          ===================================================== */}
           <div className="sm:col-span-2 lg:col-span-6">
             <Link
               to="/"
@@ -189,19 +170,18 @@ function Footer() {
               <div
                 className="
                   flex
-                  h-[46px]
+                  h-[44px]
                   w-auto
                   min-w-0
-                  max-w-[190px]
-                  items-center
-                  min-[360px]:h-[49px]
-                  min-[360px]:max-w-[205px]
-                  sm:h-[52px]
-                  sm:max-w-[225px]
-                  md:h-[55px]
-                  md:max-w-[240px]
-                  lg:h-[58px]
-                  lg:max-w-[260px]
+                  max-w-[185px]
+                  min-[360px]:h-[47px]
+                  min-[360px]:max-w-[200px]
+                  sm:h-[50px]
+                  sm:max-w-[220px]
+                  md:h-[53px]
+                  md:max-w-[235px]
+                  lg:h-[56px]
+                  lg:max-w-[250px]
                 "
               >
                 <img
@@ -227,7 +207,7 @@ function Footer() {
 
             <p
               className="
-                mt-2.5
+                mt-2
                 max-w-xl
                 text-sm
                 leading-5
@@ -235,7 +215,7 @@ function Footer() {
                 transition-colors
                 duration-500
                 dark:text-slate-400
-                sm:mt-3
+                sm:mt-2.5
                 sm:text-[15px]
                 sm:leading-6
               "
@@ -245,18 +225,14 @@ function Footer() {
               experiences with experience agents and members.
             </p>
 
-            {/* =================================================
-                SOCIAL LINKS
-            ================================================= */}
-            <div className="mt-3 flex flex-wrap gap-2 sm:mt-4">
-              {/* Facebook */}
+            <div className="mt-2.5 flex flex-wrap gap-2 sm:mt-3">
               <a
                 href="#"
                 aria-label="Facebook"
                 className="
                   flex
-                  h-9
-                  w-9
+                  h-8
+                  w-8
                   items-center
                   justify-center
                   rounded-full
@@ -280,17 +256,16 @@ function Footer() {
                   dark:hover:shadow-[0_8px_22px_rgba(24,119,242,0.32)]
                 "
               >
-                <FaFacebookF size={14} />
+                <FaFacebookF size={13} />
               </a>
 
-              {/* Instagram */}
               <a
                 href="#"
                 aria-label="Instagram"
                 className="
                   flex
-                  h-9
-                  w-9
+                  h-8
+                  w-8
                   items-center
                   justify-center
                   rounded-full
@@ -314,17 +289,16 @@ function Footer() {
                   dark:hover:shadow-[0_8px_22px_rgba(228,64,95,0.32)]
                 "
               >
-                <FaInstagram size={14} />
+                <FaInstagram size={13} />
               </a>
 
-              {/* Twitter */}
               <a
                 href="#"
                 aria-label="Twitter"
                 className="
                   flex
-                  h-9
-                  w-9
+                  h-8
+                  w-8
                   items-center
                   justify-center
                   rounded-full
@@ -348,17 +322,16 @@ function Footer() {
                   dark:hover:shadow-[0_8px_22px_rgba(29,161,242,0.32)]
                 "
               >
-                <FaTwitter size={14} />
+                <FaTwitter size={13} />
               </a>
 
-              {/* LinkedIn */}
               <a
                 href="#"
                 aria-label="LinkedIn"
                 className="
                   flex
-                  h-9
-                  w-9
+                  h-8
+                  w-8
                   items-center
                   justify-center
                   rounded-full
@@ -382,20 +355,17 @@ function Footer() {
                   dark:hover:shadow-[0_8px_22px_rgba(10,102,194,0.32)]
                 "
               >
-                <FaLinkedinIn size={14} />
+                <FaLinkedinIn size={13} />
               </a>
             </div>
           </div>
 
-          {/* =====================================================
-              PLANNER SERVICES
-          ===================================================== */}
           <div className="lg:col-span-3">
             <h3
               className="
-                mb-2.5
+                mb-2
                 text-sm
-                font-bold
+                font-medium
                 text-slate-800
                 transition-colors
                 duration-500
@@ -406,7 +376,7 @@ function Footer() {
               Planner Services
             </h3>
 
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {plannerServices.map((service) => (
                 <li key={service.label}>
                   <Link
@@ -444,15 +414,12 @@ function Footer() {
             </ul>
           </div>
 
-          {/* =====================================================
-              COMPANY
-          ===================================================== */}
           <div className="lg:col-span-3">
             <h3
               className="
-                mb-2.5
+                mb-2
                 text-sm
-                font-bold
+                font-medium
                 text-slate-800
                 transition-colors
                 duration-500
@@ -463,7 +430,7 @@ function Footer() {
               Company
             </h3>
 
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {companyLinks.map((item) => (
                 <li key={item.label}>
                   <Link
@@ -502,29 +469,26 @@ function Footer() {
           </div>
         </div>
 
-        {/* =======================================================
-            AUTO CHANGING POSITIVE THOUGHT
-        ======================================================= */}
         <div
           className="
-            mt-5
+            mt-4
             border-t
             border-slate-200/80
-            pt-4
+            pt-3
             transition-colors
             duration-500
             dark:border-slate-700/60
-            sm:mt-6
-            sm:pt-5
+            sm:mt-5
+            sm:pt-4
           "
         >
           <div className="flex flex-col items-center text-center">
             <p
               className="
                 text-[10px]
-                font-bold
+                font-medium
                 uppercase
-                tracking-[0.18em]
+                tracking-[0.16em]
                 text-indigo-600
                 dark:text-indigo-300
                 sm:text-xs
@@ -535,15 +499,15 @@ function Footer() {
 
             <div
               className="
-                mt-1.5
+                mt-1
                 flex
-                min-h-[34px]
+                min-h-[30px]
                 w-full
                 max-w-3xl
                 items-center
                 justify-center
                 px-2
-                sm:min-h-[38px]
+                sm:min-h-[34px]
               "
             >
               <p
@@ -558,10 +522,9 @@ function Footer() {
                   dark:text-slate-300
                   sm:text-[15px]
                   sm:leading-6
-                  ${
-                    thoughtVisible
-                      ? "translate-y-0 opacity-100"
-                      : "translate-y-1 opacity-0"
+                  ${thoughtVisible
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-1 opacity-0"
                   }
                 `}
               >
@@ -569,8 +532,7 @@ function Footer() {
               </p>
             </div>
 
-            {/* Thought Indicator */}
-            <div className="mt-1.5 flex items-center gap-1.5">
+            <div className="mt-1 flex items-center gap-1.5">
               {thoughts.slice(0, 5).map((_, index) => (
                 <span
                   key={index}
@@ -579,10 +541,9 @@ function Footer() {
                     rounded-full
                     transition-all
                     duration-300
-                    ${
-                      currentThought % 5 === index
-                        ? "w-5 bg-indigo-500 dark:bg-indigo-400"
-                        : "w-1.5 bg-slate-300 dark:bg-slate-700"
+                    ${currentThought % 5 === index
+                      ? "w-5 bg-indigo-500 dark:bg-indigo-400"
+                      : "w-1.5 bg-slate-300 dark:bg-slate-700"
                     }
                   `}
                 />
@@ -591,21 +552,17 @@ function Footer() {
           </div>
         </div>
 
-        {/* =======================================================
-            COPYRIGHT
-            Bottom Privacy / Terms / Cookies removed
-        ======================================================= */}
         <div
           className="
-            mt-4
+            mt-3
             border-t
             border-slate-200/80
-            pt-3
+            pt-2.5
             transition-colors
             duration-500
             dark:border-slate-700/60
-            sm:mt-5
-            sm:pt-4
+            sm:mt-4
+            sm:pt-3
           "
         >
           <div className="flex items-center justify-center text-center">

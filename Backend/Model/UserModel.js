@@ -18,14 +18,29 @@ const userSchema = new mongoose.Schema(
 
     phone: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true,
       trim: true,
     },
 
     password: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
+    },
+
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
 
     role: {
@@ -82,31 +97,38 @@ const userSchema = new mongoose.Schema(
       houseNo: {
         type: String,
         default: "",
+        trim: true,
       },
 
       area: {
         type: String,
         default: "",
+        trim: true,
       },
 
       city: {
         type: String,
         default: "",
+        trim: true,
       },
 
       state: {
         type: String,
         default: "",
+        trim: true,
       },
 
       country: {
         type: String,
         default: "India",
+        trim: true,
       },
 
       pincode: {
         type: String,
         default: "",
+        trim: true,
+        match: [/^[0-9]{6}$/, "Pincode must be exactly 6 digits"],
       },
     },
   },

@@ -1,18 +1,627 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Cake,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Headphones,
   MapPin,
+  PartyPopper,
   Plane,
   XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getUserDashboard } from "../../Services/AuthAPI";
 
-const Dashboard = () => {
+/* ------------------------------------------------------------------
+   Theme: same tokens as the Tour page.
+   light -> indigo accents | dark (global .dark) -> emerald accents
+------------------------------------------------------------------ */
+
+const styles = `
+  .dash-root {
+    --page-bg: #f4f6fa;
+
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #64748b;
+
+    --teal: #4f46e5;
+    --ink: #ffffff;
+
+    --accent-soft: rgba(79, 70, 229, 0.09);
+    --accent-ring: rgba(79, 70, 229, 0.18);
+
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-solid: #ffffff;
+    --tile: rgba(241, 245, 249, 0.85);
+
+    --border: rgba(15, 23, 42, 0.09);
+    --border-hover: rgba(15, 23, 42, 0.18);
+
+    --shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+    --dash-pattern: rgba(15, 23, 42, 0.045);
+
+    --ok: #059669;
+    --bad: #dc2626;
+    --warn: #d97706;
+    --info: #2563eb;
+
+    --pill-blue: #2563eb;
+    --pill-ok: #059669;
+    --pill-bad: #dc2626;
+
+    background: var(--page-bg);
+    color: var(--text);
+    transition: background-color 500ms ease, color 500ms ease;
+  }
+
+  .dark .dash-root {
+    --page-bg: #0f172a;
+
+    --text: #f8fafc;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+
+    --teal: #34d399;
+    --ink: #04211c;
+
+    --accent-soft: rgba(52, 211, 153, 0.12);
+    --accent-ring: rgba(52, 211, 153, 0.2);
+
+    --surface: rgba(15, 23, 42, 0.78);
+    --surface-solid: #111b30;
+    --tile: rgba(30, 41, 59, 0.55);
+
+    --border: rgba(148, 163, 184, 0.16);
+    --border-hover: rgba(148, 163, 184, 0.32);
+
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+    --dash-pattern: rgba(148, 163, 184, 0.07);
+
+    --ok: #34d399;
+    --bad: #f87171;
+    --warn: #fbbf24;
+    --info: #60a5fa;
+
+    --pill-blue: #3b82f6;
+    --pill-ok: #10b981;
+    --pill-bad: #ef4444;
+  }
+
+  .dash-page {
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
+  }
+
+  .dash-root.dash-embedded {
+    background: transparent;
+  }
+
+  .dash-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--muted);
+  }
+
+  .dash-title-gradient {
+    background: linear-gradient(90deg, #4f46e5, #9333ea, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dark .dash-title-gradient {
+    background: linear-gradient(90deg, #34d399, #2dd4bf, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .dash-card {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: transparent;
+  }
+
+  .dash-tile {
+    border: 1px solid var(--border);
+    background: transparent;
+  }
+
+  .dash-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: var(--accent-soft);
+    color: var(--teal);
+  }
+
+  /* Buttons (only real buttons react on hover) */
+  .dash-btn {
+    border: 1px solid var(--border-hover);
+    background: var(--surface-solid);
+    color: var(--text);
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+
+  .dash-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  .dash-cta {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: 0 14px 34px rgba(79, 70, 229, 0.28);
+    transition: transform 160ms ease, filter 160ms ease;
+  }
+
+  .dark .dash-cta {
+    background: linear-gradient(135deg, #10b981, #0d9488);
+    box-shadow: 0 14px 34px rgba(16, 185, 129, 0.22);
+  }
+
+  .dash-cta:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .dash-cta:active {
+    transform: translateY(0);
+  }
+
+  /* Tabs */
+  .dash-tabs {
+    border: 1px solid var(--border);
+    border-radius: 0.95rem;
+    background: transparent;
+  }
+
+  .dash-tab {
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    color: var(--text-soft);
+    transition: color 160ms ease, background-color 160ms ease,
+      border-color 160ms ease;
+  }
+
+  .dash-tab:hover { color: var(--teal); }
+  .dash-tab[data-tone="ok"]:hover { color: var(--ok); }
+  .dash-tab[data-tone="bad"]:hover { color: var(--bad); }
+
+  .dash-tab[data-active="true"] {
+    border-color: var(--teal);
+    background: var(--accent-soft);
+    color: var(--teal);
+  }
+
+  .dash-tab[data-active="true"][data-tone="ok"] {
+    border-color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    color: var(--ok);
+  }
+
+  .dash-tab[data-active="true"][data-tone="bad"] {
+    border-color: var(--bad);
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
+    color: var(--bad);
+  }
+
+  /* Smooth collapse (height is measured, so it follows content changes) */
+  .dash-collapse {
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    will-change: height;
+    transition:
+      height 460ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 280ms ease,
+      visibility 0s linear 460ms;
+  }
+
+  .dash-collapse[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      height 460ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 360ms ease 60ms,
+      visibility 0s linear 0s;
+  }
+
+  .dash-collapse-inner {
+    transform: translateY(-8px);
+    transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .dash-collapse[data-open="true"] .dash-collapse-inner {
+    transform: translateY(0);
+  }
+
+  .dash-chevron {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .dash-toggle[aria-expanded="true"] .dash-chevron {
+    transform: rotate(180deg);
+  }
+
+  .dash-total {
+    border: 1px solid transparent;
+    background: var(--pill-blue);
+    color: #ffffff;
+    transition: background-color 320ms ease, filter 160ms ease;
+  }
+
+  .dash-total[data-tone="ok"] { background: var(--pill-ok); }
+  .dash-total[data-tone="bad"] { background: var(--pill-bad); }
+
+  .dash-toggle:hover .dash-total { filter: brightness(1.08); }
+
+  /* Rows */
+  .dash-row-title {
+    color: var(--text);
+    transition: color 160ms ease;
+  }
+
+  .dash-row:hover .dash-row-title {
+    color: var(--teal);
+  }
+
+  .dash-status-ok { color: var(--ok); }
+  .dash-status-bad { color: var(--bad); }
+  .dash-status-muted { color: var(--muted); }
+
+  .dash-pill-ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+  .dash-pill-bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+  .dash-pill-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+  .dash-pill-info { color: var(--info); background: color-mix(in srgb, var(--info) 12%, transparent); }
+  .dash-pill-muted { color: var(--text-soft); background: var(--tile); }
+
+  /* Scrollbar */
+  .dashboard-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+    scroll-behavior: smooth;
+  }
+
+  .dashboard-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+  .dashboard-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .dashboard-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--border-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dash-root,
+    .dash-collapse,
+    .dash-collapse-inner,
+    .dash-chevron,
+    .dash-total,
+    .dash-cta { transition: none; }
+  }
+`;
+
+/* ------------------------------------------------------------------
+   Small helpers / components (module level so they are never remounted)
+------------------------------------------------------------------ */
+
+const getStatusClass = (status) => {
+  if (status === "Confirmed") return "dash-status-ok";
+  if (status === "Cancelled") return "dash-status-bad";
+  return "dash-status-muted";
+};
+
+const getSupportStatus = (status) => {
+  switch (status) {
+    case "Resolved":
+      return { icon: CheckCircle2, className: "dash-pill-ok" };
+    case "Closed":
+      return { icon: XCircle, className: "dash-pill-muted" };
+    case "In Progress":
+      return { icon: Clock3, className: "dash-pill-info" };
+    default:
+      return { icon: Clock3, className: "dash-pill-warn" };
+  }
+};
+
+const Shell = ({ children, embedded = false }) =>
+  embedded ? (
+    <div className="dash-root dash-embedded w-full min-w-0">
+      <style>{styles}</style>
+      {children}
+    </div>
+  ) : (
+    <div className="dash-root w-full overflow-x-clip">
+      <style>{styles}</style>
+
+      <main className="dash-page min-h-[calc(100vh-110px)] px-3 pb-6 pt-3 sm:px-6 sm:pb-10 sm:pt-5 lg:px-8 lg:pb-14 lg:pt-6">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            backgroundImage: `
+              linear-gradient(
+                90deg,
+                var(--page-pattern-color, var(--dash-pattern)) 1px,
+                transparent 1px
+              ),
+              linear-gradient(
+                0deg,
+                var(--page-pattern-color, var(--dash-pattern)) 1px,
+                transparent 1px
+              )
+            `,
+            backgroundSize: "48px 48px",
+          }}
+        />
+
+        <div className="relative z-10 mx-auto w-full min-w-0 max-w-7xl">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+
+const EmptyState = ({
+  icon: Icon,
+  title,
+  description,
+  buttonText,
+  onClick,
+}) => (
+  <div className="flex min-h-[200px] flex-col items-center justify-center px-5 py-8 text-center">
+    <span className="dash-icon h-12 w-12 !rounded-full sm:h-14 sm:w-14">
+      <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+    </span>
+
+    <h3 className="mt-4 text-sm font-bold text-[var(--text)] sm:text-base">
+      {title}
+    </h3>
+
+    <p className="mt-1 max-w-sm text-[13px] leading-6 text-[var(--muted)] sm:text-sm">
+      {description}
+    </p>
+
+    {buttonText && onClick && (
+      <button
+        type="button"
+        onClick={onClick}
+        className="dash-cta mt-5 rounded-xl px-5 py-2.5 text-[13px] font-semibold sm:text-sm"
+      >
+        {buttonText}
+      </button>
+    )}
+  </div>
+);
+
+const DrawerTabs = ({ active, onChange, tabs }) => (
+  <div className="dash-tabs grid grid-cols-3 gap-1 p-1">
+    {tabs.map((tab) => (
+      <button
+        key={tab.id}
+        type="button"
+        onClick={() => onChange(tab.id)}
+        data-active={active === tab.id}
+        data-tone={
+          tab.id === "confirmed"
+            ? "ok"
+            : tab.id === "cancelled"
+              ? "bad"
+              : "primary"
+        }
+        className="dash-tab min-w-0 whitespace-nowrap px-1 py-2.5 text-[11.5px] font-semibold sm:px-4 sm:text-sm"
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+);
+
+const PlanRow = ({
+  icon: Icon,
+  title,
+  subtitle,
+  meta,
+  budget,
+  status,
+  onClick,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="dash-row flex w-full min-w-0 items-start gap-3 border-b border-[var(--border)] px-3.5 py-3.5 text-left last:border-b-0 sm:gap-4 sm:px-5 sm:py-4"
+  >
+    <span className="dash-icon h-10 w-10 sm:h-11 sm:w-11">
+      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+    </span>
+
+    <span className="min-w-0 flex-1">
+      <span className="dash-row-title block break-words text-sm font-bold sm:text-base">
+        {title}
+      </span>
+
+      <span className="mt-0.5 block break-words text-xs text-[var(--text-soft)] sm:text-sm">
+        {subtitle}
+      </span>
+
+      {meta.length > 0 && (
+        <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-[var(--muted)] sm:text-xs">
+          {meta.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </span>
+      )}
+    </span>
+
+    <span className="shrink-0 text-right">
+      <span className="block text-xs font-bold text-[var(--text)] sm:text-sm">
+        ₹{Number(budget || 0).toLocaleString("en-IN")}
+      </span>
+
+      <span
+        className={`mt-0.5 block text-[11px] font-medium sm:text-xs ${getStatusClass(
+          status,
+        )}`}
+      >
+        {status}
+      </span>
+    </span>
+  </button>
+);
+
+const Collapse = ({ open, children }) => {
+  const innerRef = useRef(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const element = innerRef.current;
+
+    if (!element) return undefined;
+
+    const update = () => setHeight(element.offsetHeight);
+
+    update();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", update);
+
+      return () => window.removeEventListener("resize", update);
+    }
+
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      className="dash-collapse"
+      data-open={open}
+      aria-hidden={!open}
+      style={{ height: open ? height : 0 }}
+    >
+      <div ref={innerRef} className="dash-collapse-inner">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const PlanSection = ({
+  icon: Icon,
+  title,
+  description,
+  count,
+  isOpen,
+  onToggle,
+  activeTab,
+  setActiveTab,
+  tabs,
+  plans,
+  getRow,
+  emptyIcon,
+  emptyTitle,
+  emptyDescription,
+  emptyButtonText,
+  emptyButtonAction,
+}) => {
+  // Blue by default, green on Confirmed, red on Cancelled (only while open)
+  const pillTone = !isOpen
+    ? "primary"
+    : activeTab === "confirmed"
+      ? "ok"
+      : activeTab === "cancelled"
+        ? "bad"
+        : "primary";
+
+  return (
+    <section className="dash-card overflow-hidden" data-dash-section>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="dash-toggle flex w-full items-center justify-between gap-3 p-3.5 text-left sm:p-5 lg:p-6"
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="dash-icon h-10 w-10 sm:h-11 sm:w-11">
+            <Icon className="h-5 w-5" />
+          </span>
+
+          <span className="min-w-0">
+            <span className="block text-base font-bold text-[var(--text)] sm:text-lg">
+              {title}
+            </span>
+
+            <span className="mt-0.5 block text-[13px] leading-5 text-[var(--muted)] sm:text-sm">
+              {description}
+            </span>
+          </span>
+        </span>
+
+        <span
+          className="dash-total inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold sm:px-4 sm:text-sm"
+          data-tone={pillTone}
+        >
+          <span className="hidden sm:inline">Total Plans</span>
+
+          <span className="tabular-nums">{count}</span>
+
+          <ChevronDown size={16} className="dash-chevron" />
+        </span>
+      </button>
+
+      <Collapse open={isOpen}>
+        <div className="border-t border-[var(--border)] p-3 sm:p-5">
+          <DrawerTabs
+            active={activeTab}
+            onChange={setActiveTab}
+            tabs={tabs}
+          />
+
+          <div className="dash-tile mt-3 overflow-hidden rounded-xl">
+            {plans.length === 0 ? (
+              <EmptyState
+                icon={emptyIcon}
+                title={emptyTitle}
+                description={emptyDescription}
+                buttonText={emptyButtonText}
+                onClick={emptyButtonAction}
+              />
+            ) : (
+              <div
+                className={
+                  plans.length > 10
+                    ? "dashboard-scrollbar max-h-[520px] overflow-y-auto"
+                    : ""
+                }
+              >
+                {plans.slice(0, 10).map((plan, index) => (
+                  <PlanRow key={plan?._id || index} {...getRow(plan)} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Collapse>
+    </section>
+  );
+};
+
+/* ------------------------------------------------------------------
+   Dashboard
+------------------------------------------------------------------ */
+
+const Dashboard = ({ embedded = false }) => {
   const navigate = useNavigate();
 
   const [dashboard, setDashboard] = useState({
@@ -22,11 +631,16 @@ const Dashboard = () => {
     allBirthdays: [],
     confirmedBirthdays: [],
     cancelledBirthdays: [],
+    allEvents: [],
+    confirmedEvents: [],
+    cancelledEvents: [],
     latestSupportRequest: null,
   });
 
+  const [openDrawer, setOpenDrawer] = useState(null);
   const [activeTripTab, setActiveTripTab] = useState("all");
   const [activeBirthdayTab, setActiveBirthdayTab] = useState("all");
+  const [activeEventTab, setActiveEventTab] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +651,9 @@ const Dashboard = () => {
         const response = await getUserDashboard();
 
         if (!response?.status) {
-          throw new Error(response?.message || "Unable to load dashboard");
+          throw new Error(
+            response?.message || "Unable to load dashboard",
+          );
         }
 
         if (!mounted) return;
@@ -61,6 +677,13 @@ const Dashboard = () => {
           cancelledBirthdays: Array.isArray(data.cancelledBirthdays)
             ? data.cancelledBirthdays
             : [],
+          allEvents: Array.isArray(data.allEvents) ? data.allEvents : [],
+          confirmedEvents: Array.isArray(data.confirmedEvents)
+            ? data.confirmedEvents
+            : [],
+          cancelledEvents: Array.isArray(data.cancelledEvents)
+            ? data.cancelledEvents
+            : [],
           latestSupportRequest: data.latestSupportRequest || null,
         });
       } catch (error) {
@@ -70,8 +693,8 @@ const Dashboard = () => {
 
         toast.error(
           error?.response?.data?.message ||
-            error?.message ||
-            "Unable to load dashboard",
+          error?.message ||
+          "Unable to load dashboard",
         );
       } finally {
         if (mounted) {
@@ -94,43 +717,52 @@ const Dashboard = () => {
     allBirthdays,
     confirmedBirthdays,
     cancelledBirthdays,
+    allEvents,
+    confirmedEvents,
+    cancelledEvents,
     latestSupportRequest,
   } = dashboard;
 
+  // Close the open drawer when the user taps/clicks anywhere outside the
+  // plan sections (or presses Escape).
+  useEffect(() => {
+    if (!openDrawer) return undefined;
+
+    const handleOutside = (event) => {
+      if (!event.target.closest?.("[data-dash-section]")) {
+        setOpenDrawer(null);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setOpenDrawer(null);
+    };
+
+    document.addEventListener("pointerdown", handleOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [openDrawer]);
+
   const tripTabs = [
-    {
-      id: "all",
-      label: "All Trips",
-      data: allTrips,
-    },
-    {
-      id: "confirmed",
-      label: "Confirmed",
-      data: confirmedTrips,
-    },
-    {
-      id: "cancelled",
-      label: "Cancelled",
-      data: cancelledTrips,
-    },
+    { id: "all", label: "All Plans", data: allTrips },
+    { id: "confirmed", label: "Confirmed", data: confirmedTrips },
+    { id: "cancelled", label: "Cancelled", data: cancelledTrips },
   ];
 
   const birthdayTabs = [
-    {
-      id: "all",
-      label: "All Birthdays",
-      data: allBirthdays,
-    },
-    {
-      id: "confirmed",
-      label: "Confirmed",
-      data: confirmedBirthdays,
-    },
-    {
-      id: "cancelled",
-      label: "Cancelled",
-      data: cancelledBirthdays,
-    },
+    { id: "all", label: "All Plans", data: allBirthdays },
+    { id: "confirmed", label: "Confirmed", data: confirmedBirthdays },
+    { id: "cancelled", label: "Cancelled", data: cancelledBirthdays },
+  ];
+
+  const eventTabs = [
+    { id: "all", label: "All Plans", data: allEvents },
+    { id: "confirmed", label: "Confirmed", data: confirmedEvents },
+    { id: "cancelled", label: "Cancelled", data: cancelledEvents },
   ];
 
   const activeTrips =
@@ -138,6 +770,13 @@ const Dashboard = () => {
 
   const activeBirthdays =
     birthdayTabs.find((tab) => tab.id === activeBirthdayTab)?.data || [];
+
+  const activeEvents =
+    eventTabs.find((tab) => tab.id === activeEventTab)?.data || [];
+
+  const toggleDrawer = (section) => {
+    setOpenDrawer((current) => (current === section ? null : section));
+  };
 
   const handleViewTrip = (tripId) => {
     if (!tripId) {
@@ -157,570 +796,255 @@ const Dashboard = () => {
     navigate(`/birthday/${birthdayId}`);
   };
 
-  const getDisplayStatus = (status) => {
-    return status === "Booked" ? "Confirmed" : status || "Generated";
-  };
-
-  const getSupportStatus = (status) => {
-    switch (status) {
-      case "Resolved":
-        return {
-          icon: CheckCircle2,
-          className: "bg-emerald-50 text-emerald-700",
-        };
-
-      case "Closed":
-        return {
-          icon: XCircle,
-          className: "bg-slate-100 text-slate-600",
-        };
-
-      case "In Progress":
-        return {
-          icon: Clock3,
-          className: "bg-blue-50 text-blue-700",
-        };
-
-      default:
-        return {
-          icon: Clock3,
-          className: "bg-amber-50 text-amber-700",
-        };
-    }
-  };
-
-  const getTabColor = (tabId, type) => {
-    if (tabId === "confirmed") {
-      return "bg-emerald-500 text-white shadow-sm";
+  const handleViewEvent = (eventId) => {
+    if (!eventId) {
+      toast.error("Event ID is missing");
+      return;
     }
 
-    if (tabId === "cancelled") {
-      return "bg-red-500 text-white shadow-sm";
-    }
-
-    return type === "birthday"
-      ? "bg-pink-500 text-white shadow-sm"
-      : "bg-indigo-600 text-white shadow-sm";
+    navigate(`/event/${eventId}`);
   };
 
-  const TripCard = ({ trip }) => (
-    <button
-      type="button"
-      onClick={() => handleViewTrip(trip?._id)}
-      className="group flex w-full min-w-0 flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition-all duration-300 hover:bg-indigo-50/70 min-[375px]:px-5 min-[375px]:py-4 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between"
-    >
-      <div className="flex min-w-0 items-start gap-3 min-[375px]:gap-3.5 sm:gap-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 transition-all duration-300 group-hover:bg-indigo-100 min-[375px]:h-10 min-[375px]:w-10 sm:h-11 sm:w-11">
-          <MapPin className="h-4 w-4 min-[375px]:h-[18px] min-[375px]:w-[18px] sm:h-5 sm:w-5" />
-        </div>
+  const getTripRow = (trip) => ({
+    icon: MapPin,
+    title: trip?.destination || "Unknown destination",
+    subtitle: `${trip?.startLocation || "Unknown location"} → ${trip?.destination || "Destination"
+      }`,
+    meta: [
+      `${trip?.days ?? 0} ${trip?.days === 1 ? "day" : "days"}`,
+      `${trip?.people ?? 0} ${trip?.people === 1 ? "person" : "people"}`,
+      ...(trip?.travelType ? [trip.travelType] : []),
+    ],
+    budget: trip?.budget,
+    status: trip?.status || "Generated",
+    onClick: () => handleViewTrip(trip?._id),
+  });
 
-        <div className="min-w-0 flex-1">
-          <h3 className="break-words text-[clamp(0.9rem,3.2vw,1rem)] font-medium leading-5 text-slate-800 transition-colors duration-300 group-hover:text-indigo-600">
-            {trip?.destination || "Unknown destination"}
-          </h3>
+  const getBirthdayRow = (birthday) => ({
+    icon: Cake,
+    title: birthday?.Name || "Birthday Plan",
+    subtitle: birthday?.Area || "Unknown location",
+    meta: [
+      `Age ${birthday?.Age ?? 0}`,
+      `${birthday?.people ?? 0} ${birthday?.people === 1 ? "person" : "people"
+      }`,
+      ...(birthday?.venueType ? [birthday.venueType] : []),
+      ...(birthday?.eventType ? [birthday.eventType] : []),
+    ],
+    budget: birthday?.budget,
+    status: birthday?.status || "Generated",
+    onClick: () => handleViewBirthday(birthday?._id),
+  });
 
-          <p className="mt-1 break-words text-[clamp(0.75rem,2.6vw,0.875rem)] leading-5 text-slate-500">
-            {trip?.startLocation || "Unknown location"} →{" "}
-            {trip?.destination || "Destination"}
-          </p>
+  const getEventRow = (event) => {
+    const people = event?.people ?? event?.guests ?? event?.attendees ?? 0;
+    const eventType = event?.eventType || event?.type;
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[clamp(0.75rem,2.5vw,0.8125rem)] leading-5 text-slate-500 min-[375px]:gap-x-3 sm:gap-x-4">
-            <span>
-              {trip?.days ?? 0} {trip?.days === 1 ? "day" : "days"}
-            </span>
-
-            <span>
-              {trip?.people ?? 0} {trip?.people === 1 ? "person" : "people"}
-            </span>
-
-            {trip?.travelType && <span>{trip.travelType}</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex w-full shrink-0 items-center justify-between gap-4 pl-12 md:w-auto md:justify-end md:pl-0">
-        <div className="text-left md:text-right">
-          <p className="text-[clamp(0.875rem,3vw,1rem)] font-medium text-slate-800">
-            ₹{Number(trip?.budget || 0).toLocaleString("en-IN")}
-          </p>
-
-          <p className="mt-1 text-[clamp(0.75rem,2.5vw,0.8125rem)] text-slate-500 sm:text-sm">
-            {getDisplayStatus(trip?.status)}
-          </p>
-        </div>
-      </div>
-    </button>
-  );
-
-  const BirthdayCard = ({ birthday }) => (
-    <button
-      type="button"
-      onClick={() => handleViewBirthday(birthday?._id)}
-      className="group flex w-full min-w-0 flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition-all duration-300 hover:bg-pink-50/70 min-[375px]:px-5 min-[375px]:py-4 sm:px-6 sm:py-5 md:flex-row md:items-center md:justify-between"
-    >
-      <div className="flex min-w-0 items-start gap-3 min-[375px]:gap-3.5 sm:gap-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500 transition-all duration-300 group-hover:bg-pink-100 min-[375px]:h-10 min-[375px]:w-10 sm:h-11 sm:w-11">
-          <Cake className="h-4 w-4 min-[375px]:h-[18px] min-[375px]:w-[18px] sm:h-5 sm:w-5" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h3 className="break-words text-[clamp(0.9rem,3.2vw,1rem)] font-medium leading-5 text-slate-800 transition-colors duration-300 group-hover:text-pink-600">
-            {birthday?.Name || "Birthday Plan"}
-          </h3>
-
-          <p className="mt-1 break-words text-[clamp(0.75rem,2.6vw,0.875rem)] leading-5 text-slate-500">
-            {birthday?.Area || "Unknown location"}
-          </p>
-
-          <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[clamp(0.75rem,2.5vw,0.8125rem)] leading-5 text-slate-500 min-[375px]:gap-x-3 sm:gap-x-4">
-            <span>Age {birthday?.Age ?? 0}</span>
-
-            <span>
-              {birthday?.people ?? 0}{" "}
-              {birthday?.people === 1 ? "person" : "people"}
-            </span>
-
-            {birthday?.venueType && <span>{birthday.venueType}</span>}
-
-            {birthday?.eventType && <span>{birthday.eventType}</span>}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex w-full shrink-0 items-center justify-between gap-4 pl-12 md:w-auto md:justify-end md:pl-0">
-        <div className="text-left md:text-right">
-          <p className="text-[clamp(0.875rem,3vw,1rem)] font-medium text-slate-800">
-            ₹{Number(birthday?.budget || 0).toLocaleString("en-IN")}
-          </p>
-
-          <p className="mt-1 text-[clamp(0.75rem,2.5vw,0.8125rem)] text-slate-500 sm:text-sm">
-            {getDisplayStatus(birthday?.status)}
-          </p>
-        </div>
-      </div>
-    </button>
-  );
-
-  const EmptyState = ({
-    icon: Icon,
-    title,
-    description,
-    buttonText,
-    onClick,
-    type = "trip",
-  }) => {
-    const birthday = type === "birthday";
-
-    return (
-      <div className="flex min-h-[220px] flex-col items-center justify-center px-5 py-8 text-center min-[375px]:min-h-[230px] sm:min-h-[250px] sm:px-6 sm:py-10">
-        <div
-          className={`flex h-11 w-11 items-center justify-center rounded-full min-[375px]:h-12 min-[375px]:w-12 sm:h-14 sm:w-14 ${
-            birthday ? "bg-pink-50" : "bg-indigo-50"
-          }`}
-        >
-          <Icon
-            className={`h-5 w-5 sm:h-6 sm:w-6 ${
-              birthday ? "text-pink-500" : "text-indigo-500"
-            }`}
-          />
-        </div>
-
-        <h3 className="mt-4 text-[clamp(0.875rem,3vw,1rem)] font-medium text-slate-800">
-          {title}
-        </h3>
-
-        <p className="mt-1 max-w-sm text-[clamp(0.75rem,2.5vw,0.875rem)] leading-5 text-slate-500 sm:leading-6">
-          {description}
-        </p>
-
-        {buttonText && onClick && (
-          <button
-            type="button"
-            onClick={onClick}
-            className={`mt-5 rounded-xl px-4 py-2.5 text-[clamp(0.75rem,2.5vw,0.875rem)] font-medium text-white transition-all duration-300 hover:-translate-y-0.5 sm:px-5 ${
-              birthday
-                ? "bg-pink-500 hover:bg-pink-600"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
-          >
-            {buttonText}
-          </button>
-        )}
-      </div>
-    );
+    return {
+      icon: PartyPopper,
+      title: event?.name || event?.eventName || event?.title || "Event Plan",
+      subtitle:
+        event?.location || event?.Area || event?.venue || "Unknown location",
+      meta: [
+        `${people} ${people === 1 ? "person" : "people"}`,
+        ...(eventType ? [eventType] : []),
+      ],
+      budget: event?.budget,
+      status: event?.status || "Generated",
+      onClick: () => handleViewEvent(event?._id),
+    };
   };
-
-  const StatCard = ({ title, count, icon: Icon, iconClass }) => (
-    <div
-      className={`group min-w-0 cursor-pointer rounded-2xl bg-white p-3.5 shadow-sm ring-1 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-md active:translate-y-0 min-[375px]:p-4 sm:p-5 ${iconClass}`}
-    >
-      <div className="flex items-center justify-between gap-2.5 min-[375px]:gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="break-words text-[clamp(0.75rem,2.5vw,0.875rem)] leading-5 text-slate-500 transition-colors duration-300 group-hover:text-current">
-            {title}
-          </p>
-
-          <p className="mt-2 text-[clamp(1.25rem,5vw,1.875rem)] font-medium leading-none text-slate-800 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-current">
-            {count}
-          </p>
-        </div>
-
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:-rotate-2 min-[375px]:h-10 min-[375px]:w-10 sm:h-11 sm:w-11">
-          <Icon className="h-4 w-4 min-[375px]:h-[18px] min-[375px]:w-[18px] sm:h-5 sm:w-5" />
-        </div>
-      </div>
-    </div>
-  );
-
-  const TabButton = ({ active, onClick, children, tabId, type = "trip" }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex min-h-10 w-full min-w-0 items-center justify-center rounded-lg px-1 py-2 text-center text-[clamp(0.75rem,2.7vw,0.875rem)] font-medium leading-4 transition-all duration-300 ease-out min-[375px]:px-1.5 sm:min-h-11 sm:px-3 sm:py-2.5 ${
-        active
-          ? getTabColor(tabId, type)
-          : tabId === "confirmed"
-            ? "text-slate-500 hover:bg-emerald-50 hover:text-emerald-600"
-            : tabId === "cancelled"
-              ? "text-slate-500 hover:bg-red-50 hover:text-red-600"
-              : type === "birthday"
-                ? "text-slate-500 hover:bg-pink-50 hover:text-pink-600"
-                : "text-slate-500 hover:bg-indigo-50 hover:text-indigo-600"
-      }`}
-    >
-      <span className="block w-full whitespace-normal break-words">
-        {children}
-      </span>
-    </button>
-  );
 
   const supportStatus = getSupportStatus(latestSupportRequest?.status);
+  const SupportStatusIcon = supportStatus.icon;
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-3 py-6 min-[375px]:px-4 sm:px-6 sm:py-8 lg:px-8">
-        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+      <Shell embedded={embedded}>
+        <div className="flex min-h-[50vh] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600 sm:h-9 sm:w-9" />
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[var(--border-hover)] border-t-[var(--teal)]" />
 
-            <p className="mt-4 text-[clamp(0.75rem,2.5vw,0.875rem)] text-slate-500">
+            <p className="mt-4 text-sm text-[var(--muted)]">
               Loading dashboard...
             </p>
           </div>
         </div>
-      </main>
+      </Shell>
     );
   }
 
   return (
-    <main className="dashboard-page min-h-screen overflow-x-hidden bg-slate-50 px-3 py-4 min-[375px]:px-4 min-[375px]:py-5 sm:px-6 sm:py-6 lg:px-8">
-      <style>{`
-        .dashboard-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #c7d2fe transparent;
-          scroll-behavior: smooth;
-        }
+    <Shell embedded={embedded}>
+      {/* Heading */}
+      <section className="dash-card mb-3 p-4 sm:mb-4 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="dash-label">Service Planner</p>
 
-        .dashboard-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
+            <h1 className="dash-title-gradient mt-2.5 text-[clamp(1.5rem,4vw,2.25rem)] font-medium leading-tight tracking-[-0.02em]">
+              Dashboard
+            </h1>
 
-        .dashboard-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-          border-radius: 999px;
-        }
-
-        .dashboard-scrollbar::-webkit-scrollbar-thumb {
-          background: #c7d2fe;
-          border-radius: 999px;
-        }
-
-        .dashboard-scrollbar::-webkit-scrollbar-button {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-      `}</style>
-
-      <div className="mx-auto w-full max-w-7xl min-w-0">
-        <section className="mb-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 transition-all duration-300 hover:shadow-md min-[375px]:mb-5 min-[375px]:p-5 sm:mb-6 sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-[clamp(0.625rem,2vw,0.75rem)] font-medium uppercase tracking-wider text-indigo-600">
-                Service Planner
-              </p>
-
-              <h1 className="mt-2 text-[clamp(1.35rem,5vw,1.875rem)] font-medium tracking-tight text-slate-800">
-                Dashboard
-              </h1>
-
-              <p className="mt-2 max-w-2xl text-[clamp(0.75rem,2.5vw,0.875rem)] leading-5 text-slate-500 sm:leading-6">
-                Manage your travel plans, birthday plans, and support requests
-                from one place.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-[clamp(0.75rem,2.5vw,0.875rem)] font-medium text-slate-600 transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 hover:shadow-sm sm:w-auto"
-            >
-              Back to Home
-            </button>
-          </div>
-        </section>
-
-        <section className="mb-4 grid grid-cols-2 gap-2.5 min-[375px]:mb-5 min-[375px]:gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-          <StatCard
-            title="All Trips"
-            count={allTrips.length}
-            icon={Plane}
-            iconClass="border-indigo-100 ring-indigo-100 text-indigo-500 hover:bg-indigo-50/70"
-          />
-
-          <StatCard
-            title="Confirmed Trips"
-            count={confirmedTrips.length}
-            icon={CheckCircle2}
-            iconClass="border-emerald-100 ring-emerald-100 text-emerald-500 hover:bg-emerald-50/70"
-          />
-
-          <StatCard
-            title="Cancelled Trips"
-            count={cancelledTrips.length}
-            icon={XCircle}
-            iconClass="border-red-100 ring-red-100 text-red-500 hover:bg-red-50/70"
-          />
-
-          <StatCard
-            title="All Birthdays"
-            count={allBirthdays.length}
-            icon={Cake}
-            iconClass="border-indigo-100 ring-indigo-100 text-indigo-500 hover:bg-indigo-50/70"
-          />
-
-          <StatCard
-            title="Confirmed Birthdays"
-            count={confirmedBirthdays.length}
-            icon={CheckCircle2}
-            iconClass="border-emerald-100 ring-emerald-100 text-emerald-500 hover:bg-emerald-50/70"
-          />
-
-          <StatCard
-            title="Cancelled Birthdays"
-            count={cancelledBirthdays.length}
-            icon={XCircle}
-            iconClass="border-red-100 ring-red-100 text-red-500 hover:bg-red-50/70"
-          />
-        </section>
-
-        <section className="w-full min-w-0 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-          <div className="border-b border-slate-100 bg-indigo-50/20 px-4 py-4 min-[375px]:py-5 sm:px-6">
-            <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 sm:h-10 sm:w-10">
-                  <Plane className="h-4 w-4 text-indigo-500 sm:h-5 sm:w-5" />
-                </div>
-
-                <div className="min-w-0">
-                  <h2 className="text-[clamp(0.9375rem,3vw,1.125rem)] font-medium text-slate-800">
-                    Travel Plans
-                  </h2>
-
-                  <p className="mt-1 text-[clamp(0.75rem,2.5vw,0.875rem)] text-slate-500">
-                    View and manage your travel plans.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate("/tour")}
-                className="inline-flex min-h-9 items-center justify-center self-start rounded-xl px-3 text-[clamp(0.75rem,2.5vw,0.875rem)] font-medium text-indigo-600 transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-700 lg:self-center"
-              >
-                Create Trip
-              </button>
-            </div>
-
-            <div className="mt-4 grid w-full grid-cols-3 gap-1 rounded-xl bg-slate-50 p-1 min-[375px]:mt-5 min-[375px]:gap-1.5">
-              {tripTabs.map((tab) => (
-                <TabButton
-                  key={tab.id}
-                  tabId={tab.id}
-                  active={activeTripTab === tab.id}
-                  onClick={() => setActiveTripTab(tab.id)}
-                  type="trip"
-                >
-                  {tab.label}
-                </TabButton>
-              ))}
-            </div>
+            <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">
+              Manage your experiences, plans, and support requests from one
+              place.
+            </p>
           </div>
 
-          {activeTrips.length === 0 ? (
-            <EmptyState
-              icon={Plane}
-              title={
-                activeTripTab === "confirmed"
-                  ? "No confirmed trips"
-                  : activeTripTab === "cancelled"
-                    ? "No cancelled trips"
-                    : "No trips yet"
-              }
-              description={
-                activeTripTab === "confirmed"
-                  ? "Your confirmed travel plans will appear here."
-                  : activeTripTab === "cancelled"
-                    ? "Your cancelled travel plans will appear here."
-                    : "Create your first travel plan and it will appear here."
-              }
-              buttonText={
-                activeTripTab === "cancelled" ? undefined : "Create a trip"
-              }
-              onClick={
-                activeTripTab === "cancelled"
-                  ? undefined
-                  : () => navigate("/tour")
-              }
-            />
-          ) : (
-            <div
-              className={
-                activeTrips.length > 10
-                  ? "dashboard-scrollbar max-h-[500px] overflow-y-auto sm:max-h-[620px]"
-                  : ""
-              }
-            >
-              {activeTrips.map((trip) => (
-                <TripCard key={trip?._id} trip={trip} />
-              ))}
-            </div>
-          )}
-        </section>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="dash-btn inline-flex h-10 w-full shrink-0 items-center justify-center rounded-xl px-4 text-[13px] font-semibold sm:w-auto sm:text-sm"
+          >
+            Back to Home
+          </button>
+        </div>
+      </section>
 
-        <section className="mt-4 w-full min-w-0 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 min-[375px]:mt-5 sm:mt-6">
-          <div className="border-b border-slate-100 bg-pink-50/20 px-4 py-4 min-[375px]:py-5 sm:px-6">
-            <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pink-50 sm:h-10 sm:w-10">
-                  <Cake className="h-4 w-4 text-pink-500 sm:h-5 sm:w-5" />
-                </div>
+      {/* Plans */}
+      <div className="space-y-3 sm:space-y-4">
+        <PlanSection
+          icon={Plane}
+          title="Tour"
+          description="View and manage your tour plans."
+          count={allTrips.length}
+          isOpen={openDrawer === "tour"}
+          onToggle={() => toggleDrawer("tour")}
+          activeTab={activeTripTab}
+          setActiveTab={setActiveTripTab}
+          tabs={tripTabs}
+          plans={activeTrips}
+          getRow={getTripRow}
+          emptyIcon={Plane}
+          emptyTitle={
+            activeTripTab === "confirmed"
+              ? "No confirmed plans"
+              : activeTripTab === "cancelled"
+                ? "No cancelled plans"
+                : "No tour plans yet"
+          }
+          emptyDescription={
+            activeTripTab === "confirmed"
+              ? "Your confirmed tour plans will appear here."
+              : activeTripTab === "cancelled"
+                ? "Your cancelled tour plans will appear here."
+                : "Create your first tour plan and it will appear here."
+          }
+          emptyButtonText={
+            activeTripTab === "cancelled" ? undefined : "Create a tour"
+          }
+          emptyButtonAction={
+            activeTripTab === "cancelled" ? undefined : () => navigate("/tour")
+          }
+        />
 
-                <div className="min-w-0">
-                  <h2 className="text-[clamp(0.9375rem,3vw,1.125rem)] font-medium text-slate-800">
-                    Birthday Plans
-                  </h2>
+        <PlanSection
+          icon={Cake}
+          title="Birthday"
+          description="View and manage your birthday plans."
+          count={allBirthdays.length}
+          isOpen={openDrawer === "birthday"}
+          onToggle={() => toggleDrawer("birthday")}
+          activeTab={activeBirthdayTab}
+          setActiveTab={setActiveBirthdayTab}
+          tabs={birthdayTabs}
+          plans={activeBirthdays}
+          getRow={getBirthdayRow}
+          emptyIcon={Cake}
+          emptyTitle={
+            activeBirthdayTab === "confirmed"
+              ? "No confirmed plans"
+              : activeBirthdayTab === "cancelled"
+                ? "No cancelled plans"
+                : "No birthday plans yet"
+          }
+          emptyDescription={
+            activeBirthdayTab === "confirmed"
+              ? "Your confirmed birthday plans will appear here."
+              : activeBirthdayTab === "cancelled"
+                ? "Your cancelled birthday plans will appear here."
+                : "Create your first birthday plan and it will appear here."
+          }
+          emptyButtonText={
+            activeBirthdayTab === "cancelled" ? undefined : "Plan a birthday"
+          }
+          emptyButtonAction={
+            activeBirthdayTab === "cancelled"
+              ? undefined
+              : () => navigate("/birthday")
+          }
+        />
 
-                  <p className="mt-1 text-[clamp(0.75rem,2.5vw,0.875rem)] text-slate-500">
-                    View and manage your birthday plans.
-                  </p>
-                </div>
-              </div>
+        <PlanSection
+          icon={PartyPopper}
+          title="Event"
+          description="View and manage your event plans."
+          count={allEvents.length}
+          isOpen={openDrawer === "event"}
+          onToggle={() => toggleDrawer("event")}
+          activeTab={activeEventTab}
+          setActiveTab={setActiveEventTab}
+          tabs={eventTabs}
+          plans={activeEvents}
+          getRow={getEventRow}
+          emptyIcon={PartyPopper}
+          emptyTitle={
+            activeEventTab === "confirmed"
+              ? "No confirmed plans"
+              : activeEventTab === "cancelled"
+                ? "No cancelled plans"
+                : "No event plans yet"
+          }
+          emptyDescription={
+            activeEventTab === "confirmed"
+              ? "Your confirmed event plans will appear here."
+              : activeEventTab === "cancelled"
+                ? "Your cancelled event plans will appear here."
+                : "Create your first event plan and it will appear here."
+          }
+          emptyButtonText={
+            activeEventTab === "cancelled" ? undefined : "Create an event"
+          }
+          emptyButtonAction={
+            activeEventTab === "cancelled"
+              ? undefined
+              : () => navigate("/event")
+          }
+        />
 
-              <button
-                type="button"
-                onClick={() => navigate("/birthday")}
-                className="inline-flex min-h-9 items-center justify-center self-start rounded-xl px-3 text-[clamp(0.75rem,2.5vw,0.875rem)] font-medium text-pink-600 transition-all duration-300 hover:bg-pink-100 hover:text-pink-700 lg:self-center"
-              >
-                Plan Birthday
-              </button>
-            </div>
+        {/* Support */}
+        <section className="dash-card overflow-hidden">
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 lg:p-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="dash-icon h-10 w-10 sm:h-11 sm:w-11">
+                <Headphones className="h-5 w-5" />
+              </span>
 
-            <div className="mt-4 grid w-full grid-cols-3 gap-1 rounded-xl bg-slate-50 p-1 min-[375px]:mt-5 min-[375px]:gap-1.5">
-              {birthdayTabs.map((tab) => (
-                <TabButton
-                  key={tab.id}
-                  tabId={tab.id}
-                  active={activeBirthdayTab === tab.id}
-                  onClick={() => setActiveBirthdayTab(tab.id)}
-                  type="birthday"
-                >
-                  {tab.label}
-                </TabButton>
-              ))}
-            </div>
-          </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[var(--text)] sm:text-lg">
+                  Support Request
+                </h2>
 
-          {activeBirthdays.length === 0 ? (
-            <EmptyState
-              icon={Cake}
-              type="birthday"
-              title={
-                activeBirthdayTab === "confirmed"
-                  ? "No confirmed birthdays"
-                  : activeBirthdayTab === "cancelled"
-                    ? "No cancelled birthdays"
-                    : "No birthday plans yet"
-              }
-              description={
-                activeBirthdayTab === "confirmed"
-                  ? "Your confirmed birthday plans will appear here."
-                  : activeBirthdayTab === "cancelled"
-                    ? "Your cancelled birthday plans will appear here."
-                    : "Create your first birthday plan and it will appear here."
-              }
-              buttonText={
-                activeBirthdayTab === "cancelled"
-                  ? undefined
-                  : "Plan a birthday"
-              }
-              onClick={
-                activeBirthdayTab === "cancelled"
-                  ? undefined
-                  : () => navigate("/birthday")
-              }
-            />
-          ) : (
-            <div
-              className={
-                activeBirthdays.length > 10
-                  ? "dashboard-scrollbar max-h-[500px] overflow-y-auto sm:max-h-[620px]"
-                  : ""
-              }
-            >
-              {activeBirthdays.map((birthday) => (
-                <BirthdayCard key={birthday?._id} birthday={birthday} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* --------------------------------CONTACT SUPPORT AT BOTTOM------------------------------------- */}
-
-        <section className="mt-4 w-full min-w-0 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 min-[375px]:mt-5 sm:mt-6">
-          <div className="border-b border-slate-100 px-4 py-4 min-[375px]:py-5 sm:px-6">
-            <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 sm:h-10 sm:w-10">
-                  <Headphones className="h-4 w-4 text-indigo-500 sm:h-5 sm:w-5" />
-                </div>
-
-                <div className="min-w-0">
-                  <h2 className="text-[clamp(0.9375rem,3vw,1.125rem)] font-medium text-slate-800">
-                    Support Request
-                  </h2>
-
-                  <p className="mt-1 text-[clamp(0.75rem,2.5vw,0.875rem)] text-slate-500">
-                    Check the status of your latest support request.
-                  </p>
-                </div>
+                <p className="mt-0.5 text-[13px] leading-5 text-[var(--muted)] sm:text-sm">
+                  Check the status of your latest support request.
+                </p>
               </div>
             </div>
+
           </div>
 
           {latestSupportRequest ? (
-            <div className="p-4 min-[375px]:p-5 sm:p-6">
-              <div className="group flex flex-col gap-4 rounded-2xl bg-slate-50 p-4 transition-all duration-300 hover:bg-indigo-50 hover:shadow-sm min-[375px]:p-5 md:flex-row md:items-center md:justify-between">
+            <div className="border-t border-[var(--border)] p-3 sm:p-5 lg:p-6">
+              <div className="dash-tile flex flex-col gap-4 rounded-2xl p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[clamp(0.68rem,2vw,0.75rem)] font-medium uppercase tracking-wider text-slate-400">
-                    Latest Request
-                  </p>
+                  <p className="dash-label">Latest Request</p>
 
-                  <h3 className="mt-2 break-words text-[clamp(0.875rem,3vw,1rem)] font-medium text-slate-800 transition-colors duration-300 group-hover:text-indigo-700">
+                  <h3 className="mt-2.5 break-words text-sm font-bold text-[var(--text)] sm:text-base">
                     {latestSupportRequest.subject || "Support Request"}
                   </h3>
 
-                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[clamp(0.75rem,2.5vw,0.875rem)] text-slate-500">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-soft)]">
                     {latestSupportRequest.category && (
                       <span>{latestSupportRequest.category}</span>
                     )}
@@ -731,47 +1055,28 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {(() => {
-                  const StatusIcon = supportStatus.icon;
-
-                  return (
-                    <div
-                      className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full px-3 py-2 text-[clamp(0.75rem,2.5vw,0.875rem)] font-medium sm:px-4 md:self-center ${supportStatus.className}`}
-                    >
-                      <StatusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-
-                      {latestSupportRequest.status || "Pending"}
-                    </div>
-                  );
-                })()}
+                <div
+                  className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full px-3.5 py-2 text-xs font-semibold sm:text-sm md:self-center ${supportStatus.className}`}
+                >
+                  <SupportStatusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  {latestSupportRequest.status || "Pending"}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center px-4 py-6 text-center min-[375px]:px-5 sm:py-8">
-              <Headphones className="h-10 w-10 text-slate-300" />
-
-              <h3 className="mt-3 text-sm font-medium text-slate-800">
-                No support requests
-              </h3>
-
-              <p className="mt-1 max-w-md text-[clamp(0.75rem,2.5vw,0.875rem)] leading-5 text-slate-500">
-                If you face any problem, contact our support team and track your
-                request here.
-              </p>
-
-              <button
-                type="button"
+            <div className="border-t border-[var(--border)]">
+              <EmptyState
+                icon={Headphones}
+                title="No support requests"
+                description="If you face any problem, contact our support team and track your request here."
+                buttonText="Contact Support"
                 onClick={() => navigate("/support")}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-600 ring-1 ring-blue-100 transition-colors duration-200 hover:bg-blue-100 hover:text-blue-700 active:bg-[#0f2a43] active:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto"
-              >
-                <Headphones className="h-4 w-4" />
-                Contact Support
-              </button>
+              />
             </div>
           )}
         </section>
       </div>
-    </main>
+    </Shell>
   );
 };
 

@@ -31,6 +31,27 @@ import { searchItems } from "../../Data/SearchData";
 
 const LAST_KNOWN_USER_KEY = "sp_navbar_last_known_user";
 
+/* =========================================================
+   PLAN ROUTES
+
+   Travel / Birthday / Event / Support are "sibling" sections.
+   Moving between them must NOT stack history entries
+   (tour -> birthday -> event -> ...), otherwise the Back
+   button loops through every plan the user visited.
+
+   Rule: if the user is already inside a plan section, going
+   to another plan section REPLACES the current history entry.
+   So the history stays  Home -> (current plan)  and Back
+   always returns to the Home page.
+========================================================= */
+
+const PLAN_ROUTES = ["/tour", "/birthday", "/event", "/support"];
+
+const isPlanPath = (path = "") =>
+  PLAN_ROUTES.some(
+    (route) => path === route || path.startsWith(`${route}/`)
+  );
+
 const readLastKnownUser = () => {
   try {
     const raw = window.localStorage.getItem(LAST_KNOWN_USER_KEY);
@@ -71,6 +92,13 @@ let cachedUser = readLastKnownUser();
 
 let inFlightRequest = null;
 const runProfileCheck = () => {
+  // Logged out: don't hit the API, so no 401 noise in the console
+  if (!window.localStorage.getItem("userToken")) {
+    cachedUser = null;
+    writeLastKnownUser(null);
+    return Promise.resolve(null);
+  }
+
   if (inFlightRequest) return inFlightRequest;
 
   inFlightRequest = getUserProfile()
@@ -78,9 +106,7 @@ const runProfileCheck = () => {
       const userData = response?.data?.data || null;
 
       const normalized =
-        userData &&
-          typeof userData === "object" &&
-          !Array.isArray(userData)
+        userData && typeof userData === "object" && !Array.isArray(userData)
           ? userData
           : null;
 
@@ -591,6 +617,14 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  /*
+   * True when the user is already inside a plan section
+   * (/tour, /birthday, /event, /support and their sub-pages).
+   * In that case, switching to another plan replaces the
+   * current history entry instead of pushing a new one.
+   */
+  const onPlanRoute = isPlanPath(location.pathname);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] =
     useState(false);
@@ -669,7 +703,10 @@ const Navbar = () => {
     setSearchFocused(false);
     setMobileOpen(false);
 
-    navigate(item.route);
+    // Plan -> plan via search also replaces, so Back goes Home.
+    navigate(item.route, {
+      replace: onPlanRoute && isPlanPath(item.route),
+    });
   };
 
   const handleSearchSubmit = (event) => {
@@ -1223,23 +1260,124 @@ const Navbar = () => {
     };
   }, [mobileOpen]);
 
-  const navItemClass = `
+  /* =========================================================
+     DESKTOP PLAN NAV ITEMS
+
+     Each plan has its own hover colour (light + dark) with a
+     matching border. The border is always present
+     (transparent by default) so hovering never shifts layout.
+
+       Travel   -> blue
+       Birthday -> pink
+       Event    -> purple
+       Support  -> orange
+  ========================================================= */
+
+  const navItemBase = `
     flex
     h-11
     shrink-0
     items-center
     gap-2
     rounded-full
+    border
+    border-transparent
     px-4
     text-[14px]
     font-semibold
     text-[var(--text-secondary)]
     transition-colors
     duration-150
-    hover:bg-[var(--app-surface)]
     hover:text-[var(--text-primary)]
   `;
 
+  const navItemTravel = `
+    ${navItemBase}
+    hover:border-blue-200
+    hover:bg-blue-50
+    dark:hover:border-blue-500/50
+    dark:hover:bg-blue-500/15
+    dark:hover:text-blue-300
+  `;
+
+  const navItemBirthday = `
+    ${navItemBase}
+    hover:border-pink-200
+    hover:bg-pink-50
+    dark:hover:border-pink-500/50
+    dark:hover:bg-pink-500/15
+    dark:hover:text-pink-300
+  `;
+
+  const navItemEvent = `
+    ${navItemBase}
+    hover:border-purple-200
+    hover:bg-purple-50
+    dark:hover:border-purple-500/50
+    dark:hover:bg-purple-500/15
+    dark:hover:text-purple-300
+  `;
+
+  const navItemSupport = `
+    ${navItemBase}
+    hover:border-orange-200
+    hover:bg-orange-50
+    dark:hover:border-orange-500/50
+    dark:hover:bg-orange-500/15
+    dark:hover:text-orange-300
+  `;
+
+  /* =========================================================
+     MOBILE MENU PLAN ITEMS (same colour mapping)
+  ========================================================= */
+
+  const mobileItemBase = `
+    flex
+    min-h-12
+    items-center
+    gap-3
+    rounded-xl
+    border
+    border-transparent
+    px-3
+    text-[14px]
+    font-semibold
+    text-[var(--text-primary)]
+    transition-colors
+    duration-150
+  `;
+
+  const mobileItemTravel = `
+    ${mobileItemBase}
+    hover:border-blue-200
+    hover:bg-blue-50
+    dark:hover:border-blue-500/50
+    dark:hover:bg-blue-500/15
+  `;
+
+  const mobileItemBirthday = `
+    ${mobileItemBase}
+    hover:border-pink-200
+    hover:bg-pink-50
+    dark:hover:border-pink-500/50
+    dark:hover:bg-pink-500/15
+  `;
+
+  const mobileItemEvent = `
+    ${mobileItemBase}
+    hover:border-purple-200
+    hover:bg-purple-50
+    dark:hover:border-purple-500/50
+    dark:hover:bg-purple-500/15
+  `;
+
+  const mobileItemSupport = `
+    ${mobileItemBase}
+    hover:border-orange-200
+    hover:bg-orange-50
+    dark:hover:border-orange-500/50
+    dark:hover:bg-orange-500/15
+  `;
 
   const loginButtonClass = `
   flex
@@ -1395,7 +1533,8 @@ const Navbar = () => {
         >
           <Link
             to="/tour"
-            className={navItemClass}
+            replace={onPlanRoute}
+            className={navItemTravel}
           >
             <Plane
               size={19}
@@ -1407,7 +1546,8 @@ const Navbar = () => {
 
           <Link
             to="/birthday"
-            className={navItemClass}
+            replace={onPlanRoute}
+            className={navItemBirthday}
           >
             <Cake
               size={19}
@@ -1419,7 +1559,8 @@ const Navbar = () => {
 
           <Link
             to="/event"
-            className={navItemClass}
+            replace={onPlanRoute}
+            className={navItemEvent}
           >
             <CalendarDays
               size={19}
@@ -1431,7 +1572,8 @@ const Navbar = () => {
 
           <Link
             to="/support"
-            className={navItemClass}
+            replace={onPlanRoute}
+            className={navItemSupport}
           >
             <Headphones
               size={19}
@@ -2580,19 +2722,9 @@ const Navbar = () => {
             <div className="grid gap-2">
               <Link
                 to="/tour"
+                replace={onPlanRoute}
                 onClick={closeMenu}
-                className="
-                  flex
-                  min-h-12
-                  items-center
-                  gap-3
-                  rounded-xl
-                  px-3
-                  text-[14px]
-                  font-semibold
-                  text-[var(--text-primary)]
-                  hover:bg-[var(--app-surface-secondary)]
-                "
+                className={mobileItemTravel}
               >
                 <span
                   className="
@@ -2615,19 +2747,9 @@ const Navbar = () => {
 
               <Link
                 to="/birthday"
+                replace={onPlanRoute}
                 onClick={closeMenu}
-                className="
-                  flex
-                  min-h-12
-                  items-center
-                  gap-3
-                  rounded-xl
-                  px-3
-                  text-[14px]
-                  font-semibold
-                  text-[var(--text-primary)]
-                  hover:bg-[var(--app-surface-secondary)]
-                "
+                className={mobileItemBirthday}
               >
                 <span
                   className="
@@ -2650,19 +2772,9 @@ const Navbar = () => {
 
               <Link
                 to="/event"
+                replace={onPlanRoute}
                 onClick={closeMenu}
-                className="
-                  flex
-                  min-h-12
-                  items-center
-                  gap-3
-                  rounded-xl
-                  px-3
-                  text-[14px]
-                  font-semibold
-                  text-[var(--text-primary)]
-                  hover:bg-[var(--app-surface-secondary)]
-                "
+                className={mobileItemEvent}
               >
                 <span
                   className="
@@ -2682,21 +2794,12 @@ const Navbar = () => {
 
                 Event
               </Link>
+
               <Link
                 to="/support"
+                replace={onPlanRoute}
                 onClick={closeMenu}
-                className="
-                  flex
-                  min-h-12
-                  items-center
-                  gap-3
-                  rounded-xl
-                  px-3
-                  text-[14px]
-                  font-semibold
-                  text-[var(--text-primary)]
-                  hover:bg-[var(--app-surface-secondary)]
-                "
+                className={mobileItemSupport}
               >
                 <span
                   className="

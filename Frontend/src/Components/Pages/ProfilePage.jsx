@@ -10,8 +10,8 @@ import {
   Edit3,
   Save,
   X,
+  CheckCircle2,
   Globe,
-  Building2,
   KeyRound,
   LogOut,
   Search,
@@ -21,7 +21,6 @@ import {
   Cake,
   CalendarDays,
   Clock3,
-  ShieldCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -33,135 +32,342 @@ import {
   getUserDashboard,
 } from "../../Services/AuthAPI";
 
+import {
+  INDIA_REGIONS,
+  isValidIndianPincode,
+} from "../../Data/TouristPlaces";
+
 import showSuccess from "../../Utils/toast";
 import Dashboard from "./Dashboard";
 import Navbar from "../Layout/Navbar";
 
-const countries = [
-  "India",
-  "United States",
-  "United Kingdom",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "Japan",
-  "Singapore",
-  "United Arab Emirates",
-];
+const styles = `
+  .pf-root {
+    --page-bg: #f4f6fa;
 
-const statesByCountry = {
-  India: [
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chhattisgarh",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-    "Delhi",
-    "Jammu and Kashmir",
-    "Ladakh",
-  ],
-  "United States": [
-    "California",
-    "Texas",
-    "Florida",
-    "New York",
-    "Washington",
-    "Arizona",
-    "Nevada",
-    "Illinois",
-    "Ohio",
-    "Georgia",
-  ],
-  "United Kingdom": [
-    "England",
-    "Scotland",
-    "Wales",
-    "Northern Ireland",
-  ],
-  Canada: [
-    "Ontario",
-    "Quebec",
-    "British Columbia",
-    "Alberta",
-    "Manitoba",
-    "Saskatchewan",
-  ],
-  Australia: [
-    "New South Wales",
-    "Victoria",
-    "Queensland",
-    "Western Australia",
-    "South Australia",
-    "Tasmania",
-  ],
-  Germany: [
-    "Bavaria",
-    "Berlin",
-    "Hamburg",
-    "Hesse",
-    "Saxony",
-  ],
-  France: [
-    "Île-de-France",
-    "Occitanie",
-    "Nouvelle-Aquitaine",
-    "Auvergne-Rhône-Alpes",
-  ],
-  Japan: [
-    "Tokyo",
-    "Osaka",
-    "Kyoto",
-    "Hokkaido",
-    "Aichi",
-    "Fukuoka",
-  ],
-  Singapore: ["Singapore"],
-  "United Arab Emirates": [
-    "Abu Dhabi",
-    "Dubai",
-    "Sharjah",
-    "Ajman",
-    "Fujairah",
-    "Ras Al Khaimah",
-    "Umm Al Quwain",
-  ],
-};
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #64748b;
+
+    --teal: #4f46e5;
+    --ink: #ffffff;
+
+    --accent-soft: rgba(79, 70, 229, 0.09);
+    --accent-ring: rgba(79, 70, 229, 0.18);
+
+    --surface-solid: #ffffff;
+    --input: #ffffff;
+
+    --border: rgba(15, 23, 42, 0.09);
+    --border-hover: rgba(15, 23, 42, 0.18);
+
+    --pf-pattern: rgba(15, 23, 42, 0.045);
+
+    --ok: #059669;
+    --bad: #dc2626;
+    --pink: #ec4899;
+
+    background: var(--page-bg);
+    color: var(--text);
+    transition: background-color 500ms ease, color 500ms ease;
+  }
+
+  .dark .pf-root {
+    --page-bg: #0f172a;
+
+    --text: #f8fafc;
+    --text-soft: #cbd5e1;
+    --muted: #94a3b8;
+
+    --teal: #34d399;
+    --ink: #04211c;
+
+    --accent-soft: rgba(52, 211, 153, 0.12);
+    --accent-ring: rgba(52, 211, 153, 0.2);
+
+    --surface-solid: #111b30;
+    --input: rgba(15, 23, 42, 0.7);
+
+    --border: rgba(148, 163, 184, 0.16);
+    --border-hover: rgba(148, 163, 184, 0.32);
+
+    --pf-pattern: rgba(148, 163, 184, 0.07);
+
+    --ok: #34d399;
+    --bad: #f87171;
+    --pink: #f472b6;
+  }
+
+  .pf-page {
+    position: relative;
+    isolation: isolate;
+    overflow-x: clip;
+  }
+
+  .pf-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--muted);
+  }
+
+  .pf-card {
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: transparent;
+  }
+
+  .pf-tile {
+    border: 1px solid var(--border);
+    background: transparent;
+  }
+
+  .pf-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: var(--accent-soft);
+    color: var(--teal);
+  }
+
+  .pf-tone-ok {
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+  }
+
+  .pf-tone-bad {
+    color: var(--bad);
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
+  }
+
+  .pf-tone-pink {
+    color: var(--pink);
+    background: color-mix(in srgb, var(--pink) 12%, transparent);
+  }
+
+  .pf-pill-ok {
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+  }
+
+  .pf-pill-bad {
+    color: var(--bad);
+    background: color-mix(in srgb, var(--bad) 12%, transparent);
+  }
+
+  .pf-pill-muted {
+    color: var(--text-soft);
+    background: var(--accent-soft);
+  }
+
+  .pf-field {
+    position: relative;
+    min-width: 0;
+    border: 1px solid var(--border);
+    background: var(--input);
+    transition:
+      border-color 160ms ease,
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .pf-field[data-editing="true"]:hover {
+    border-color: var(--border-hover);
+  }
+
+  .pf-field[data-editing="true"]:focus-within {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+  }
+
+  .pf-field[data-editing="true"]:focus-within .pf-label {
+    color: var(--teal);
+  }
+
+  .pf-field[data-editing="false"] {
+    background: transparent;
+  }
+
+  .pf-field[data-error="true"] {
+    border-color: var(--bad);
+  }
+
+  .pf-field[data-error="true"]:focus-within {
+    border-color: var(--bad);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 14%, transparent);
+  }
+
+  .pf-input {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .pf-field input {
+    padding: 0;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .pf-input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  .pf-input:disabled {
+    opacity: 1;
+    -webkit-text-fill-color: var(--text);
+    cursor: default;
+  }
+
+  .pf-error {
+    margin-top: 5px;
+    padding-left: 4px;
+    color: var(--bad);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .pf-btn {
+    border: 1px solid var(--border-hover);
+    background: var(--surface-solid);
+    color: var(--text);
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+
+  .pf-btn:hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  .pf-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pf-cta {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: 0 14px 34px rgba(79, 70, 229, 0.28);
+    transition: transform 160ms ease, filter 160ms ease;
+  }
+
+  .dark .pf-cta {
+    background: linear-gradient(135deg, #10b981, #0d9488);
+    box-shadow: 0 14px 34px rgba(16, 185, 129, 0.22);
+  }
+
+  .pf-cta:hover:not(:disabled) {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .pf-cta:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .pf-cta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .pf-nav {
+    color: var(--text-soft);
+    border: 1px solid transparent;
+    transition:
+      color 160ms ease,
+      background-color 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .pf-nav:hover {
+    color: var(--teal);
+  }
+
+  .pf-nav[data-active="true"] {
+    background: var(--accent-soft);
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  .pf-danger {
+    color: var(--bad);
+    transition: filter 160ms ease;
+  }
+
+  .pf-danger:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  .pf-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .pf-dropdown {
+    border: 1px solid var(--border-hover);
+    background: var(--surface-solid);
+    box-shadow: 0 22px 55px rgba(15, 23, 42, 0.16);
+  }
+
+  .dark .pf-dropdown {
+    box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5);
+  }
+
+  .pf-option {
+    color: var(--text);
+    transition: background-color 140ms ease;
+  }
+
+  .pf-option:hover,
+  .pf-option.selected {
+    background: var(--accent-soft);
+  }
+
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-root,
+    .pf-field,
+    .pf-cta,
+    .pf-nav {
+      transition: none;
+    }
+  }
+`;
 
 const fieldWrap =
-  "group relative min-h-[64px] w-full rounded-xl border border-slate-200 bg-[#f5f7fb] px-3 pb-2 pt-5 shadow-[0_2px_8px_rgba(15,23,42,.025)] transition-all duration-200 sm:min-h-[70px] sm:rounded-2xl sm:px-4 sm:pb-2.5 sm:pt-5.5";
+  "pf-field group relative min-h-[68px] w-full rounded-2xl px-3.5 pb-2.5 pt-6 sm:min-h-[78px] sm:px-5 sm:pb-3 sm:pt-7";
 
 const labelCls =
-  "pointer-events-none absolute left-3 top-2 z-10 text-[clamp(0.58rem,0.55vw,0.7rem)] font-medium uppercase tracking-[0.08em] text-slate-500 transition-colors duration-200 sm:left-4 sm:tracking-[0.1em] group-focus-within:text-indigo-500";
+  "pf-label pointer-events-none absolute left-3.5 top-2.5 z-10 transition-colors sm:left-5";
 
-const iconBoxCls =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 transition-all duration-200 group-hover:bg-indigo-100 group-hover:text-indigo-600 sm:h-9 sm:w-9";
+const iconBoxCls = "pf-icon h-8 w-8 !rounded-lg sm:h-9 sm:w-9";
 
 const dropdownCls =
-  "absolute left-0 right-0 top-[68px] z-[9999] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,.12)] sm:top-[76px] sm:rounded-2xl";
+  "pf-dropdown absolute left-0 right-0 top-[calc(100%+6px)] z-[9999] overflow-hidden rounded-2xl";
 
 const dropdownMotion = {
   initial: {
@@ -185,52 +391,80 @@ const dropdownMotion = {
   },
 };
 
+const PageShell = ({ children }) => (
+  <div className="pf-root w-full overflow-x-clip">
+    <style>{styles}</style>
+
+    <Navbar />
+
+    <main className="pf-page min-h-[calc(100vh-110px)] px-3 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage: `
+            linear-gradient(
+              90deg,
+              var(--page-pattern-color, var(--pf-pattern)) 1px,
+              transparent 1px
+            ),
+            linear-gradient(
+              0deg,
+              var(--page-pattern-color, var(--pf-pattern)) 1px,
+              transparent 1px
+            )
+          `,
+          backgroundSize: "48px 48px",
+        }}
+      />
+
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-[1700px]">
+        {children}
+      </div>
+    </main>
+  </div>
+);
+
 const SectionCard = ({
   icon: Icon,
   title,
   subtitle,
   children,
   delay = 0,
-  className = "",
+  action,
 }) => (
   <motion.div
-    initial={{
-      opacity: 0,
-      y: 10,
-    }}
-    animate={{
-      opacity: 1,
-      y: 0,
-    }}
-    transition={{
-      delay,
-      duration: 0.25,
-    }}
-    className={`flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_6px_24px_rgba(15,23,42,.045)] sm:p-4 lg:p-5 ${className}`}
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.25 }}
+    className="pf-card p-4 sm:p-6 lg:p-7"
   >
-    {(Icon || title) && (
-      <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2.5 sm:mb-4 sm:gap-3">
-        {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 sm:h-10 sm:w-10">
-            <Icon size={17} />
-          </div>
-        )}
-
-        <div className="min-w-0">
-          <h2 className="truncate text-[clamp(0.88rem,0.95vw,1.08rem)] font-semibold leading-5 text-[#0f172a]">
-            {title}
-          </h2>
-
-          {subtitle && (
-            <p className="mt-0.5 truncate text-[clamp(0.68rem,0.68vw,0.8rem)] font-normal leading-4 text-slate-500">
-              {subtitle}
-            </p>
+    {(Icon || title || action) && (
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+        <div className="flex min-w-0 items-center gap-3">
+          {Icon && (
+            <span className="pf-icon h-10 w-10">
+              <Icon size={19} />
+            </span>
           )}
+
+          <div className="min-w-0">
+            <h2 className="text-base font-bold leading-6 text-[var(--text)] sm:text-lg">
+              {title}
+            </h2>
+
+            {subtitle && (
+              <p className="mt-0.5 text-[13px] leading-5 text-[var(--muted)] sm:text-sm">
+                {subtitle}
+              </p>
+            )}
+          </div>
         </div>
+
+        {action}
       </div>
     )}
 
-    <div className="min-h-0 flex-1">{children}</div>
+    {children}
   </motion.div>
 );
 
@@ -242,63 +476,41 @@ const InputField = ({
   onChange,
   editing,
   type = "text",
-  inputMode,
   placeholder,
+  error = "",
+  disabled = false,
+  inputMode,
   maxLength,
-  error,
 }) => (
-  <div className="relative z-0 w-full min-w-0">
+  <div className="relative z-0 w-full">
     <div
-      className={`${fieldWrap} ${
-        error
-          ? "border-red-300 bg-red-50/40 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100"
-          : "focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"
-      }`}
+      className={fieldWrap}
+      data-editing={editing}
+      data-error={Boolean(error)}
     >
-      <label
-        className={`${labelCls} ${
-          error ? "text-red-500" : ""
-        }`}
-      >
-        {label}
-      </label>
+      <label className={labelCls}>{label}</label>
 
-      <div className="flex min-w-0 items-center gap-2">
-        <span
-          className={`${iconBoxCls} ${
-            error
-              ? "bg-red-100 text-red-500 group-hover:bg-red-100 group-hover:text-red-500"
-              : ""
-          }`}
-        >
-          <Icon size={15} />
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+        <span className={iconBoxCls}>
+          <Icon size={16} />
         </span>
 
         <input
           type={type}
-          inputMode={inputMode}
           name={name}
           value={value}
           onChange={onChange}
-          disabled={!editing}
+          disabled={disabled || !editing}
           placeholder={placeholder}
-          maxLength={maxLength}
           autoComplete="off"
-          className={`min-w-0 w-full bg-transparent text-[clamp(0.76rem,0.72vw,0.9rem)] font-normal leading-5 text-[#0f172a] outline-none placeholder:text-slate-400/70 ${
-            !editing ? "cursor-default" : ""
-          }`}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          className="pf-input min-w-0 w-full bg-transparent outline-none"
         />
       </div>
     </div>
 
-    {error && (
-      <p
-        role="alert"
-        className="mt-1 px-1 text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-red-500"
-      >
-        {error}
-      </p>
-    )}
+    {error && <p className="pf-error">{error}</p>}
   </div>
 );
 
@@ -315,6 +527,9 @@ const LocationSearch = ({
   onInput,
   onSelect,
   placeholder,
+  error = "",
+  disabled = false,
+  emptyMessage = "No matching options found.",
 }) => {
   const wrapperRef = useRef(null);
 
@@ -327,71 +542,80 @@ const LocationSearch = ({
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside,
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside,
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [show, setShow]);
 
   const handleFocus = () => {
-    if (!editing) return;
+    if (!editing || disabled) return;
 
     setShow(true);
     setOtherShow?.(false);
   };
 
+  const handleBlur = () => {
+    if (!editing || disabled) return;
+
+    const query = String(search || "").trim();
+
+    if (!query || options.length !== 1) return;
+
+    const onlyOption = options[0];
+
+    if (
+      String(onlyOption).toLowerCase() !==
+      String(value || "").trim().toLowerCase()
+    ) {
+      onSelect(onlyOption);
+    }
+  };
+
   return (
     <div
       ref={wrapperRef}
-      className={`relative w-full min-w-0 ${
-        show ? "z-[100]" : "z-10"
-      }`}
+      className={`relative w-full ${show ? "z-[100]" : "z-10"}`}
     >
-      <div className={fieldWrap}>
+      <div
+        className={fieldWrap}
+        data-editing={editing}
+        data-error={Boolean(error)}
+      >
         <label className={labelCls}>{label}</label>
 
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <span className={iconBoxCls}>
-            <Icon size={15} />
+            <Icon size={16} />
           </span>
 
           <input
             type="text"
-            value={value}
-            disabled={!editing}
+            value={editing ? search : value}
+            disabled={!editing || disabled}
             placeholder={placeholder}
             autoComplete="off"
             spellCheck="false"
             onFocus={handleFocus}
+            onBlur={handleBlur}
             onChange={onInput}
-            className={`min-w-0 flex-1 bg-transparent text-[clamp(0.76rem,0.72vw,0.9rem)] font-normal leading-5 text-[#0f172a] outline-none placeholder:text-slate-400/70 ${
-              !editing ? "cursor-default" : ""
-            }`}
+            className="pf-input min-w-0 flex-1 bg-transparent outline-none"
           />
 
-          {editing && (
+          {editing && !disabled && (
             <Search
-              size={15}
+              size={16}
               strokeWidth={1.8}
-              className="shrink-0 text-slate-400"
+              className="shrink-0 text-[var(--muted)]"
             />
           )}
         </div>
 
         <AnimatePresence>
-          {editing && show && (
-            <motion.div
-              {...dropdownMotion}
-              className={dropdownCls}
-            >
-              <div className="max-h-52 overflow-y-auto p-1.5 sm:max-h-56 sm:p-2">
+          {editing && !disabled && show && (
+            <motion.div {...dropdownMotion} className={dropdownCls}>
+              <div className="max-h-56 overflow-y-auto p-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-h-60 sm:p-2">
                 {options.length > 0 ? (
                   options.map((option) => {
                     const selected = option === value;
@@ -400,53 +624,29 @@ const LocationSearch = ({
                       <button
                         key={option}
                         type="button"
-                        onMouseDown={(event) =>
-                          event.preventDefault()
-                        }
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => onSelect(option)}
-                        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal transition-all sm:rounded-xl sm:px-3 sm:py-2.5 ${
-                          selected
-                            ? "bg-indigo-50 text-indigo-600"
-                            : "text-[#0f172a] hover:bg-indigo-50 hover:text-indigo-600"
-                        }`}
+                        className={`pf-option ${selected ? "selected" : ""
+                          } flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium sm:px-4 sm:py-3`}
                       >
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
-                          <MapPin size={13} />
+                        <span className={iconBoxCls}>
+                          <MapPin size={14} />
                         </span>
 
-                        <span className="min-w-0 flex-1 truncate">
-                          {option}
-                        </span>
+                        <span className="truncate">{option}</span>
 
                         {selected && (
                           <Check
-                            size={14}
-                            className="ml-auto shrink-0 text-indigo-500"
+                            size={15}
+                            className="ml-auto shrink-0 text-[var(--teal)]"
                           />
                         )}
                       </button>
                     );
                   })
-                ) : search.trim() ? (
-                  <button
-                    type="button"
-                    onMouseDown={(event) =>
-                      event.preventDefault()
-                    }
-                    onClick={() => onSelect(search)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal text-[#0f172a] transition-all hover:bg-indigo-50 hover:text-indigo-600 sm:rounded-xl sm:px-3 sm:py-2.5"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
-                      <MapPin size={13} />
-                    </span>
-
-                    <span className="truncate">
-                      Use "{search}"
-                    </span>
-                  </button>
                 ) : (
-                  <div className="px-3 py-5 text-center text-[clamp(0.68rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                    Start typing to search...
+                  <div className="px-4 py-5 text-center text-sm text-[var(--muted)]">
+                    {emptyMessage}
                   </div>
                 )}
               </div>
@@ -454,6 +654,142 @@ const LocationSearch = ({
           )}
         </AnimatePresence>
       </div>
+
+      {error && <p className="pf-error">{error}</p>}
+    </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, label, value, tone = "indigo" }) => {
+  const tones = {
+    indigo: "",
+    emerald: "pf-tone-ok",
+    rose: "pf-tone-bad",
+  };
+
+  return (
+    <div className="pf-tile rounded-2xl p-3.5 sm:p-4">
+      <div className="flex items-center gap-3">
+        <span className={`pf-icon h-10 w-10 ${tones[tone]}`}>
+          <Icon size={18} />
+        </span>
+
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-[var(--muted)]">
+            {label}
+          </p>
+
+          <p className="mt-0.5 text-lg font-bold text-[var(--text)] sm:text-xl">
+            {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const getEventTitle = (event, type) => {
+  if (type === "birthday") {
+    return (
+      event?.name ||
+      event?.fullName ||
+      event?.birthdayName ||
+      event?.title ||
+      "Birthday Event"
+    );
+  }
+
+  return (
+    event?.destination ||
+    event?.place ||
+    event?.location ||
+    event?.title ||
+    event?.tripName ||
+    "Travel Plan"
+  );
+};
+
+const getEventDate = (event) =>
+  event?.date ||
+  event?.travelDate ||
+  event?.birthdayDate ||
+  event?.startDate ||
+  event?.eventDate ||
+  event?.createdAt ||
+  "";
+
+const getEventStatus = (event) =>
+  event?.status || event?.bookingStatus || event?.planStatus || "Planned";
+
+const EventRow = ({ event, type }) => {
+  const isBirthday = type === "birthday";
+  const Icon = isBirthday ? Cake : Plane;
+
+  const title = getEventTitle(event, type);
+  const date = getEventDate(event);
+  const status = getEventStatus(event);
+
+  const formattedDate = date
+    ? (() => {
+      const parsed = new Date(date);
+
+      if (Number.isNaN(parsed.getTime())) {
+        return String(date);
+      }
+
+      return parsed.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    })()
+    : "";
+
+  const statusText = String(status);
+
+  const statusClass =
+    statusText.toLowerCase() === "confirmed"
+      ? "pf-pill-ok"
+      : statusText.toLowerCase() === "cancelled" ||
+        statusText.toLowerCase() === "canceled"
+        ? "pf-pill-bad"
+        : "pf-pill-muted";
+
+  return (
+    <div className="pf-tile flex items-center gap-3 rounded-2xl px-3.5 py-3 sm:px-4">
+      <span
+        className={`pf-icon h-10 w-10 ${isBirthday ? "pf-tone-pink" : ""}`}
+      >
+        <Icon size={18} />
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className="break-words text-sm font-bold leading-5 text-[var(--text)] sm:text-[15px]">
+          {title}
+        </p>
+
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {formattedDate && (
+            <span className="flex items-center gap-1 text-xs leading-5 text-[var(--muted)] sm:text-[13px]">
+              <CalendarDays size={13} />
+              {formattedDate}
+            </span>
+          )}
+
+          {event?.time && (
+            <span className="flex items-center gap-1 text-xs leading-5 text-[var(--muted)] sm:text-[13px]">
+              <Clock3 size={13} />
+              {event.time}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <span
+        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize sm:text-xs ${statusClass}`}
+      >
+        {statusText}
+      </span>
     </div>
   );
 };
@@ -464,17 +800,34 @@ const Profile = () => {
 
   const [activePage, setActivePage] = useState("profile");
   const [user, setUser] = useState(null);
+
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [countrySearch, setCountrySearch] = useState("");
+
   const [stateSearch, setStateSearch] = useState("");
-  const [showCountries, setShowCountries] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+
   const [showStates, setShowStates] = useState(false);
+  const [showCities, setShowCities] = useState(false);
+
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    address: {
+      state: "",
+      area: "",
+      city: "",
+      houseNo: "",
+      pincode: "",
+    },
+  });
+
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   const [dashboardData, setDashboardData] = useState({
     allTrips: [],
@@ -485,15 +838,11 @@ const Profile = () => {
     cancelledBirthdays: [],
   });
 
-  const [dashboardLoading, setDashboardLoading] =
-    useState(true);
-
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     address: {
-      fullName: "",
       houseNo: "",
       area: "",
       city: "",
@@ -503,14 +852,50 @@ const Profile = () => {
     },
   });
 
+  const states = INDIA_REGIONS.map((region) => region.name);
+
+  const getCitiesForState = (state) => {
+    if (!state) return [];
+
+    const region = INDIA_REGIONS.find(
+      (item) =>
+        String(item?.name || "").toLowerCase() ===
+        String(state).toLowerCase(),
+    );
+
+    if (!region) return [];
+
+    const cities = Array.isArray(region.cities)
+      ? region.cities
+      : Array.isArray(region.city)
+        ? region.city
+        : region.city
+          ? [region.city]
+          : [];
+
+    return [
+      ...new Set(
+        cities
+          .map((city) =>
+            typeof city === "string"
+              ? city
+              : city?.name || city?.city || "",
+          )
+          .map((city) => String(city).trim())
+          .filter(Boolean),
+      ),
+    ];
+  };
+
   const getAddress = (data) => ({
-    fullName: data?.address?.fullName || "",
     houseNo: data?.address?.houseNo || "",
     area: data?.address?.area || "",
     city: data?.address?.city || "",
     state: data?.address?.state || "",
-    country: data?.address?.country || "India",
-    pincode: data?.address?.pincode || "",
+    country: "India",
+    pincode: String(data?.address?.pincode || "")
+      .replace(/\D/g, "")
+      .slice(0, 6),
   });
 
   const setProfileData = (data) => {
@@ -527,9 +912,24 @@ const Profile = () => {
       address,
     });
 
-    setPhoneError("");
-    setCountrySearch(address.country);
     setStateSearch(address.state);
+    setCitySearch(address.city);
+
+    setShowStates(false);
+    setShowCities(false);
+
+    setErrors({
+      name: "",
+      email: "",
+      address: {
+        state: "",
+        area: "",
+        city: "",
+        houseNo: "",
+        pincode: "",
+      },
+    });
+
     setImagePreview(data?.profileImage?.url || "");
   };
 
@@ -541,10 +941,7 @@ const Profile = () => {
 
       setProfileData(response.data.data);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to load profile",
-      );
+      toast.error(error.response?.data?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -556,50 +953,28 @@ const Profile = () => {
 
       const response = await getUserDashboard();
 
-      if (!response?.status) {
-        throw new Error(
-          response?.message ||
-            "Unable to load dashboard",
-        );
-      }
-
-      const data = response?.data || {};
+      const data = response?.data?.data || response?.data || {};
 
       setDashboardData({
-        allTrips: Array.isArray(data.allTrips)
-          ? data.allTrips
-          : [],
-        confirmedTrips: Array.isArray(
-          data.confirmedTrips,
-        )
+        allTrips: Array.isArray(data.allTrips) ? data.allTrips : [],
+        confirmedTrips: Array.isArray(data.confirmedTrips)
           ? data.confirmedTrips
           : [],
-        cancelledTrips: Array.isArray(
-          data.cancelledTrips,
-        )
+        cancelledTrips: Array.isArray(data.cancelledTrips)
           ? data.cancelledTrips
           : [],
-        allBirthdays: Array.isArray(
-          data.allBirthdays,
-        )
+        allBirthdays: Array.isArray(data.allBirthdays)
           ? data.allBirthdays
           : [],
-        confirmedBirthdays: Array.isArray(
-          data.confirmedBirthdays,
-        )
+        confirmedBirthdays: Array.isArray(data.confirmedBirthdays)
           ? data.confirmedBirthdays
           : [],
-        cancelledBirthdays: Array.isArray(
-          data.cancelledBirthdays,
-        )
+        cancelledBirthdays: Array.isArray(data.cancelledBirthdays)
           ? data.cancelledBirthdays
           : [],
       });
     } catch (error) {
-      console.error(
-        "PROFILE DASHBOARD ERROR:",
-        error,
-      );
+      console.error("PROFILE DASHBOARD ERROR:", error);
 
       setDashboardData({
         allTrips: [],
@@ -630,60 +1005,42 @@ const Profile = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    if (name === "phone") {
-      const numericValue = value
-        .replace(/\D/g, "")
-        .slice(0, 10);
-
-      setForm((prev) => ({
-        ...prev,
-        phone: numericValue,
-      }));
-
-      if (phoneError) {
-        setPhoneError(
-          numericValue.length === 10
-            ? ""
-            : "Phone number must be exactly 10 digits",
-        );
-      }
-
-      return;
-    }
-
     setForm((prev) => ({
       ...prev,
       [name]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
     }));
   };
 
   const handleAddressChange = (event) => {
     const { name, value } = event.target;
 
-    setForm((prev) => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [name]: value,
-      },
-    }));
-  };
+    let nextValue = value;
 
-  const handleCountryInput = (event) => {
-    const value = event.target.value;
-
-    setCountrySearch(value);
+    if (name === "pincode") {
+      nextValue = value.replace(/\D/g, "").slice(0, 6);
+    }
 
     setForm((prev) => ({
       ...prev,
       address: {
         ...prev.address,
-        country: value,
+        [name]: nextValue,
       },
     }));
 
-    setShowCountries(true);
-    setShowStates(false);
+    setErrors((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [name]: "",
+        ...(name === "state" ? { pincode: "" } : {}),
+      },
+    }));
   };
 
   const handleStateInput = (event) => {
@@ -696,34 +1053,24 @@ const Profile = () => {
       address: {
         ...prev.address,
         state: value,
+        city: "",
+      },
+    }));
+
+    setCitySearch("");
+
+    setErrors((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        state: "",
+        city: "",
+        pincode: "",
       },
     }));
 
     setShowStates(true);
-    setShowCountries(false);
-  };
-
-  const selectCountry = (country) => {
-    setForm((prev) => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        country,
-        state:
-          country === prev.address.country
-            ? prev.address.state
-            : "",
-      },
-    }));
-
-    setCountrySearch(country);
-
-    if (country !== form.address.country) {
-      setStateSearch("");
-    }
-
-    setShowCountries(false);
-    setShowStates(false);
+    setShowCities(false);
   };
 
   const selectState = (state) => {
@@ -732,11 +1079,72 @@ const Profile = () => {
       address: {
         ...prev.address,
         state,
+        city: "",
       },
     }));
 
     setStateSearch(state);
+    setCitySearch("");
+
+    setErrors((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        state: "",
+        city: "",
+        pincode: "",
+      },
+    }));
+
     setShowStates(false);
+    setShowCities(false);
+  };
+
+  const handleCityInput = (event) => {
+    const value = event.target.value;
+
+    setCitySearch(value);
+
+    setForm((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        city: value,
+      },
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        city: "",
+      },
+    }));
+
+    setShowCities(true);
+    setShowStates(false);
+  };
+
+  const selectCity = (city) => {
+    setForm((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        city,
+      },
+    }));
+
+    setCitySearch(city);
+
+    setErrors((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        city: "",
+      },
+    }));
+
+    setShowCities(false);
   };
 
   const handleImageChange = (event) => {
@@ -764,9 +1172,21 @@ const Profile = () => {
 
   const handleEdit = () => {
     setEditing(true);
-    setPhoneError("");
-    setCountrySearch(form.address.country);
+
     setStateSearch(form.address.state);
+    setCitySearch(form.address.city);
+
+    setErrors({
+      name: "",
+      email: "",
+      address: {
+        state: "",
+        area: "",
+        city: "",
+        houseNo: "",
+        pincode: "",
+      },
+    });
   };
 
   const handleCancel = () => {
@@ -779,10 +1199,9 @@ const Profile = () => {
     }
 
     setEditing(false);
-    setPhoneError("");
     setImageFile(null);
-    setShowCountries(false);
     setShowStates(false);
+    setShowCities(false);
 
     setForm({
       name: user.name || "",
@@ -793,8 +1212,21 @@ const Profile = () => {
       address,
     });
 
-    setCountrySearch(address.country);
     setStateSearch(address.state);
+    setCitySearch(address.city);
+
+    setErrors({
+      name: "",
+      email: "",
+      address: {
+        state: "",
+        area: "",
+        city: "",
+        houseNo: "",
+        pincode: "",
+      },
+    });
+
     setImagePreview(user.profileImage?.url || "");
 
     if (fileInputRef.current) {
@@ -802,27 +1234,91 @@ const Profile = () => {
     }
   };
 
+  const validateForm = () => {
+    const nextErrors = {
+      name: "",
+      email: "",
+      address: {
+        state: "",
+        area: "",
+        city: "",
+        houseNo: "",
+        pincode: "",
+      },
+    };
+
+    const name = form.name.trim();
+    const email = form.email.trim();
+
+    const state = form.address.state.trim();
+    const area = form.address.area.trim();
+    const city = form.address.city.trim();
+    const houseNo = form.address.houseNo.trim();
+    const pincode = form.address.pincode.trim();
+
+    const citiesForState = getCitiesForState(state);
+
+    if (!name) {
+      nextErrors.name = "Name is required";
+    }
+
+    if (!email) {
+      nextErrors.email = "Email is required";
+    }
+
+    if (!state) {
+      nextErrors.address.state = "State is required";
+    } else if (!states.includes(state)) {
+      nextErrors.address.state = "Please select a valid Indian state";
+    }
+
+    if (!area) {
+      nextErrors.address.area = "Area is required";
+    }
+
+    if (!city) {
+      nextErrors.address.city = "City is required";
+    } else if (
+      states.includes(state) &&
+      citiesForState.length > 0 &&
+      !citiesForState.includes(city)
+    ) {
+      nextErrors.address.city = `Please select a valid city in ${state}`;
+    }
+
+    if (!houseNo) {
+      nextErrors.address.houseNo = "House / Flat No. is required";
+    }
+
+    if (!pincode) {
+      nextErrors.address.pincode = "Pincode is required";
+    } else if (!/^\d{6}$/.test(pincode)) {
+      nextErrors.address.pincode = "Pincode must be exactly 6 digits";
+    } else if (state && states.includes(state)) {
+      if (!isValidIndianPincode(pincode, state)) {
+        nextErrors.address.pincode = `Pincode does not match ${state}`;
+      }
+    }
+
+    setErrors(nextErrors);
+
+    return (
+      !nextErrors.name &&
+      !nextErrors.email &&
+      !nextErrors.address.state &&
+      !nextErrors.address.area &&
+      !nextErrors.address.city &&
+      !nextErrors.address.houseNo &&
+      !nextErrors.address.pincode
+    );
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim()) {
-      toast.error("Name is required");
+    if (!validateForm()) {
       return;
     }
-
-    if (!form.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    if (!/^\d{10}$/.test(form.phone.trim())) {
-      setPhoneError(
-        "Phone number must be exactly 10 digits",
-      );
-      return;
-    }
-
-    setPhoneError("");
 
     try {
       setSaving(true);
@@ -836,12 +1332,11 @@ const Profile = () => {
       formData.append(
         "address",
         JSON.stringify({
-          fullName: form.address.fullName.trim(),
           houseNo: form.address.houseNo.trim(),
           area: form.address.area.trim(),
           city: form.address.city.trim(),
           state: form.address.state.trim(),
-          country: form.address.country.trim(),
+          country: "India",
           pincode: form.address.pincode.trim(),
         }),
       );
@@ -850,30 +1345,34 @@ const Profile = () => {
         formData.append("profileImage", imageFile);
       }
 
-      const response =
-        await updateUserProfile(formData);
+      const response = await updateUserProfile(formData);
 
       setProfileData(response.data.data);
 
       setImageFile(null);
-      setPhoneError("");
       setEditing(false);
-      setShowCountries(false);
       setShowStates(false);
+      setShowCities(false);
+
+      setErrors({
+        name: "",
+        email: "",
+        address: {
+          state: "",
+          area: "",
+          city: "",
+          houseNo: "",
+          pincode: "",
+        },
+      });
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
 
-      showSuccess(
-        response.data.message ||
-          "Profile updated successfully",
-      );
+      showSuccess(response.data.message || "Profile updated successfully");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to update profile",
-      );
+      toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -890,6 +1389,7 @@ const Profile = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
+
       await logoutUser();
     } catch {
     } finally {
@@ -907,166 +1407,112 @@ const Profile = () => {
     }
   };
 
-  const handleViewTrip = (tripId) => {
-    if (!tripId) {
-      toast.error("Trip ID is missing");
-      return;
-    }
-
-    navigate(`/tour/${tripId}`);
-  };
-
-  const handleViewBirthday = (birthdayId) => {
-    if (!birthdayId) {
-      toast.error("Birthday ID is missing");
-      return;
-    }
-
-    navigate(`/birthday/${birthdayId}`);
-  };
-
-  const availableStates =
-    statesByCountry[form.address.country] || [];
-
-  const filteredCountries = countries.filter(
-    (country) =>
-      country
-        .toLowerCase()
-        .includes(countrySearch.toLowerCase()),
+  const filteredStates = states.filter((state) =>
+    state.toLowerCase().includes(stateSearch.toLowerCase()),
   );
 
-  const filteredStates = availableStates.filter(
-    (state) =>
-      state
-        .toLowerCase()
-        .includes(stateSearch.toLowerCase()),
+  const availableCities = getCitiesForState(form.address.state);
+
+  const filteredCities = availableCities.filter((city) =>
+    city.toLowerCase().includes(citySearch.toLowerCase()),
   );
 
-  const navItems = [
-    {
-      key: "profile",
-      label: "Profile",
-      icon: User,
-      activeClass:
-        "bg-blue-50 text-blue-600",
-      hoverClass:
-        "hover:bg-blue-50 hover:text-blue-600",
-      iconActive:
-        "bg-white text-blue-600",
-    },
-    {
-      key: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      activeClass:
-        "bg-emerald-50 text-emerald-600",
-      hoverClass:
-        "hover:bg-emerald-50 hover:text-emerald-600",
-      iconActive:
-        "bg-white text-emerald-600",
-    },
-  ];
+  const totalPlans =
+    dashboardData.allTrips.length + dashboardData.allBirthdays.length;
 
-  const totalTrips = dashboardData.allTrips.length;
-  const confirmedTrips =
-    dashboardData.confirmedTrips.length;
-  const cancelledTrips =
-    dashboardData.cancelledTrips.length;
-  const totalBirthdays =
-    dashboardData.allBirthdays.length;
+  const confirmedPlans =
+    dashboardData.confirmedTrips.length +
+    dashboardData.confirmedBirthdays.length;
 
-  const getDisplayStatus = (status) => {
-    if (!status) return "Generated";
+  const cancelledPlans =
+    dashboardData.cancelledTrips.length +
+    dashboardData.cancelledBirthdays.length;
 
-    const normalized = String(status)
-      .trim()
-      .toLowerCase();
+  const allEvents = [
+    ...dashboardData.allTrips.map((event) => ({
+      ...event,
+      __eventType: "trip",
+    })),
 
-    if (
-      normalized === "booked" ||
-      normalized === "booking"
-    ) {
-      return "Confirmed";
-    }
+    ...dashboardData.allBirthdays.map((event) => ({
+      ...event,
+      __eventType: "birthday",
+    })),
+  ].sort((a, b) => {
+    const dateA = new Date(getEventDate(a) || a.createdAt || 0).getTime();
 
-    if (normalized === "cancelled") {
-      return "Canceled";
-    }
+    const dateB = new Date(getEventDate(b) || b.createdAt || 0).getTime();
 
-    return status;
-  };
+    return dateA - dateB;
+  });
+
+  const navButtonClass =
+    "pf-nav flex min-h-[50px] w-full shrink-0 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold";
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-
-        <section className="flex min-h-[calc(100vh-68px)] items-center justify-center bg-[#f4f6fa] px-4 lg:min-h-[calc(100vh-76px)]">
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-500 sm:h-9 sm:w-9" />
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-[var(--border-hover)] border-t-[var(--teal)]" />
 
-            <p className="mt-3 text-[clamp(0.72rem,0.75vw,0.9rem)] font-normal text-slate-500">
+            <p className="mt-4 text-sm text-[var(--muted)]">
               Loading profile...
             </p>
           </div>
-        </section>
-      </>
+        </div>
+      </PageShell>
     );
   }
 
   if (!user) {
     return (
-      <>
-        <Navbar />
+      <PageShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="pf-card w-full max-w-md p-6 text-center sm:p-8">
+            <span className="pf-icon mx-auto h-14 w-14 !rounded-2xl">
+              <User size={26} />
+            </span>
 
-        <section className="flex min-h-[calc(100vh-68px)] items-center justify-center bg-[#f4f6fa] px-4 lg:min-h-[calc(100vh-76px)]">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:rounded-3xl sm:p-8">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 sm:h-14 sm:w-14 sm:rounded-2xl">
-              <User size={24} />
-            </div>
-
-            <h2 className="mt-4 text-[clamp(1rem,1.3vw,1.3rem)] font-semibold text-[#0f172a]">
+            <h2 className="mt-5 text-xl font-bold text-[var(--text)]">
               Unable to load profile
             </h2>
 
-            <p className="mt-2 text-[clamp(0.72rem,0.75vw,0.9rem)] font-normal leading-5 text-slate-500">
-              Something went wrong while loading your
-              account information.
+            <p className="mt-2 text-[13px] leading-6 text-[var(--muted)] sm:text-sm">
+              Something went wrong while loading your account information.
             </p>
 
             <button
               type="button"
               onClick={fetchProfile}
-              className="mt-5 w-full rounded-xl bg-indigo-600 px-5 py-3 text-[clamp(0.72rem,0.75vw,0.9rem)] font-medium text-white transition hover:bg-indigo-700 sm:w-auto"
+              className="pf-cta mt-6 w-full rounded-xl px-6 py-3 text-sm font-semibold sm:w-auto"
             >
               Try Again
             </button>
           </div>
-        </section>
-      </>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <>
-      <Navbar />
-
-      <section className="min-h-[calc(100vh-68px)] overflow-x-hidden bg-[#f4f6fa] px-2.5 py-3 text-[#0f172a] sm:px-4 sm:py-5 md:px-5 lg:min-h-[calc(100vh-76px)] lg:px-6 lg:py-6 xl:px-8">
-        <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start xl:gap-5">
-          <motion.aside
-            initial={{
-              opacity: 0,
-              x: -15,
-            }}
-            animate={{
-              opacity: 1,
-              x: 0,
-            }}
-            className="w-full shrink-0 lg:sticky lg:top-[92px] lg:w-[220px] xl:w-[235px] 2xl:w-[250px]"
-          >
-            <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_6px_24px_rgba(15,23,42,.045)] sm:p-3 lg:min-h-[calc(100vh-108px)]">
-              <div className="flex items-center gap-2.5 px-2 py-2 sm:gap-3 sm:px-2.5 sm:py-3">
-                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-indigo-50 sm:h-12 sm:w-12 sm:rounded-2xl">
+    <PageShell>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-7">
+        <motion.aside
+          initial={{
+            opacity: 0,
+            x: -15,
+          }}
+          animate={{
+            opacity: 1,
+            x: 0,
+          }}
+          className="w-full shrink-0 lg:fixed lg:left-7 lg:top-1/2 lg:z-40 lg:w-[285px] lg:-translate-y-1/2 xl:left-10 xl:w-[300px]"
+        >
+          <div className="pf-card w-full p-3.5 sm:p-4">
+            <div className="flex flex-col items-center px-2 pt-2 text-center">
+              <div className="relative h-20 w-20 shrink-0 sm:h-24 sm:w-24">
+                <div className="h-20 w-20 overflow-hidden rounded-full border-4 border-[var(--page-bg)] bg-[var(--accent-soft)] shadow-md ring-1 ring-[var(--border-hover)] sm:h-24 sm:w-24">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -1074,704 +1520,455 @@ const Profile = () => {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-indigo-500">
-                      <User size={20} />
+                    <div className="flex h-full w-full items-center justify-center text-[var(--teal)]">
+                      <User size={34} />
                     </div>
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <p className="truncate text-[clamp(0.7rem,0.7vw,0.85rem)] font-medium leading-5 text-[#0f172a]">
-                    {user.name}
-                  </p>
-
-                  <p className="truncate text-[clamp(0.6rem,0.6vw,0.75rem)] font-normal leading-4 text-slate-500">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="my-1.5 border-t border-slate-100 sm:my-2" />
-
-              <div className="grid grid-cols-2 gap-1.5 lg:flex lg:flex-col lg:gap-1.5">
-                {navItems.map(
-                  ({
-                    key,
-                    label,
-                    icon: Icon,
-                    activeClass,
-                    hoverClass,
-                    iconActive,
-                  }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setActivePage(key);
-                        setEditing(false);
-                      }}
-                      className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-[clamp(0.66rem,0.68vw,0.8rem)] font-medium transition-all duration-200 lg:justify-start lg:px-3 sm:min-h-[44px] sm:gap-2 ${
-                        activePage === key
-                          ? activeClass
-                          : `text-slate-600 ${hoverClass}`
-                      }`}
-                    >
-                      <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                          activePage === key
-                            ? iconActive
-                            : "bg-slate-50 text-slate-500"
-                        }`}
-                      >
-                        <Icon size={15} />
-                      </span>
-
-                      <span>{label}</span>
-                    </button>
-                  ),
-                )}
-              </div>
-
-              <div className="mt-4 hidden lg:block">
-                <div className="rounded-xl bg-[#f8f9fc] p-3">
-                  <p className="text-[clamp(0.6rem,0.55vw,0.72rem)] font-medium uppercase tracking-[0.12em] text-slate-400">
-                    Account
-                  </p>
-
-                  <p className="mt-1.5 text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal leading-5 text-slate-500">
-                    Manage your personal information and
-                    dashboard.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.aside>
-
-          <main className="min-w-0 flex-1">
-            <AnimatePresence mode="wait">
-              {activePage === "dashboard" ? (
-                <motion.div
-                  key="dashboard"
-                  initial={{
-                    opacity: 0,
-                    x: 10,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -10,
-                  }}
-                  transition={{
-                    duration: 0.2,
-                  }}
-                >
-                  <Dashboard />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="profile"
-                  initial={{
-                    opacity: 0,
-                    x: 10,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: 0,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: -10,
-                  }}
-                  transition={{
-                    duration: 0.2,
-                  }}
-                >
-                  <form
-                    id="profile-form"
-                    onSubmit={handleSave}
-                    className="space-y-3.5 sm:space-y-4 lg:space-y-5"
+                {editing && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Change profile photo"
+                    className="pf-cta absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center !rounded-full"
                   >
-                    <SectionCard className="h-auto min-h-[110px] sm:min-h-[120px]">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-                        <div className="flex min-w-0 items-center gap-3 sm:gap-4 lg:gap-5">
-                          <div className="relative h-[64px] w-[64px] shrink-0 sm:h-20 sm:w-20 lg:h-[86px] lg:w-[86px]">
-                            <div className="h-full w-full overflow-hidden rounded-full border-4 border-white bg-indigo-50 shadow-md ring-1 ring-slate-200">
-                              {imagePreview ? (
-                                <img
-                                  src={imagePreview}
-                                  alt={
-                                    user.name ||
-                                    "Profile"
-                                  }
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-indigo-500">
-                                  <User size={30} />
-                                </div>
-                              )}
-                            </div>
+                    <Camera size={15} />
+                  </button>
+                )}
 
-                            {editing && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  fileInputRef.current?.click()
-                                }
-                                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition hover:bg-indigo-700 sm:h-8 sm:w-8"
-                              >
-                                <Camera size={14} />
-                              </button>
-                            )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </div>
 
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageChange}
-                              className="hidden"
-                            />
-                          </div>
+              <h2 className="mt-3 w-full truncate text-lg font-bold text-[var(--text)]">
+                {user.name}
+              </h2>
 
-                          <div className="min-w-0">
-                            <p className="text-[clamp(0.6rem,0.6vw,0.75rem)] font-medium uppercase tracking-[0.14em] text-indigo-500">
-                              Account
-                            </p>
+              <p className="mt-0.5 w-full break-all text-[13px] font-medium text-[var(--muted)]">
+                {user.email}
+              </p>
 
-                            <h1 className="mt-0.5 text-[clamp(1.35rem,2vw,2rem)] font-medium leading-tight tracking-tight text-[#3530c9]">
-                              Profile
-                            </h1>
+              {user.isVerified && (
+                <span className="pf-pill-ok mt-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold">
+                  <CheckCircle2 size={13} />
+                  Verified Account
+                </span>
+              )}
+            </div>
 
-                            <p className="mt-0.5 text-[clamp(0.68rem,0.72vw,0.88rem)] font-normal leading-5 text-slate-500">
-                              Manage your personal
-                              information.
-                            </p>
+            <div className="my-3 border-t border-[var(--border)] sm:my-4" />
 
+            <div className="flex w-full flex-col gap-1.5">
+              <button
+                type="button"
+                data-active={activePage === "profile"}
+                onClick={() => {
+                  setActivePage("profile");
+                  setEditing(false);
+                }}
+                className={navButtonClass}
+              >
+                <span className="pf-icon h-9 w-9">
+                  <User size={18} />
+                </span>
 
+                <span>Profile</span>
+              </button>
 
+              <button
+                type="button"
+                data-active={activePage === "dashboard"}
+                onClick={() => {
+                  setActivePage("dashboard");
+                  setEditing(false);
+                }}
+                className={navButtonClass}
+              >
+                <span className="pf-icon h-9 w-9">
+                  <LayoutDashboard size={18} />
+                </span>
 
-                            <div className="mt-1.5">
-                              <h2 className="truncate text-[clamp(0.9rem,1.1vw,1.2rem)] font-medium leading-5 text-[#0f172a]">
-                                {user.name}
-                              </h2>
+                <span>Dashboard</span>
+              </button>
 
-                              <p className="mt-0.5 truncate text-[clamp(0.66rem,0.7vw,0.85rem)] font-normal leading-4 text-slate-500">
-                                {user.email}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                className={navButtonClass}
+              >
+                <span className="pf-icon h-9 w-9">
+                  <KeyRound size={18} />
+                </span>
 
-                        <div className="w-full shrink-0 sm:w-auto">
-                          {!editing ? (
+                <span>Change Password</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="pf-danger flex min-h-[50px] w-full shrink-0 items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold"
+              >
+                <span className="pf-icon pf-tone-bad h-9 w-9">
+                  {loggingOut ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <LogOut size={18} />
+                  )}
+                </span>
+
+                <span>{loggingOut ? "Logging out..." : "Logout"}</span>
+              </button>
+            </div>
+          </div>
+        </motion.aside>
+
+        <div className="min-w-0 w-full lg:ml-[315px] lg:w-[calc(100%-315px)] xl:ml-[330px] xl:w-[calc(100%-330px)]">
+          <AnimatePresence mode="wait">
+            {activePage === "dashboard" ? (
+              <motion.div
+                key="dashboard"
+                initial={{
+                  opacity: 0,
+                  x: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                }}
+                exit={{
+                  opacity: 0,
+                  x: -10,
+                }}
+                transition={{
+                  duration: 0.2,
+                }}
+              >
+                <Dashboard embedded />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="profile"
+                initial={{
+                  opacity: 0,
+                  x: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                }}
+                exit={{
+                  opacity: 0,
+                  x: -10,
+                }}
+                transition={{
+                  duration: 0.2,
+                }}
+              >
+                <form
+                  id="profile-form"
+                  onSubmit={handleSave}
+                  className="space-y-4 sm:space-y-5"
+                >
+                  <SectionCard
+                    icon={User}
+                    title="Personal Details"
+                    subtitle="Your basic account information"
+                    delay={0.05}
+                    action={
+                      <div className="flex shrink-0 items-center gap-2">
+                        {!editing ? (
+                          <motion.button
+                            type="button"
+                            onClick={handleEdit}
+                            whileTap={{
+                              scale: 0.98,
+                            }}
+                            className="pf-cta flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold sm:text-sm"
+                          >
+                            <Edit3 size={16} />
+                            <span>Edit Profile</span>
+                          </motion.button>
+                        ) : (
+                          <>
                             <motion.button
                               type="button"
-                              onClick={handleEdit}
-                              whileHover={{
-                                y: -2,
-                              }}
+                              onClick={handleCancel}
+                              disabled={saving}
                               whileTap={{
                                 scale: 0.98,
                               }}
-                              className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-white shadow-md transition hover:bg-indigo-700 sm:min-h-[42px] sm:w-auto sm:px-5"
+                              className="pf-btn flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold sm:text-sm"
                             >
-                              <Edit3 size={15} />
-                              Edit Profile
+                              <X size={16} />
+                              Cancel
                             </motion.button>
-                          ) : (
-                            <div className="flex w-full gap-2 sm:w-auto">
-                              <motion.button
-                                type="button"
-                                onClick={handleCancel}
-                                disabled={saving}
-                                whileTap={{
-                                  scale: 0.98,
-                                }}
-                                className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.86rem)] font-medium text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50 sm:min-h-[42px] sm:flex-none sm:px-4"
-                              >
-                                <X size={15} />
-                                Cancel
-                              </motion.button>
 
-                              <motion.button
-                                type="submit"
-                                form="profile-form"
-                                disabled={saving}
-                                whileTap={{
-                                  scale: 0.98,
-                                }}
-                                className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.86rem)] font-medium text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-60 sm:min-h-[42px] sm:flex-none sm:px-4"
-                              >
-                                {saving ? (
-                                  <>
-                                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                    Saving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Save size={15} />
-                                    Save
-                                  </>
-                                )}
-                              </motion.button>
-                            </div>
-                          )}
-                        </div>
+                            <motion.button
+                              type="submit"
+                              disabled={saving}
+                              whileTap={{
+                                scale: 0.98,
+                              }}
+                              className="pf-cta flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold sm:text-sm"
+                            >
+                              {saving ? (
+                                <>
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save size={16} />
+                                  Save
+                                </>
+                              )}
+                            </motion.button>
+                          </>
+                        )}
                       </div>
-                    </SectionCard>
-
-                    <div className="grid min-w-0 grid-cols-1 items-stretch gap-3.5 sm:gap-4 xl:grid-cols-[1fr_1fr_0.9fr]">
-                      <SectionCard
+                    }
+                  >
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                      <InputField
                         icon={User}
-                        title="Personal Information"
-                        subtitle="Your basic account details"
-                        className="h-full"
-                      >
-                        <div className="flex h-full flex-col gap-2 sm:gap-2.5">
-                          <div className="flex-1">
-                            <InputField
-                              icon={User}
-                              label="Full Name"
-                              name="name"
-                              value={form.name}
-                              onChange={handleChange}
-                              editing={editing}
-                              placeholder="Enter your name"
-                            />
-                          </div>
+                        label="Full Name"
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        editing={editing}
+                        placeholder="Enter your name"
+                        error={errors.name}
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={Mail}
-                              label="Email Address"
-                              name="email"
-                              value={form.email}
-                              onChange={handleChange}
-                              editing={editing}
-                              type="email"
-                              placeholder="Enter your email"
-                            />
-                          </div>
+                      <InputField
+                        icon={Mail}
+                        label="Email Address"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        editing={editing}
+                        type="email"
+                        placeholder="Enter your email"
+                        error={errors.email}
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={Phone}
-                              label="Phone Number"
-                              name="phone"
-                              value={form.phone}
-                              onChange={handleChange}
-                              editing={editing}
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={10}
-                              error={phoneError}
-                              placeholder="Enter 10 digit phone number"
-                            />
-                          </div>
+                      <InputField
+                        icon={Phone}
+                        label="Phone Number"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        editing={editing}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </SectionCard>
 
-                          <div className="flex min-h-[64px] flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 sm:h-9 sm:w-9">
-                              <ShieldCheck size={16} />
-                            </div>
+                  <SectionCard
+                    icon={MapPin}
+                    title="Address Information"
+                    subtitle="Manage your complete address"
+                    delay={0.1}
+                  >
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                      <InputField
+                        icon={Globe}
+                        label="Country"
+                        name="country"
+                        value="India"
+                        onChange={() => { }}
+                        editing={editing}
+                        disabled
+                        placeholder="India"
+                      />
 
-                            <div className="min-w-0">
-                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                                Account Verified
-                              </p>
-
-                              <p className="mt-0.5 text-[clamp(0.78rem,0.75vw,0.92rem)] font-medium text-slate-700">
-                                {user.isVerified
-                                  ? "Verified"
-                                  : "Not Verified"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </SectionCard>
-
-                      <SectionCard
+                      <LocationSearch
+                        label="State"
                         icon={MapPin}
-                        title="Location"
-                        subtitle="Your address and location"
-                        className="h-full"
-                      >
-                        <div className="flex h-full flex-col gap-2 sm:gap-2.5">
-                          <div className="flex-1">
-                            <InputField
-                              icon={User}
-                              label="Full Name"
-                              name="fullName"
-                              value={
-                                form.address.fullName
-                              }
-                              onChange={
-                                handleAddressChange
-                              }
-                              editing={editing}
-                              placeholder="Enter full name"
-                            />
-                          </div>
+                        editing={editing}
+                        value={form.address.state}
+                        search={stateSearch}
+                        options={filteredStates}
+                        show={showStates}
+                        setShow={setShowStates}
+                        setOtherShow={setShowCities}
+                        onInput={handleStateInput}
+                        onSelect={selectState}
+                        placeholder="Search state"
+                        error={errors.address.state}
+                        emptyMessage="No matching state or union territory found."
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={Home}
-                              label="House / Flat No."
-                              name="houseNo"
-                              value={
-                                form.address.houseNo
-                              }
-                              onChange={
-                                handleAddressChange
-                              }
-                              editing={editing}
-                              placeholder="Enter house or flat number"
-                            />
-                          </div>
+                      <LocationSearch
+                        label="City"
+                        icon={MapPin}
+                        editing={editing}
+                        value={form.address.city}
+                        search={citySearch}
+                        options={filteredCities}
+                        show={showCities}
+                        setShow={setShowCities}
+                        setOtherShow={setShowStates}
+                        onInput={handleCityInput}
+                        onSelect={selectCity}
+                        placeholder={
+                          form.address.state
+                            ? "Search city"
+                            : "Select state first"
+                        }
+                        error={errors.address.city}
+                        disabled={!form.address.state}
+                        emptyMessage={
+                          form.address.state
+                            ? `No city found in ${form.address.state}`
+                            : "Select a state first"
+                        }
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={MapPin}
-                              label="Area"
-                              name="area"
-                              value={form.address.area}
-                              onChange={
-                                handleAddressChange
-                              }
-                              editing={editing}
-                              placeholder="Enter area"
-                            />
-                          </div>
+                      <InputField
+                        icon={MapPin}
+                        label="Area"
+                        name="area"
+                        value={form.address.area}
+                        onChange={handleAddressChange}
+                        editing={editing}
+                        placeholder="Enter area"
+                        error={errors.address.area}
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={Building2}
-                              label="City"
-                              name="city"
-                              value={form.address.city}
-                              onChange={
-                                handleAddressChange
-                              }
-                              editing={editing}
-                              placeholder="Enter city"
-                            />
-                          </div>
+                      <InputField
+                        icon={Home}
+                        label="House / Flat No."
+                        name="houseNo"
+                        value={form.address.houseNo}
+                        onChange={handleAddressChange}
+                        editing={editing}
+                        placeholder="Enter house or flat number"
+                        error={errors.address.houseNo}
+                      />
 
-                          <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
-                            <LocationSearch
-                              label="Country"
-                              icon={Globe}
-                              editing={editing}
-                              value={
-                                form.address.country
-                              }
-                              search={countrySearch}
-                              options={
-                                filteredCountries
-                              }
-                              show={showCountries}
-                              setShow={
-                                setShowCountries
-                              }
-                              setOtherShow={
-                                setShowStates
-                              }
-                              onInput={
-                                handleCountryInput
-                              }
-                              onSelect={
-                                selectCountry
-                              }
-                              placeholder="Search country"
-                            />
+                      <InputField
+                        icon={MapPin}
+                        label="Pincode"
+                        name="pincode"
+                        value={form.address.pincode}
+                        onChange={handleAddressChange}
+                        editing={editing}
+                        placeholder="Enter pincode"
+                        inputMode="numeric"
+                        maxLength={6}
+                        error={errors.address.pincode}
+                      />
+                    </div>
+                  </SectionCard>
 
-                            <LocationSearch
-                              label="State"
-                              icon={MapPin}
-                              editing={editing}
-                              value={
-                                form.address.state
-                              }
-                              search={stateSearch}
-                              options={filteredStates}
-                              show={showStates}
-                              setShow={setShowStates}
-                              setOtherShow={
-                                setShowCountries
-                              }
-                              onInput={
-                                handleStateInput
-                              }
-                              onSelect={selectState}
-                              placeholder="Search state"
-                            />
-                          </div>
+                  <SectionCard
+                    icon={CalendarDays}
+                    title="Plans & Recent Events"
+                    subtitle="Your travel and birthday activity"
+                    delay={0.15}
+                  >
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <StatCard
+                        icon={CalendarDays}
+                        label="Total Plans"
+                        value={totalPlans}
+                        tone="indigo"
+                      />
 
-                          <div className="flex-1">
-                            <InputField
-                              icon={MapPin}
-                              label="Pincode"
-                              name="pincode"
-                              value={
-                                form.address.pincode
-                              }
-                              onChange={
-                                handleAddressChange
-                              }
-                              editing={editing}
-                              placeholder="Enter pincode"
-                            />
-                          </div>
-                        </div>
-                      </SectionCard>
+                      <StatCard
+                        icon={CheckCircle2}
+                        label="Confirmed"
+                        value={confirmedPlans}
+                        tone="emerald"
+                      />
 
-                      <SectionCard
-                        icon={ShieldCheck}
-                        title="Profile Overview"
-                        subtitle="Account information"
-                        className="h-full"
-                      >
-                        <div className="grid h-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 sm:h-9 sm:w-9">
-                              <Plane size={16} />
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                                Total Trips
-                              </p>
-
-                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
-                                {totalTrips}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500 sm:h-9 sm:w-9">
-                              <CalendarDays size={16} />
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                                Confirmed Plans
-                              </p>
-
-                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
-                                {confirmedTrips}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-500 sm:h-9 sm:w-9">
-                              <Clock3 size={16} />
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                                Canceled Plans
-                              </p>
-
-                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
-                                {cancelledTrips}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-xl bg-[#f8f9fc] p-3 sm:min-h-[70px] sm:p-3.5">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-500 sm:h-9 sm:w-9">
-                              <Cake size={16} />
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[clamp(0.66rem,0.65vw,0.8rem)] font-normal text-slate-400">
-                                Birthday Plans
-                              </p>
-
-                              <p className="mt-0.5 text-[clamp(0.8rem,0.85vw,1rem)] font-medium text-slate-700">
-                                {totalBirthdays}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </SectionCard>
+                      <StatCard
+                        icon={X}
+                        label="Cancelled"
+                        value={cancelledPlans}
+                        tone="rose"
+                      />
                     </div>
 
-                    {!dashboardLoading &&
-                      dashboardData.allTrips.length >
-                        0 && (
-                        <SectionCard
-                          icon={Plane}
-                          title="Recent Trips"
-                          subtitle="Your latest travel plans"
-                        >
-                          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {dashboardData.allTrips
-                              .slice(0, 3)
-                              .map((trip) => (
-                                <button
-                                  key={trip?._id}
-                                  type="button"
-                                  onClick={() =>
-                                    handleViewTrip(
-                                      trip?._id,
-                                    )
-                                  }
-                                  className="min-w-0 rounded-xl border border-slate-100 bg-[#f8f9fc] p-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50 active:scale-[0.99]"
-                                >
-                                  <div className="flex min-w-0 items-center gap-2.5">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
-                                      <MapPin size={15} />
-                                    </div>
+                    <div className="mt-5">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-bold leading-6 text-[var(--text)]">
+                            Recent Events
+                          </h3>
 
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate text-[clamp(0.74rem,0.7vw,0.9rem)] font-medium leading-5 text-slate-800">
-                                        {trip?.destination ||
-                                          trip?.place ||
-                                          trip?.title ||
-                                          "Travel Plan"}
-                                      </p>
+                          <p className="mt-0.5 text-[13px] leading-5 text-[var(--muted)]">
+                            Travel and birthday events
+                          </p>
+                        </div>
 
-                                      <p className="mt-0.5 truncate text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-slate-500">
-                                        {getDisplayStatus(
-                                          trip?.status,
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
-                        </SectionCard>
-                      )}
-
-                    {!dashboardLoading &&
-                      dashboardData.allBirthdays.length >
-                        0 && (
-                        <SectionCard
-                          icon={Cake}
-                          title="Birthday Plans"
-                          subtitle="Your latest birthday plans"
-                        >
-                          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {dashboardData.allBirthdays
-                              .slice(0, 3)
-                              .map((birthday) => (
-                                <button
-                                  key={birthday?._id}
-                                  type="button"
-                                  onClick={() =>
-                                    handleViewBirthday(
-                                      birthday?._id,
-                                    )
-                                  }
-                                  className="min-w-0 rounded-xl border border-pink-100 bg-pink-50/40 p-3 text-left transition-all hover:border-red-200 hover:bg-red-50 active:scale-[0.99]"
-                                >
-                                  <div className="flex min-w-0 items-center gap-2.5">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
-                                      <Cake size={15} />
-                                    </div>
-
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate text-[clamp(0.74rem,0.7vw,0.9rem)] font-medium leading-5 text-slate-800">
-                                        {birthday?.name ||
-                                          birthday?.Name ||
-                                          birthday?.title ||
-                                          "Birthday Plan"}
-                                      </p>
-
-                                      <p className="mt-0.5 truncate text-[clamp(0.66rem,0.6vw,0.78rem)] font-normal leading-4 text-slate-500">
-                                        {getDisplayStatus(
-                                          birthday?.status,
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                          </div>
-                        </SectionCard>
-                      )}
-
-                    <SectionCard
-                      icon={KeyRound}
-                      title="Account & Security"
-                      subtitle="Manage your account access"
-                    >
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          onClick={handleChangePassword}
-                          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 active:scale-[0.99]"
-                        >
-                          <KeyRound size={16} />
-                          Change Password
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          disabled={loggingOut}
-                          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-[clamp(0.7rem,0.75vw,0.88rem)] font-medium text-white transition hover:bg-red-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {loggingOut ? (
-                            <>
-                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              Logging out...
-                            </>
-                          ) : (
-                            <>
-                              <LogOut size={16} />
-                              Logout
-                            </>
-                          )}
-                        </button>
+                        {allEvents.length > 4 && (
+                          <span className="shrink-0 text-xs font-medium text-[var(--muted)]">
+                            Scroll for more
+                          </span>
+                        )}
                       </div>
 
-                      {editing && (
-                        <div className="mt-2.5 grid w-full grid-cols-2 gap-2 sm:hidden">
-                          <button
-                            type="button"
-                            onClick={handleCancel}
-                            disabled={saving}
-                            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.84rem)] font-medium text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
-                          >
-                            <X size={15} />
-                            Cancel
-                          </button>
+                      {dashboardLoading ? (
+                        <div className="pf-tile rounded-2xl px-4 py-8 text-center">
+                          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[var(--border-hover)] border-t-[var(--teal)]" />
 
-                          <button
-                            type="submit"
-                            disabled={saving}
-                            className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2.5 text-[clamp(0.68rem,0.72vw,0.84rem)] font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
-                          >
-                            {saving ? (
-                              <>
-                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save size={15} />
-                                Save Changes
-                              </>
-                            )}
-                          </button>
+                          <p className="mt-3 text-[13px] font-medium text-[var(--muted)]">
+                            Loading events...
+                          </p>
+                        </div>
+                      ) : allEvents.length === 0 ? (
+                        <div className="pf-tile rounded-2xl border-dashed px-4 py-8 text-center">
+                          <CalendarDays
+                            size={25}
+                            className="mx-auto text-[var(--muted)]"
+                          />
+
+                          <p className="mt-3 text-sm font-semibold text-[var(--text-soft)]">
+                            No events yet
+                          </p>
+
+                          <p className="mt-1 text-[13px] text-[var(--muted)]">
+                            Your travel and birthday plans will appear here.
+                          </p>
+                        </div>
+                      ) : (
+                        <div
+                          className={`space-y-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${allEvents.length > 4
+                              ? "max-h-[340px] overflow-y-auto"
+                              : ""
+                            }`}
+                        >
+                          {allEvents.map((event, index) => (
+                            <EventRow
+                              key={
+                                event?._id ||
+                                event?.id ||
+                                `${event.__eventType}-${index}`
+                              }
+                              event={event}
+                              type={event.__eventType}
+                            />
+                          ))}
                         </div>
                       )}
-                    </SectionCard>
-                  </form>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </main>
+                    </div>
+                  </SectionCard>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </section>
-    </>
+      </div>
+    </PageShell>
   );
 };
 

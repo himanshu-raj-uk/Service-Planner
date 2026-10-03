@@ -217,31 +217,46 @@ const Banner = () => {
               </span>
             </div>
 
-            {/* CTA */}
+            {/* CTA
+                Default = theme base (surface colour + border).
+                Hover / focus / click = brand indigo background. */}
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
                 onClick={handleStartPlanning}
                 className="
                   rounded-xl
-                  bg-gradient-to-r
-                  from-indigo-600
-                  to-purple-600
+                  border
+                  border-[var(--border-color)]
+                  bg-[var(--app-surface)]
                   px-7
                   py-3
                   text-sm
                   font-semibold
-                  text-white
-                  shadow-lg
-                  shadow-indigo-500/20
+                  text-[var(--text-primary)]
+                  shadow-md
                   transition-all
                   duration-300
                   hover:-translate-y-0.5
+                  hover:border-indigo-600
+                  hover:bg-indigo-600
+                  hover:text-white
                   hover:shadow-xl
+                  hover:shadow-indigo-500/20
+                  focus:border-indigo-600
+                  focus:bg-indigo-600
+                  focus:text-white
+                  focus:outline-none
                   active:translate-y-0
-                  dark:from-indigo-500
-                  dark:to-purple-500
-                  dark:shadow-indigo-500/10
+                  active:border-indigo-700
+                  active:bg-indigo-700
+                  active:text-white
+                  dark:hover:border-indigo-500
+                  dark:hover:bg-indigo-500
+                  dark:focus:border-indigo-500
+                  dark:focus:bg-indigo-500
+                  dark:active:border-indigo-600
+                  dark:active:bg-indigo-600
                 "
               >
                 Start Planning
